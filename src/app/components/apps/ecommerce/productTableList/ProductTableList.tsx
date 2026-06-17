@@ -1,0 +1,470 @@
+"use client"
+import React, { useContext, useState } from 'react';
+import { HiOutlineDotsVertical } from 'react-icons/hi';
+import { Icon } from '@iconify/react';
+import { format } from 'date-fns';
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+import SimpleBar from 'simplebar-react';
+import { ProductType } from '@/app/(DashboardLayout)/types/apps/eCommerce';
+import { ProductContext } from '@/app/context/Ecommercecontext';
+import { Card } from '@/components/ui/card';
+import {
+  Table,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableCell,
+} from '@/components/ui/table';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AnimatedTableWrapper,
+  AnimatedTableBody,
+  AnimatedTableRow,
+} from "@/app/components/animatedComponents/AnimatedTable"
+import InputPlaceholderAnimate from '@/app/components/animatedComponents/AnimatedInputPlaceholder';
+import Image from 'next/image';
+
+const ProductTablelist = () => {
+  const {
+    filteredAndSortedProducts,
+    deleteProduct,
+    deleteAllProducts,
+    searchProducts,
+    updateProduct,
+    getProductById,
+  }: any = useContext(ProductContext);
+  const [search, setSearch] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState<any>([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [showAlert, setShowAlert] = useState(false);
+  const [openEditModal, setOpenEditModal] = useState(false);
+  const [editedProduct, setEditedProduct] = useState<ProductType | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [imageURL, setImageURL] = useState<string>('');
+
+  const handleSearch = (value: React.SetStateAction<string>) => {
+    setSearch(value);
+    searchProducts(value);
+  };
+
+  const handleEdit = (productId: number) => {
+    const product = getProductById(productId);
+
+    if (product) {
+      setEditedProduct(product);
+      setImageURL(product.photo);
+      setOpenEditModal(true);
+    }
+  };
+
+  const handleCloseEditModals = () => {
+    setOpenEditModal(false);
+    setEditedProduct(null);
+    setImageURL('');
+  };
+
+  const handleSaveEdit = () => {
+    if (editedProduct) {
+      const updatedProduct = {
+        ...editedProduct,
+        photo: imageURL,
+        created: selectedDate || editedProduct.created,
+      };
+      updateProduct(editedProduct.id.toString(), updatedProduct);
+      handleCloseEditModals();
+    }
+  };
+
+  const toggleSelectAll = () => {
+    const selectAllValue = !selectAll;
+    setSelectAll(selectAllValue);
+    if (selectAllValue) {
+      setSelectedProducts(filteredAndSortedProducts.map((product: { id: any }) => product.id));
+    } else {
+      setSelectedProducts([]);
+    }
+  };
+
+  const toggleSelectProduct = (productId: number) => {
+    const index = selectedProducts.indexOf(productId);
+    if (index === -1) {
+      setSelectedProducts([...selectedProducts, productId]);
+    } else {
+      setSelectedProducts(selectedProducts.filter((id: number) => id !== productId));
+    }
+  };
+
+  const handleDelete = () => {
+    if (selectedProducts.length === 0) {
+      setShowAlert(true); // Show alert after adding contact
+      setTimeout(() => {
+        setShowAlert(false);
+      }, 3000);
+    } else {
+      setOpenDeleteDialog(true);
+    }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setOpenDeleteDialog(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (selectedProducts.length > 0) {
+      if (selectedProducts.length === filteredAndSortedProducts.length) {
+        deleteAllProducts();
+      } else {
+        selectedProducts.forEach((productId: number) => {
+          deleteProduct(productId);
+        });
+      }
+      setSelectedProducts([]);
+      setSelectAll(false);
+    }
+    setOpenDeleteDialog(false);
+  };
+
+  const handleDateChange = (created: Date | null) => {
+    setSelectedDate(created);
+    if (editedProduct) {
+      setEditedProduct({ ...editedProduct, created: created || new Date() });
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        {/* Search  */}
+        <div className="flex gap-3 justify-between items-center mb-5">
+          <div className="relative w-full sm:max-w-60">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+              <Icon icon="solar:magnifer-linear" height={18} />
+            </span>
+            <InputPlaceholderAnimate
+              value={search}
+              onChange={handleSearch}
+              placeholders={['Search products...', 'Find top products...', 'Look up products...']}
+            />
+          </div>
+          <div className="flex gap-4">
+            {selectAll ? (
+              <Button variant={'lighterror'} className="btn-circle p-0">
+                <Icon icon="tabler:trash" height={18} onClick={handleDelete} />
+              </Button>
+            ) : (
+              <Button variant={'lightprimary'} className="btn-circle p-0">
+                <Icon icon="tabler:filter" height={18} />
+              </Button>
+            )}
+          </div>
+        </div>
+        {/* Table */}
+        <SimpleBar className="max-h-[580px]">
+          <div className="border rounded-md border-border dark:border-darkborder overflow-x-auto">
+            <AnimatedTableWrapper>
+              <Table className="">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-base font-semibold py-3">
+                      <Checkbox checked={selectAll} onCheckedChange={toggleSelectAll} />
+                    </TableHead>
+                    <TableHead className="text-base font-semibold py-3">Products</TableHead>
+                    <TableHead className="text-base font-semibold py-3">Date</TableHead>
+                    <TableHead className="text-base font-semibold py-3">Status</TableHead>
+                    <TableHead className="text-base font-semibold py-3">Price</TableHead>
+                    <TableHead className="text-base font-semibold py-3">Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <AnimatedTableBody className="divide-y divide-border dark:divide-darkborder ">
+                  {filteredAndSortedProducts.map(
+                    (
+                      item: {
+                        id: number;
+                        photo: string | undefined;
+                        title:
+                        | string
+                        | number
+                        | boolean
+                        | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | Iterable<React.ReactNode>
+                        | null
+                        | undefined;
+                        category:
+                        | string
+                        | number
+                        | boolean
+                        | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | Iterable<React.ReactNode>
+                        | null
+                        | undefined;
+                        created: string | number | Date;
+                        stock: any;
+                        price:
+                        | string
+                        | number
+                        | boolean
+                        | React.ReactElement<any, string | React.JSXElementConstructor<any>>
+                        | Iterable<React.ReactNode>
+                        | React.ReactPortal
+                        | Iterable<React.ReactNode>
+                        | null
+                        | undefined;
+                      },
+                      index: number,
+                    ) => (
+                      <AnimatedTableRow key={index} index={index}>
+                        <TableCell className="whitespace-nowrap">
+                          <Checkbox
+                            checked={selectedProducts.includes(item.id)}
+                            onCheckedChange={() => toggleSelectProduct(item.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap lg:min-w-auto min-w-[250px]">
+                          <div className="flex  gap-3 items-center">
+                            <Image
+                              src={item.photo as string}
+                              alt="icon"
+                              width={56}
+                              height={56}
+                              className="h-14 w-14 rounded-full"
+                            />
+                            <div className="text-no-wrap">
+                              <h6 className="text-base">{item.title}</h6>
+                              <p className="text-sm text-darklink">{item.category}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <p className="text-sm text-darklink font-medium">
+                            {format(new Date(item.created), 'E, MMM d yyyy')}
+                          </p>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <div className="flex gap-2 text-sm items-center text-darklink font-medium">
+                            {item.stock ? (
+                              <Badge variant={'success'} className="h-2 w-2 p-0 rounded-md"></Badge>
+                            ) : (
+                              <Badge variant={'error'} className="h-2 w-2 p-0 rounded-md"></Badge>
+                            )}
+                            {item.stock ? 'InStock' : 'Out of Stock'}
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="whitespace-nowrap">
+                          <h5 className="text-base">${item.price}</h5>
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap">
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
+                              <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer">
+                                <HiOutlineDotsVertical size={22} />
+                              </span>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem
+                                className="flex gap-3 items-center cursor-pointer"
+                                onClick={() => handleEdit(item.id)}
+                              >
+                                <Icon icon="solar:pen-new-square-broken" height={18} />
+                                <span>Edit</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="flex gap-3 items-center cursor-pointer"
+                                onClick={handleDelete}
+                              >
+                                <Icon icon="solar:trash-bin-minimalistic-outline" height={18} />
+                                <span>Delete</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </AnimatedTableRow>
+                    ),
+                  )}
+                </AnimatedTableBody>
+              </Table>
+            </AnimatedTableWrapper>
+          </div>
+        </SimpleBar>
+      </Card>
+
+      <Dialog open={openDeleteDialog} onOpenChange={handleCloseDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Confirmation</DialogTitle>
+          </DialogHeader>
+
+          <p className="text-center text-lg my-6">
+            Are you sure you want to delete selected products?
+          </p>
+
+          <DialogFooter className="flex justify-center gap-2">
+            <Button variant="destructive" className="rounded-md" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+            <Button variant="outline" className="rounded-md" onClick={handleCloseDeleteDialog}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={openEditModal} onOpenChange={handleCloseEditModals}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+          </DialogHeader>
+
+          {editedProduct && (
+            <div className="grid grid-cols-12 gap-6 pt-4">
+              <div className="col-span-12 lg:col-span-6">
+                <Label htmlFor="ttl" className="mb-2 block capitalize">
+                  Title
+                </Label>
+                <Input
+                  id="ttl"
+                  value={editedProduct.title}
+                  onChange={(e) =>
+                    setEditedProduct({
+                      ...editedProduct,
+                      title: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="col-span-12 lg:col-span-6">
+                <Label htmlFor="price" className="mb-2 block capitalize">
+                  Price
+                </Label>
+                <Input
+                  id="price"
+                  value={editedProduct.price}
+                  onChange={(e) =>
+                    setEditedProduct({
+                      ...editedProduct,
+                      price: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="col-span-12 lg:col-span-6">
+                <Label htmlFor="stck" className="mb-2 block capitalize">
+                  Stock
+                </Label>
+                <Select
+                  value={editedProduct.stock ? 'In Stock' : 'Out of Stock'}
+                  onValueChange={(value) =>
+                    setEditedProduct({
+                      ...editedProduct,
+                      stock: value === 'In Stock',
+                    })
+                  }
+                >
+                  <SelectTrigger id="stck" className="select-md-contact">
+                    <SelectValue placeholder="Select Stock Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="In Stock">IN Stock</SelectItem>
+                    <SelectItem value="Out of Stock">Out Stock</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="col-span-12 lg:col-span-6">
+                <Label htmlFor="dt" className="mb-2 block capitalize">
+                  Date
+                </Label>
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={handleDateChange}
+                  dateFormat="MMMM d, yyyy"
+                  className="form-control-input w-full max-w-full py-[10px] border border-input rounded-md px-3"
+                  id="dt"
+                />
+              </div>
+
+              <div className="col-span-12 lg:col-span-6">
+                <Label htmlFor="img" className="mb-2 block capitalize">
+                  Image URL
+                </Label>
+                <Input
+                  id="img"
+                  placeholder="Paste image URL"
+                  value={imageURL}
+                  onChange={(e) => setImageURL(e.target.value)}
+                />
+              </div>
+
+              <div className="col-span-12">
+                <Label htmlFor="imgPreview" className="mb-2 block capitalize">
+                  Image Preview
+                </Label>
+                {imageURL && (
+                  <Image
+                    id="imgPreview"
+                    src={imageURL}
+                    alt="Preview"
+                    className="w-full max-w-[200px] h-auto object-cover rounded-md"
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-6">
+            <Button onClick={handleSaveEdit}>
+              Save
+            </Button>
+            <Button
+              type="button"
+              onClick={handleCloseEditModals}
+              variant="outlineerror"
+            >
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {showAlert && (
+        <Alert className="bg-yellow-100 text-yellow-800 border border-yellow-300 fixed mx-auto start-0 end-0 top-3 w-fit z-[50] rounded-md flex items-center gap-2 px-4 py-3">
+          <Icon icon="solar:archive-minimalistic-broken" height={22} className="shrink-0" />
+          <AlertDescription className="ms-2">Please select products to delete.</AlertDescription>
+        </Alert>
+      )}
+    </>
+  );
+};
+
+export default ProductTablelist;
