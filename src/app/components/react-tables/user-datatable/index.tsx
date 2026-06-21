@@ -34,6 +34,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React from 'react'
 import { uniqueId } from 'lodash'
@@ -214,9 +222,50 @@ function UserDataTable() {
     email: '',
   })
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [confirmTargetId, setConfirmTargetId] = useState<string | null>(null)
+  const [confirmTargetCount, setConfirmTargetCount] = useState(0)
+  const [isBulkDelete, setIsBulkDelete] = useState(false)
+
+  const openDeleteConfirm = (rowId: string) => {
+    setIsBulkDelete(false)
+    setConfirmTargetId(rowId)
+    setConfirmTargetCount(1)
+    setConfirmMessage('Are you sure you want to delete this user? This action cannot be undone.')
+    setConfirmDialogOpen(true)
+  }
+
+  const openBulkDeleteConfirm = (count: number) => {
+    setIsBulkDelete(true)
+    setConfirmTargetId(null)
+    setConfirmTargetCount(count)
+    setConfirmMessage(
+      `Are you sure you want to delete ${count} selected user(s)? This action cannot be undone.`
+    )
+    setConfirmDialogOpen(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (isBulkDelete) {
+      const selectedIds = table
+        .getSelectedRowModel()
+        .rows.map((r) => r.original.id)
+      setUserData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
+      table.resetRowSelection()
+      setFeedback(`Deleted ${selectedIds.length} user(s)`)
+    } else if (confirmTargetId) {
+      setUserData((prev) => prev.filter((item) => item.id !== confirmTargetId))
+      setFeedback('User deleted')
+    }
+
+    setConfirmDialogOpen(false)
+    setConfirmTargetId(null)
+    setConfirmTargetCount(0)
+  }
+
   const handleDelete = (rowId: string) => {
-    setUserData((prev) => prev.filter((item) => item.id !== rowId))
-    setFeedback('User deleted')
+    openDeleteConfirm(rowId)
   }
 
   // Create column helper
@@ -636,9 +685,10 @@ function UserDataTable() {
     const selectedIds = table
       .getSelectedRowModel()
       .rows.map((r) => r.original.id)
-    setUserData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
-    table.resetRowSelection()
-    setFeedback(`Deleted ${selectedIds.length} user(s)`)
+
+    if (selectedIds.length === 0) return
+
+    openBulkDeleteConfirm(selectedIds.length)
   }, [table])
 
   useEffect(() => {
@@ -796,12 +846,31 @@ function UserDataTable() {
             onClick={() => setShowNewUserRow(true)}
             color={'primary'}
             className='w-fit'>
-            Create User
+            CreateCreate User
           </Button>
         </div>
 
         {/* Feedback Toast */}
         {feedback && <ToastContainer />}
+
+        <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete confirmation</DialogTitle>
+              <DialogDescription>{confirmMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                variant='secondary'
+                onClick={() => setConfirmDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant='destructive' onClick={handleConfirmDelete}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* user table */}
         <div className='overflow-x-auto'>

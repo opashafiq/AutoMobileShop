@@ -23,10 +23,15 @@ import {
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import type { BadgeProps } from '@/components/ui/badge'
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import {
   Select,
   SelectContent,
@@ -36,7 +41,6 @@ import {
 } from '@/components/ui/select'
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React from 'react'
-import { uniqueId } from 'lodash'
 import {
   AnimatedTableWrapper,
   AnimatedTableBody,
@@ -45,7 +49,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
 import useSWR from 'swr'
-import { getFetcher } from '@/app/api/globalFetcher'
+import { getFetcher, postFetcher } from '@/app/api/globalFetcher'
 
 interface TaxType {
   id: number
@@ -89,7 +93,7 @@ function TaxIdTable() {
 
   // SWR fetch from API
   const API_URL = 'https://localhost:44352/api/TaxId'
-  const { data, error, isLoading } = useSWR(API_URL, getFetcher)
+  const { data } = useSWR(API_URL, getFetcher)
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
@@ -99,10 +103,8 @@ function TaxIdTable() {
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  
   const [rowSelection, setRowSelection] = useState({})
-  const [editingRowId, setEditingRowId] = useState<string | null>(null)
-  const [editedRowData, setEditedRowData] = useState<Record<string, Partial<any>>>({})
+  const [editingRowId, setEditingRowId] = useState<number | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
@@ -114,12 +116,133 @@ function TaxIdTable() {
     userName: true,
     setDate: true,
   })
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<number | string | null>(null)
+  const [confirmDeleteCount, setConfirmDeleteCount] = useState(0)
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
+  const [apiLoading, setApiLoading] = useState(false)
+  const [currentTax, setCurrentTax] = useState<Partial<TaxType>>({
+    id: 0,
+    tbti_ComName: '',
+    tbti_TaxNumber: '',
+    tbti_Address: '',
+    tbti_Phone: '',
+    userName: '',
+    setDate: new Date().toISOString(),
+  })
 
-  // no client-side create UI for TaxId table; read-only
+  const resetCurrentTax = () => {
+    setCurrentTax({
+      id: 0,
+      tbti_ComName: '',
+      tbti_TaxNumber: '',
+      tbti_Address: '',
+      tbti_Phone: '',
+      userName: '',
+      setDate: new Date().toISOString(),
+    })
+  }
+
+  const openCreateDialog = () => {
+    resetCurrentTax()
+    setDialogMode('create')
+    setEditingRowId(null)
+    setIsDialogOpen(true)
+  }
+
+  const openEditDialog = (row: TaxType) => {
+    setDialogMode('edit')
+    setEditingRowId(row.id)
+    setCurrentTax({ ...row })
+    setIsDialogOpen(true)
+  }
+
+  const closeDialog = () => {
+    setIsDialogOpen(false)
+    setEditingRowId(null)
+  }
+
+  const handleSave = async () => {
+    setApiLoading(true)
+
+    try {
+      const payload: TaxType = {
+        id: dialogMode === 'create' ? 0 : editingRowId ?? 0,
+        tbti_ComName: currentTax.tbti_ComName ?? '',
+        tbti_TaxNumber: currentTax.tbti_TaxNumber ?? '',
+        tbti_Address: currentTax.tbti_Address ?? '',
+        tbti_Phone: currentTax.tbti_Phone ?? '',
+        userName: currentTax.userName ?? '',
+        setDate: currentTax.setDate ?? new Date().toISOString(),
+      }
+
+      if (dialogMode === 'create') {
+        const response = await postFetcher(API_URL, payload)
+        setTaxData((prev) => [response as TaxType, ...prev])
+        setFeedback('Tax ID created')
+      } else if (editingRowId !== null) {
+        await fetch(`${API_URL}/${editingRowId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+        setTaxData((prev) => prev.map((item) => (item.id === editingRowId ? payload : item)))
+        setFeedback('Tax ID updated')
+      }
+
+      closeDialog()
+    } catch (error) {
+      console.error('Unable to save tax id', error)
+      setFeedback('Unable to save Tax ID')
+    } finally {
+      setApiLoading(false)
+    }
+  }
+
+  const openDeleteConfirm = (rowId: number | string) => {
+    setConfirmDeleteTargetId(rowId)
+    setConfirmDeleteCount(1)
+    setConfirmDeleteMessage(
+      'Are you sure you want to delete this Tax ID? This action cannot be undone.'
+    )
+    setConfirmDialogOpen(true)
+  }
 
   const handleDelete = (rowId: number | string) => {
-    setTaxData((prev) => prev.filter((item) => item.id !== rowId))
-    setFeedback('Record deleted')
+    openDeleteConfirm(rowId)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (confirmDeleteCount > 1) {
+      const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
+      setTaxData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
+      table.resetRowSelection()
+      setFeedback(`Deleted ${selectedIds.length} record(s)`)
+      setConfirmDialogOpen(false)
+      return
+    }
+
+    if (confirmDeleteTargetId === null) {
+      setConfirmDialogOpen(false)
+      return
+    }
+
+    try {
+      await fetch(`${API_URL}/${confirmDeleteTargetId}`, {
+        method: 'DELETE',
+      })
+      setTaxData((prev) => prev.filter((item) => item.id !== confirmDeleteTargetId))
+      setFeedback('Record deleted')
+    } catch (error) {
+      console.error('Unable to delete tax id', error)
+      setFeedback('Unable to delete record')
+    } finally {
+      setConfirmDialogOpen(false)
+      setConfirmDeleteTargetId(null)
+      setConfirmDeleteCount(0)
+    }
   }
 
   // Create column helper for TaxType
@@ -186,6 +309,14 @@ function TaxIdTable() {
             const rowId = row.original.id
             return (
               <div className='flex items-center gap-2'>
+                <Button
+                  type='button'
+                  variant='lightprimary'
+                  shape='pill'
+                  onClick={() => openEditDialog(row.original)}
+                  aria-label='Edit record'>
+                  <Icon icon='solar:pen-2-linear' width={18} height={18} />
+                </Button>
                 <Button
                   type='button'
                   variant='lighterror'
@@ -290,9 +421,14 @@ function TaxIdTable() {
   // Optimized bulk delete handler
   const handleBulkDelete = useCallback(() => {
     const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
-    setTaxData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
-    table.resetRowSelection()
-    setFeedback(`Deleted ${selectedIds.length} record(s)`)
+    if (selectedIds.length === 0) return
+
+    setConfirmDeleteTargetId(null)
+    setConfirmDeleteCount(selectedIds.length)
+    setConfirmDeleteMessage(
+      `Are you sure you want to delete ${selectedIds.length} selected record(s)? This action cannot be undone.`
+    )
+    setConfirmDialogOpen(true)
   }, [table])
 
   useEffect(() => {
@@ -327,7 +463,7 @@ function TaxIdTable() {
         {/* title */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            User Table
+            Tax ID Table
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {/* Search */}
@@ -346,7 +482,7 @@ function TaxIdTable() {
             ) : (
               <Input
                 placeholder='Search...'
-                className='!form-control w-40 md:w-56'
+                className='form-control! w-40 md:w-56'
                 value={globalFilter ?? ''}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 onBlur={() => {
@@ -415,10 +551,155 @@ function TaxIdTable() {
                 <Icon icon='solar:trash-bin-2-outline' width={18} height={18} />
               </Button>
             )}
+
+            <Button
+              variant='lightprimary'
+              shape='pill'
+              onClick={openCreateDialog}
+              aria-label='Create Tax ID'>
+              Create Tax ID
+            </Button>
           </div>
         </div>
 
-        {/* filter & create removed for TaxId table */}
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {dialogMode === 'create' ? 'Create Tax ID' : 'Edit Tax ID'}
+              </DialogTitle>
+              <DialogDescription>
+                {dialogMode === 'create'
+                  ? 'Enter new tax information and save to the database.'
+                  : 'Update the tax record and save your changes.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className='grid gap-4 py-4'>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Company Name</label>
+                <Input
+                  value={currentTax.tbti_ComName ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      tbti_ComName: e.target.value,
+                    }))
+                  }
+                  placeholder='Company Name'
+                />
+              </div>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Tax Number</label>
+                <Input
+                  value={currentTax.tbti_TaxNumber ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      tbti_TaxNumber: e.target.value,
+                    }))
+                  }
+                  placeholder='Tax Number'
+                />
+              </div>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Address</label>
+                <Input
+                  value={currentTax.tbti_Address ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      tbti_Address: e.target.value,
+                    }))
+                  }
+                  placeholder='Address'
+                />
+              </div>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Phone</label>
+                <Input
+                  value={currentTax.tbti_Phone ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      tbti_Phone: e.target.value,
+                    }))
+                  }
+                  placeholder='Phone'
+                />
+              </div>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>User Name</label>
+                <Input
+                  value={currentTax.userName ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      userName: e.target.value,
+                    }))
+                  }
+                  placeholder='User Name'
+                />
+              </div>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Date</label>
+                <Input
+                  value={currentTax.setDate ?? ''}
+                  onChange={(e) =>
+                    setCurrentTax((prev) => ({
+                      ...prev,
+                      setDate: e.target.value,
+                    }))
+                  }
+                  placeholder='YYYY-MM-DDTHH:mm:ss'
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={closeDialog}
+                disabled={apiLoading}>
+                Cancel
+              </Button>
+              <Button
+                type='button'
+                variant='success'
+                onClick={handleSave}
+                disabled={apiLoading || !currentTax.tbti_ComName || !currentTax.tbti_TaxNumber}>
+                {apiLoading
+                  ? dialogMode === 'create'
+                    ? 'Creating...'
+                    : 'Saving...'
+                  : dialogMode === 'create'
+                  ? 'Create'
+                  : 'Save'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm delete</DialogTitle>
+              <DialogDescription>{confirmDeleteMessage}</DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={() => setConfirmDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type='button' variant='destructive' onClick={handleConfirmDelete}>
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Feedback Toast */}
         {feedback && <ToastContainer />}
@@ -547,7 +828,7 @@ function TaxIdTable() {
                   icon='solar:arrow-left-line-duotone'
                   className={`text-dark dark:text-white hover:text-primary cursor-pointer ${
                     table.getState().pagination.pageIndex === 0
-                      ? 'opacity-50 !cursor-not-allowed'
+                      ? 'opacity-50 cursor-not-allowed!'
                       : ''
                   }`}
                   width={20}
@@ -562,7 +843,7 @@ function TaxIdTable() {
                   className={`text-dark dark:text-white hover:text-primary cursor-pointer ${
                     table.getState().pagination.pageIndex + 1 ===
                     table.getPageCount()
-                      ? 'opacity-50 !cursor-not-allowed'
+                      ? 'opacity-50 cursor-not-allowed!'
                       : ''
                   }`}
                   width={20}
