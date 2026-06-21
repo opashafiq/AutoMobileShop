@@ -47,114 +47,21 @@ import { CustomizerContext } from '@/app/context/CustomizerContext'
 import useSWR from 'swr'
 import { getFetcher } from '@/app/api/globalFetcher'
 
-interface UserType {
-  id: string
-  avatar?: string
+interface TaxType {
+  id: number
+  tbti_ComName: string
+  tbti_TaxNumber: string
+  tbti_Address: string
+  tbti_Phone: string
   userName: string
-  role: string
-  badgecolor?: string
-  age: number
-  phone: string
-  email: string
-  isNew?: boolean
+  setDate: string
 }
 
-const User: UserType[] = [
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-1.jpg',
-    userName: 'James Johnson',
-    role: 'Admin',
-    badgecolor: 'lightInfo',
-    age: 30,
-    phone: '123-456-7890',
-    email: 'alice@company.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-2.jpg',
-    userName: 'Maria Hernandez',
-    role: 'User',
-    badgecolor: 'lightSuccess',
-    age: 45,
-    phone: '555-312-8899',
-    email: 'bobsmith@gmail.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-3.jpg',
-    userName: 'Clara Mason',
-    role: 'Superadmin',
-    badgecolor: 'lightWarning',
-    age: 38,
-    phone: '402-123-4567',
-    email: 'clara@enterprise.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-4.jpg',
-    userName: 'Derek White',
-    role: 'Moderator',
-    badgecolor: 'lightError',
-    age: 29,
-    phone: '212-321-6789',
-    email: 'derek@forum.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-5.jpg',
-    userName: 'Eva Carter',
-    role: 'Author',
-    badgecolor: 'lightInfo',
-    age: 33,
-    phone: '678-999-8212',
-    email: 'eva@blogging.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-6.jpg',
-    userName: 'Frank Zhou',
-    role: 'User',
-    badgecolor: 'lightSuccess',
-    age: 41,
-    phone: '504-222-9990',
-    email: 'fzhou@yahoo.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-7.jpg',
-    userName: 'Grace Lee',
-    role: 'Admin',
-    badgecolor: 'lightInfo',
-    age: 27,
-    phone: '703-301-4444',
-    email: 'gracelee@company.com',
-  },
-  {
-    id: uniqueId(),
-    avatar: '/images/profile/user-8.jpg',
-    userName: 'Henry Ford',
-    role: 'Superadmin',
-    badgecolor: 'lightWarning',
-    age: 52,
-    phone: '888-456-1234',
-    email: 'henry.ford@auto.com',
-  },
-]
-
-const roleColorMap: Record<string, string> = {
-  Admin: 'lightInfo',
-  User: 'lightSuccess',
-  Superadmin: 'lightWarning',
-  Moderator: 'lightError',
-  Author: 'lightPrimary',
-}
-
-function UserDataTable() {
+function TaxIdTable() {
   ////////////////////////////////////
   // Implemented a simple console log to verify component rendering and data fetching
   ///////////////////////////////////////////////////////
-  console.log('Shafiq Rendering UserDataTable')
+  console.log('Rendering TaxIdTable')
   // const fetcher = (url: string) =>
   // fetch(url).then(res => res.json());
   // // API Fetching with SWR (uncomment and replace API_URL to use)
@@ -178,55 +85,50 @@ function UserDataTable() {
   // console.log('Current theme mode from context after change:', activeMode)
 
 
-  const [userData, setUserData] = useState<UserType[]>(
-    User.map((userdata) => ({ ...userdata }))
-  )
+  const [taxData, setTaxData] = useState<TaxType[]>([])
+
+  // SWR fetch from API
+  const API_URL = 'https://localhost:44352/api/TaxId'
+  const { data, error, isLoading } = useSWR(API_URL, getFetcher)
+
+  useEffect(() => {
+    if (data && Array.isArray(data)) {
+      setTaxData(data as TaxType[])
+    }
+  }, [data])
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [roleFilter, setRoleFilter] = useState<string>('All')
+  
   const [rowSelection, setRowSelection] = useState({})
   const [editingRowId, setEditingRowId] = useState<string | null>(null)
-  const [editedRowData, setEditedRowData] = useState<
-    Record<string, Partial<UserType>>
-  >({})
+  const [editedRowData, setEditedRowData] = useState<Record<string, Partial<any>>>({})
   const [showSearch, setShowSearch] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
-  const [columnVisibility, setColumnVisibility] = useState<
-    Record<string, boolean>
-  >({
+  const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     id: true,
+    tbti_ComName: true,
+    tbti_TaxNumber: true,
+    tbti_Address: true,
+    tbti_Phone: true,
     userName: true,
-    role: true,
-    age: true,
-    phone: true,
-    email: true,
+    setDate: true,
   })
 
-  const [showNewUserRow, setShowNewUserRow] = useState(false)
-  const [newUser, setNewUser] = useState<Partial<UserType>>({
-    id: uniqueId(),
-    avatar: '/images/profile/jason.png',
-    userName: '',
-    role: 'user',
-    age: 0,
-    phone: '',
-    email: '',
-  })
+  // no client-side create UI for TaxId table; read-only
 
-  const handleDelete = (rowId: string) => {
-    setUserData((prev) => prev.filter((item) => item.id !== rowId))
-    setFeedback('User deleted')
+  const handleDelete = (rowId: number | string) => {
+    setTaxData((prev) => prev.filter((item) => item.id !== rowId))
+    setFeedback('Record deleted')
   }
 
-  // Create column helper
-  const columnHelper = createColumnHelper<UserType>()
+  // Create column helper for TaxType
+  const columnHelper = createColumnHelper<TaxType>()
 
-  // Build all columns using columnHelper
+  // Build columns matching the TaxId API
   const allColumns = useMemo(
     () =>
       [
-        // ✅ Select Checkbox
         columnHelper.display({
           id: 'select',
           header: ({ table }) => (
@@ -240,303 +142,64 @@ function UserDataTable() {
           cell: ({ row }) => (
             <Checkbox
               checked={!!row.getIsSelected()}
-              onCheckedChange={(checked) =>
-                row.toggleSelected(checked === true)
-              }
+              onCheckedChange={(checked) => row.toggleSelected(checked === true)}
             />
           ),
         }),
 
-        // ✅ Name
-        columnHelper.accessor('userName', {
-          header: 'Name',
-          cell: ({ row }) => {
-            const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-            const editedRow = editedRowData[rowId] || {}
-
-            return isEditing ? (
-              <Input
-                value={editedRow.userName ?? row.original.userName}
-                onChange={(e) =>
-                  setEditedRowData((prev) => ({
-                    ...prev,
-                    [rowId]: {
-                      ...prev[rowId],
-                      userName: e.target.value,
-                      avatar: prev[rowId]?.avatar ?? row.original.avatar,
-                    },
-                  }))
-                }
-                autoFocus
-                aria-label='Edit user name'
-                className='!form-control'
-              />
-            ) : (
-              <div className='flex items-center gap-2 flex-nowrap w-full'>
-                <Avatar>
-                  <AvatarImage
-                    src={row.original.avatar}
-                    alt={row.original.userName}
-                  />
-                  <AvatarFallback>{row.original.userName}</AvatarFallback>
-                </Avatar>
-                <p className='text-sm font-medium'>{row.original.userName}</p>
-              </div>
-            )
-          },
+        columnHelper.accessor('tbti_ComName', {
+          header: 'Company',
+          cell: (info) => <p className='text-sm font-medium'>{info.getValue()}</p>,
         }),
 
-        // ✅ Role
-        columnHelper.accessor('role', {
-          header: 'Role',
-          cell: ({ row }) => {
-            const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-            const editedRow = editedRowData[rowId] || {}
-
-            return isEditing ? (
-              <Select
-                value={editedRow.role ?? row.original.role}
-                onValueChange={(value) =>
-                  setEditedRowData((prev) => ({
-                    ...prev,
-                    [rowId]: {
-                      ...prev[rowId],
-                      role: value,
-                    },
-                  }))
-                }>
-                <SelectTrigger
-                  className='select-md-transparent !pe-0'
-                  aria-label='Edit Role'>
-                  <SelectValue placeholder='Select Role' />
-                </SelectTrigger>
-                <SelectContent>
-                  {['Admin', 'User', 'Superadmin', 'Moderator', 'Author'].map(
-                    (role) => (
-                      <SelectItem key={role} value={role}>
-                        {role}
-                      </SelectItem>
-                    )
-                  )}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Badge
-                variant={
-                  roleColorMap[row.original.role] as BadgeProps['variant']
-                }>
-                {row.original.role}
-              </Badge>
-            )
-          },
+        columnHelper.accessor('tbti_TaxNumber', {
+          header: 'Tax Number',
+          cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
         }),
 
-        // ✅ Age
-        columnHelper.accessor('age', {
-          header: 'Age',
-          cell: ({ row }) => {
-            const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-            const editedRow = editedRowData[rowId] || {}
-
-            return isEditing ? (
-              <Input
-                type='number'
-                step='0.01'
-                className='!form-control'
-                value={
-                  editedRow.age !== undefined ? editedRow.age : row.original.age
-                }
-                onChange={(e) =>
-                  setEditedRowData((prev) => ({
-                    ...prev,
-                    [rowId]: {
-                      ...prev[rowId],
-                      age: e.target.value
-                        ? parseFloat(e.target.value)
-                        : undefined,
-                    },
-                  }))
-                }
-                aria-label='Edit age'
-              />
-            ) : (
-              <p className='text-sm font-medium'>{row.original.age}</p>
-            )
-          },
+        columnHelper.accessor('tbti_Address', {
+          header: 'Address',
+          cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
         }),
 
-        // ✅ Phone
-        columnHelper.accessor('phone', {
+        columnHelper.accessor('tbti_Phone', {
           header: 'Phone',
-          cell: ({ row }) => {
-            const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-            const editedRow = editedRowData[rowId] || {}
-
-            return isEditing ? (
-              <Input
-                className='w-full !form-control'
-                value={editedRow.phone ?? row.original.phone}
-                onChange={(e) =>
-                  setEditedRowData((prev) => ({
-                    ...prev,
-                    [rowId]: {
-                      ...prev[rowId],
-                      phone: e.target.value,
-                    },
-                  }))
-                }
-                aria-label='Edit phone'
-              />
-            ) : (
-              <p className='text-sm font-medium'>{row.original.phone}</p>
-            )
-          },
+          cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
         }),
 
-        // ✅ Email
-        columnHelper.accessor('email', {
-          header: 'Email',
-          cell: ({ row }) => {
-            const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-            const editedRow = editedRowData[rowId] || {}
-
-            return isEditing ? (
-              <Input
-                className='w-full !form-control'
-                value={editedRow.email ?? ''}
-                autoFocus
-                onChange={(e) =>
-                  setEditedRowData((prev) => ({
-                    ...prev,
-                    [rowId]: {
-                      ...prev[rowId],
-                      email: e.target.value,
-                    },
-                  }))
-                }
-                aria-label='Edit email'
-              />
-            ) : (
-              <p className='text-sm font-medium'>{row.original.email}</p>
-            )
-          },
+        columnHelper.accessor('userName', {
+          header: 'User',
+          cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
         }),
 
-        // ✅ Actions
+        columnHelper.accessor('setDate', {
+          header: 'Date',
+          cell: (info) => (
+            <p className='text-sm'>{new Date(String(info.getValue())).toLocaleString()}</p>
+          ),
+        }),
+
         columnHelper.display({
           id: 'actions',
           header: 'Actions',
           cell: ({ row }) => {
             const rowId = row.original.id
-            const isEditing = editingRowId === rowId
-
             return (
               <div className='flex items-center gap-2'>
-                {isEditing ? (
-                  <>
-                    <Button
-                      type='button'
-                      variant='lightsuccess'
-                      shape='pill'
-                      onClick={() => {
-                        setUserData((prev) =>
-                          prev.map((item) =>
-                            item.id === rowId
-                              ? { ...item, ...editedRowData[rowId] }
-                              : item
-                          )
-                        )
-                        setEditingRowId(null)
-                        setEditedRowData((prev) => {
-                          const updated = { ...prev }
-                          delete updated[rowId]
-                          return updated
-                        })
-                        setFeedback('User updated')
-                      }}
-                      aria-label='Save changes'>
-                      <Icon
-                        icon='solar:check-read-linear'
-                        width={20}
-                        height={20}
-                      />
-                    </Button>
-
-                    <Button
-                      type='button'
-                      variant='lighterror'
-                      shape='pill'
-                      onClick={() => {
-                        setEditingRowId(null)
-                        setEditedRowData((prev) => {
-                          const updated = { ...prev }
-                          delete updated[rowId]
-                          return updated
-                        })
-                      }}
-                      aria-label='Cancel edit'>
-                      <Icon
-                        icon='solar:close-circle-linear'
-                        width={20}
-                        height={20}
-                      />
-                    </Button>
-                  </>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <span className='btn-circle-hover cursor-pointer p-0 h-7 w-7 bg-white dark:bg-black'>
-                        <Icon
-                          icon='solar:menu-dots-bold'
-                          width={18}
-                          height={18}
-                          aria-label='menu'
-                        />
-                      </span>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className='shadow dark:shadow-white/20'>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setEditingRowId(rowId)
-                          setEditedRowData((prev) => ({
-                            ...prev,
-                            [rowId]: { ...row.original },
-                          }))
-                        }}
-                        className='cursor-pointer'>
-                        <Icon
-                          icon='solar:pen-2-linear'
-                          width={20}
-                          height={20}
-                          className='me-2'
-                        />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => handleDelete(rowId)}
-                        className='cursor-pointer text-red-600 focus:text-red-700'>
-                        <Icon
-                          icon='solar:trash-bin-2-outline'
-                          width={20}
-                          height={20}
-                          className='me-2'
-                        />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                <Button
+                  type='button'
+                  variant='lighterror'
+                  shape='pill'
+                  onClick={() => handleDelete(rowId)}
+                  aria-label='Delete record'>
+                  <Icon icon='solar:trash-bin-2-outline' width={18} height={18} />
+                </Button>
               </div>
             )
           },
         }),
-      ] as ColumnDef<UserType>[],
-    [editingRowId, editedRowData]
+      ] as ColumnDef<TaxType>[],
+    [handleDelete]
   )
 
   // Filter columns based on columnVisibility before passing to useReactTable
@@ -553,12 +216,8 @@ function UserDataTable() {
     [allColumns, columnVisibility]
   )
 
-  // Filter orderData based on columnFilters
-  const filteredData = useMemo(() => {
-    return roleFilter === 'All'
-      ? userData
-      : userData.filter((user) => user.role === roleFilter)
-  }, [roleFilter, userData])
+  // Use taxData directly (no role filter)
+  const filteredData = useMemo(() => taxData, [taxData])
 
   const table = useReactTable({
     data: filteredData,
@@ -575,7 +234,7 @@ function UserDataTable() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    autoResetPageIndex: true,
+    autoResetPageIndex: true, // Enable row highlighting on data changes
   })
 
   // Memoize visible column keys for export
@@ -583,12 +242,9 @@ function UserDataTable() {
     () =>
       visibleColumns
         .filter(
-          (col) =>
-            (col as any).accessorKey &&
-            col.id !== 'select' &&
-            col.id !== 'actions'
+          (col) => (col as any).accessorKey && col.id !== 'select' && col.id !== 'actions'
         )
-        .map((col) => (col as any).accessorKey as keyof UserType),
+        .map((col) => (col as any).accessorKey as keyof TaxType),
     [visibleColumns]
   )
 
@@ -633,12 +289,10 @@ function UserDataTable() {
 
   // Optimized bulk delete handler
   const handleBulkDelete = useCallback(() => {
-    const selectedIds = table
-      .getSelectedRowModel()
-      .rows.map((r) => r.original.id)
-    setUserData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
+    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
+    setTaxData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
     table.resetRowSelection()
-    setFeedback(`Deleted ${selectedIds.length} user(s)`)
+    setFeedback(`Deleted ${selectedIds.length} record(s)`)
   }, [table])
 
   useEffect(() => {
@@ -764,41 +418,7 @@ function UserDataTable() {
           </div>
         </div>
 
-        {/* filter & create user */}
-        <div className='flex md:flex-row flex-col gap-2 item-center justify-between my-5'>
-          <div>
-            <div className='rounded-md border border-ld flex-wrap'>
-              {[
-                'All',
-                'Admin',
-                'User',
-                'Superadmin',
-                'Moderator',
-                'Author',
-              ].map((role) => {
-                const isSelected = roleFilter === role
-                return (
-                  <Button
-                    key={role}
-                    onClick={() => setRoleFilter(role)}
-                    className={`  ${
-                      isSelected
-                        ? 'bg-primary'
-                        : 'bg-transparent dark:bg-transparent hover:bg-lightprimary !dark:hover:bg-darkprimary text-black'
-                    } focus:ring-0 first:!border-s-0`}>
-                    {role}
-                  </Button>
-                )
-              })}
-            </div>
-          </div>
-          <Button
-            onClick={() => setShowNewUserRow(true)}
-            color={'primary'}
-            className='w-fit'>
-            Create User
-          </Button>
-        </div>
+        {/* filter & create removed for TaxId table */}
 
         {/* Feedback Toast */}
         {feedback && <ToastContainer />}
@@ -840,145 +460,7 @@ function UserDataTable() {
                   ))}
                 </thead>
                 <AnimatedTableBody>
-                  {/* Add New Row */}
-                  {showNewUserRow && (
-                    <tr className='border-b last:border-b-0 border-ld'>
-                      <td className='px-4 py-2'>
-                        <Checkbox aria-label='Select row' />
-                      </td>
-                      <td className='px-4 py-2 min-w-[180px]'>
-                        <Input
-                          value={newUser.userName}
-                          onChange={(e: { target: { value: any } }) =>
-                            setNewUser((prev) => ({
-                              ...prev,
-                              userName: e.target.value,
-                            }))
-                          }
-                          aria-label='Edit user name'
-                          className='!form-control'
-                        />
-                      </td>
-                      <td className='px-4 py-2'>
-                        <Select
-                          value={newUser.role}
-                          onValueChange={(value) =>
-                            setNewUser((prev) => ({
-                              ...prev,
-                              role: value,
-                            }))
-                          }>
-                          <SelectTrigger
-                            className='select-md-transparent'
-                            aria-label='Select Role'>
-                            <SelectValue placeholder='Select Role' />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              'Admin',
-                              'User',
-                              'Superadmin',
-                              'Moderator',
-                              'Author',
-                            ].map((role) => (
-                              <SelectItem key={role} value={role}>
-                                {role}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                      <td className='px-4 py-2 min-w-[180px]'>
-                        <Input
-                          type='number'
-                          value={newUser.age}
-                          onChange={(e: { target: { value: any } }) =>
-                            setNewUser((prev) => ({
-                              ...prev,
-                              age: Number(e.target.value),
-                            }))
-                          }
-                          className='!form-control'
-                        />
-                      </td>
-                      <td className='px-4 py-2'>
-                        <Input
-                          value={newUser.phone}
-                          onChange={(e: { target: { value: any } }) =>
-                            setNewUser((prev) => ({
-                              ...prev,
-                              phone: e.target.value,
-                            }))
-                          }
-                          placeholder='Phone'
-                          className='!form-control'
-                        />
-                      </td>
-                      <td className='px-4 py-2'>
-                        <Input
-                          value={newUser.email}
-                          onChange={(e: { target: { value: any } }) =>
-                            setNewUser((prev) => ({
-                              ...prev,
-                              email: e.target.value,
-                            }))
-                          }
-                          placeholder='Email'
-                          className='!form-control'
-                        />
-                      </td>
-                      <td className='px-4 py-2'>
-                        <div className='flex items-center gap-2'>
-                          <Button
-                            onClick={() => {
-                              const id = uniqueId()
-                              setUserData((prev) => [
-                                ...prev,
-                                { ...newUser, id } as UserType,
-                              ])
-                              setNewUser({
-                                userName: '',
-                                role: 'User',
-                                age: 0,
-                                phone: '',
-                                email: '',
-                                avatar: '/images/profile/jason.png',
-                              })
-                              setShowNewUserRow(false)
-                            }}
-                            shape={'pill'}
-                            variant={'lightsuccess'}
-                            disabled={!newUser.userName || !newUser.email}>
-                            <Icon
-                              icon={'solar:check-read-linear'}
-                              width={24}
-                              height={24}
-                            />
-                          </Button>
-                          <Button
-                            onClick={() => {
-                              setShowNewUserRow(false)
-                              setNewUser({
-                                userName: '',
-                                role: 'User',
-                                age: 0,
-                                phone: '',
-                                email: '',
-                                avatar: '/images/profile/jason.png',
-                              })
-                            }}
-                            variant={'lighterror'}
-                            shape={'pill'}>
-                            <Icon
-                              icon={'solar:close-circle-linear'}
-                              width={24}
-                              height={24}
-                            />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
+                  {/* Add new-row removed for TaxId table (read-only) */}
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td
@@ -1099,4 +581,4 @@ function UserDataTable() {
   )
 }
 
-export default UserDataTable
+export default TaxIdTable

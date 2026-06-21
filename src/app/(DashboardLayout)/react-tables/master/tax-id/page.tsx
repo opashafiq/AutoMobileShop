@@ -1,10 +1,10 @@
 import { Metadata } from 'next'
 import BreadcrumbComp from '../../../layout/shared/breadcrumb/BreadcrumbComp'
-import UserDataTable from '@/app/components/react-tables/master/taxid-datatable'
+import TaxIdTable from '@/app/components/react-tables/master/taxid-datatable'
 
 
 export const metadata: Metadata = {
-  title: 'User Table',
+  title: 'Tax ID',
 }
 
 const BCrumb = [
@@ -14,16 +14,16 @@ const BCrumb = [
   },
   {
     to: '',
-    title: 'User Table',
+    title: 'Tax ID',
   },
 ]
 
 function page() {
   return (
     <>
-      <BreadcrumbComp title='User Table' items={BCrumb} />
-      <h1>Welcome to the User Table</h1>
-      <UserDataTable />
+      <BreadcrumbComp title='Tax ID' items={BCrumb} />
+      <h1>Tax ID Records</h1>
+      <TaxIdTable />
     </>
   )
 }
