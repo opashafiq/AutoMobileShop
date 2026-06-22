@@ -49,7 +49,7 @@ import {
 import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
 import useSWR from 'swr'
-import { getFetcher, postFetcher } from '@/app/api/globalFetcher'
+import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
 
 interface TaxType {
   id: number
@@ -92,7 +92,7 @@ function TaxIdTable() {
   const [taxData, setTaxData] = useState<TaxType[]>([])
 
   // SWR fetch from API
-  const API_URL = 'https://localhost:44352/api/TaxId'
+  const API_URL = getApiUrl('/api/TaxId')
   const { data } = useSWR(API_URL, getFetcher)
 
   useEffect(() => {
@@ -183,12 +183,12 @@ function TaxIdTable() {
         setTaxData((prev) => [response as TaxType, ...prev])
         setFeedback('Tax ID created')
       } else if (editingRowId !== null) {
-        await fetch(`${API_URL}/${editingRowId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-        setTaxData((prev) => prev.map((item) => (item.id === editingRowId ? payload : item)))
+        const updatedTax = (await putFetcher(`${API_URL}/${editingRowId}`, payload)) as TaxType | null
+        setTaxData((prev) =>
+          prev.map((item) =>
+            item.id === editingRowId ? (updatedTax ?? payload) : item
+          )
+        )
         setFeedback('Tax ID updated')
       }
 
@@ -230,9 +230,7 @@ function TaxIdTable() {
     }
 
     try {
-      await fetch(`${API_URL}/${confirmDeleteTargetId}`, {
-        method: 'DELETE',
-      })
+      await deleteFetcher(`${API_URL}/${confirmDeleteTargetId}`)
       setTaxData((prev) => prev.filter((item) => item.id !== confirmDeleteTargetId))
       setFeedback('Record deleted')
     } catch (error) {
@@ -308,24 +306,42 @@ function TaxIdTable() {
           cell: ({ row }) => {
             const rowId = row.original.id
             return (
-              <div className='flex items-center gap-2'>
-                <Button
-                  type='button'
-                  variant='lightprimary'
-                  shape='pill'
-                  onClick={() => openEditDialog(row.original)}
-                  aria-label='Edit record'>
-                  <Icon icon='solar:pen-2-linear' width={18} height={18} />
-                </Button>
-                <Button
-                  type='button'
-                  variant='lighterror'
-                  shape='pill'
-                  onClick={() => handleDelete(rowId)}
-                  aria-label='Delete record'>
-                  <Icon icon='solar:trash-bin-2-outline' width={18} height={18} />
-                </Button>
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <span className='btn-circle-hover cursor-pointer p-0 h-7 w-7 bg-white dark:bg-black'>
+                    <Icon
+                      icon='solar:menu-dots-bold'
+                      width={18}
+                      height={18}
+                      aria-label='menu'
+                    />
+                  </span>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className='shadow dark:shadow-white/20'>
+                  <DropdownMenuItem
+                    onClick={() => openEditDialog(row.original)}
+                    className='cursor-pointer'>
+                    <Icon
+                      icon='solar:pen-2-linear'
+                      width={20}
+                      height={20}
+                      className='me-2'
+                    />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleDelete(rowId)}
+                    className='cursor-pointer text-red-600 focus:text-red-700'>
+                    <Icon
+                      icon='solar:trash-bin-2-outline'
+                      width={20}
+                      height={20}
+                      className='me-2'
+                    />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )
           },
         }),
