@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/select'
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React from 'react'
+import type { TaxType } from '@/app/models/interfaces'
 import {
   AnimatedTableWrapper,
   AnimatedTableBody,
@@ -50,16 +51,10 @@ import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
 import useSWR from 'swr'
 import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
+import { getUserName } from '@/app/api/auth'
+import { getLocalISO } from '@/lib/time'
 
-interface TaxType {
-  id: number
-  tbti_ComName: string
-  tbti_TaxNumber: string
-  tbti_Address: string
-  tbti_Phone: string
-  userName: string
-  setDate: string
-}
+
 
 function TaxIdTable() {
   ////////////////////////////////////
@@ -113,8 +108,6 @@ function TaxIdTable() {
     tbti_TaxNumber: true,
     tbti_Address: true,
     tbti_Phone: true,
-    userName: true,
-    setDate: true,
   })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
@@ -129,8 +122,6 @@ function TaxIdTable() {
     tbti_TaxNumber: '',
     tbti_Address: '',
     tbti_Phone: '',
-    userName: '',
-    setDate: new Date().toISOString(),
   })
 
   const resetCurrentTax = () => {
@@ -140,8 +131,6 @@ function TaxIdTable() {
       tbti_TaxNumber: '',
       tbti_Address: '',
       tbti_Phone: '',
-      userName: '',
-      setDate: new Date().toISOString(),
     })
   }
 
@@ -164,6 +153,8 @@ function TaxIdTable() {
     setEditingRowId(null)
   }
 
+  
+
   const handleSave = async () => {
     setApiLoading(true)
 
@@ -174,8 +165,8 @@ function TaxIdTable() {
         tbti_TaxNumber: currentTax.tbti_TaxNumber ?? '',
         tbti_Address: currentTax.tbti_Address ?? '',
         tbti_Phone: currentTax.tbti_Phone ?? '',
-        userName: currentTax.userName ?? '',
-        setDate: currentTax.setDate ?? new Date().toISOString(),
+        userName: getUserName() ?? '',
+        setDate: getLocalISO(),
       }
 
       if (dialogMode === 'create') {
@@ -288,17 +279,6 @@ function TaxIdTable() {
           cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
         }),
 
-        columnHelper.accessor('userName', {
-          header: 'User',
-          cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
-        }),
-
-        columnHelper.accessor('setDate', {
-          header: 'Date',
-          cell: (info) => (
-            <p className='text-sm'>{new Date(String(info.getValue())).toLocaleString()}</p>
-          ),
-        }),
 
         columnHelper.display({
           id: 'actions',
@@ -642,32 +622,6 @@ function TaxIdTable() {
                     }))
                   }
                   placeholder='Phone'
-                />
-              </div>
-              <div className='grid gap-2'>
-                <label className='text-sm font-medium'>User Name</label>
-                <Input
-                  value={currentTax.userName ?? ''}
-                  onChange={(e) =>
-                    setCurrentTax((prev) => ({
-                      ...prev,
-                      userName: e.target.value,
-                    }))
-                  }
-                  placeholder='User Name'
-                />
-              </div>
-              <div className='grid gap-2'>
-                <label className='text-sm font-medium'>Date</label>
-                <Input
-                  value={currentTax.setDate ?? ''}
-                  onChange={(e) =>
-                    setCurrentTax((prev) => ({
-                      ...prev,
-                      setDate: e.target.value,
-                    }))
-                  }
-                  placeholder='YYYY-MM-DDTHH:mm:ss'
                 />
               </div>
             </div>

@@ -1,8 +1,12 @@
+'use client'
+
 import { Icon } from '@iconify/react'
 
 import React, { useContext } from 'react'
 import * as profileData from './Data'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { clearToken } from '@/app/api/auth'
 import Image from 'next/image'
 import SimpleBar from 'simplebar-react'
 import { Button } from '@/components/ui/button'
@@ -16,6 +20,7 @@ import { CustomizerContext } from '@/app/context/CustomizerContext'
 
 const Profile = () => {
   const { activeDir } = useContext(CustomizerContext)
+  const router = useRouter()
 
   return (
     <div className='relative group/menu ps-4'>
@@ -91,8 +96,15 @@ const Profile = () => {
           {/* Logout Button */}
 
           <div className='pt-2 px-7'>
-            <Button color='outlineprimary' className='w-full rounded-md'>
-              <Link href='/auth/auth1/login'> Logout</Link>
+            <Button
+              color='outlineprimary'
+              className='w-full rounded-md'
+              onClick={() => {
+                // clear token and redirect to login
+                clearToken()
+                router.push('/auth/auth1/login')
+              }}>
+              Logout
             </Button>
           </div>
         </DropdownMenuContent>

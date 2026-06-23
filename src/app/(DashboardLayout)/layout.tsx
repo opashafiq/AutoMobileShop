@@ -1,5 +1,7 @@
-'use client'
-import React, { Activity, useContext } from 'react'
+"use client"
+import React, { Activity, useContext, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { getToken } from '@/app/api/auth'
 import Sidebar from './layout/vertical/sidebar/Sidebar'
 import Header from './layout/vertical/header/Header'
 import { Customizer } from './layout/shared/customizer/Customizer'
@@ -12,6 +14,17 @@ export default function Layout({
   children: React.ReactNode
 }>) {
   const { activeLayout, isLayout } = useContext(CustomizerContext)
+  const router = useRouter()
+
+  useEffect(() => {
+    // redirect to login if not authenticated
+    if (typeof window !== 'undefined') {
+      const token = getToken()
+      if (!token) {
+        router.push('/auth/auth1/login')
+      }
+    }
+  }, [router])
   return (
     <>
       <SidebarProvider>

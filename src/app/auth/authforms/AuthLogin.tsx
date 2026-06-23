@@ -6,12 +6,16 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import React from 'react'
+import React, { useState } from 'react'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
+import auth from '@/app/api/auth'
 
 const AuthLogin = () => {
   const router = useRouter()
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
     const form = e.currentTarget
@@ -19,16 +23,26 @@ const AuthLogin = () => {
     const password = form.password.value.trim()
 
     if (!username || !password) {
-      alert('Please fill in all fields')
+      toast.error('Please enter both username and password.')
       return
     }
 
-    // Success - redirect or call API
-    router.push('/')
+    try {
+      setLoading(true)
+      await auth.login(username, password)
+      router.push('/')
+    } catch (err: any) {
+      console.error('Login error', err)
+      toast.error(err?.message || 'Login failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <form onSubmit={handleSubmit} className='mt-6'>
+    <>
+      <ToastContainer position='top-right' autoClose={5000} hideProgressBar={false} closeOnClick pauseOnHover draggable pauseOnFocusLoss />
+      <form onSubmit={handleSubmit} className='mt-6'>
       <div className='mb-4'>
         <Label htmlFor='username'>Username</Label>
         <Input
@@ -60,10 +74,11 @@ const AuthLogin = () => {
           Forgot Password?
         </Link>
       </div>
-      <Button type='submit' className='w-full'>
-        Sign in
+      <Button type='submit' className='w-full' disabled={loading}>
+        {loading ? 'Signing in...' : 'Sign in'}
       </Button>
-    </form>
+      </form>
+    </>
   )
 }
 

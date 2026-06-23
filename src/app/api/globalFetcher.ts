@@ -5,32 +5,47 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://localhost:
 const getApiUrl = (endpoint: string) =>
   `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`
 
-const getFetcher = (url:any) => fetch(url,{
-    method:"GET",
-    headers:{'browserrefreshed':'false'},
-}).then((res) => {
-    if(!res.ok){
-        throw new Error("Failed to fetch the data")
+const getFetcher = (url:any) => {
+    const headers: Record<string,string> = {'browserrefreshed':'false'}
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        if (token) headers['Authorization'] = `Bearer ${token}`
     }
-    return res.json()
-});
+
+    return fetch(url, { method: 'GET', headers }).then((res) => {
+        if(!res.ok){
+            throw new Error("Failed to fetch the data")
+        }
+        return res.json()
+    })
+}
 
 
-const postFetcher = (url:string,arg:any) => fetch(url,{
-    method:"POST",
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(arg)
-}).then((res) => {
-    if(!res.ok){
-        throw new Error("Failed to post data")
+const postFetcher = (url:string,arg:any) => {
+    const headers: Record<string,string> = {'Content-Type':'application/json'}
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        if (token) headers['Authorization'] = `Bearer ${token}`
     }
-    return res.json()
-});
+
+    return fetch(url, { method: 'POST', headers, body: JSON.stringify(arg) }).then((res) => {
+        if(!res.ok){
+            throw new Error("Failed to post data")
+        }
+        return res.json()
+    })
+}
 
 const putFetcher = async (url:string, arg:any) => {
+    const headers: Record<string,string> = {'Content-Type':'application/json'}
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        if (token) headers['Authorization'] = `Bearer ${token}`
+    }
+
     const res = await fetch(url, {
         method: "PUT",
-        headers: {'Content-Type': 'application/json'},
+        headers,
         body: JSON.stringify(arg),
     })
 
@@ -43,9 +58,15 @@ const putFetcher = async (url:string, arg:any) => {
 }
 
 const patchFetcher = async (url:string, arg:any) => {
+    const headers: Record<string,string> = {'Content-Type':'application/json'}
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        if (token) headers['Authorization'] = `Bearer ${token}`
+    }
+
     const res = await fetch(url, {
         method: "PATCH",
-        headers: {'Content-Type': 'application/json'},
+        headers,
         body: JSON.stringify(arg),
     })
 
@@ -58,10 +79,13 @@ const patchFetcher = async (url:string, arg:any) => {
 }
 
 const deleteFetcher = (url:string, arg?: any) => {
-    const options: RequestInit = {
-        method: "DELETE",
-        headers: {'Content-Type': 'application/json'},
+    const headers: Record<string,string> = {'Content-Type':'application/json'}
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        if (token) headers['Authorization'] = `Bearer ${token}`
     }
+
+    const options: RequestInit = { method: "DELETE", headers }
 
     if (arg !== undefined) {
         options.body = JSON.stringify(arg)
