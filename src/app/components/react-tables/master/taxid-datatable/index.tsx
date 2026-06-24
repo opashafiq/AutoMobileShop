@@ -53,10 +53,12 @@ import useSWR from 'swr'
 import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
+import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
+import { textFilter, selectFilter } from '@/app/components/react-tables/shared/columnFilterUtils'
 
 
 
-function TaxIdTable() {
+function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
   ////////////////////////////////////
   // Implemented a simple console log to verify component rendering and data fetching
   ///////////////////////////////////////////////////////
@@ -109,6 +111,7 @@ function TaxIdTable() {
     tbti_Address: true,
     tbti_Phone: true,
   })
+  const [columnFilters, setColumnFilters] = useState<Record<string, string | string[] | null>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
@@ -151,6 +154,43 @@ function TaxIdTable() {
   const closeDialog = () => {
     setIsDialogOpen(false)
     setEditingRowId(null)
+  }
+
+  // Apply column filters to data
+  const applyColumnFilters = (data: TaxType[]): TaxType[] => {
+    if (Object.keys(columnFilters).length === 0) return data
+
+    return data.filter((row) => {
+      for (const [columnKey, filterValue] of Object.entries(columnFilters)) {
+        if (filterValue === null) continue
+
+        const cellValue = row[columnKey as keyof TaxType]
+        
+        if (Array.isArray(filterValue)) {
+          // Multiple selection filter
+          if (!selectFilter(cellValue, filterValue)) {
+            return false
+          }
+        } else if (typeof filterValue === 'string') {
+          // Text filter
+          if (!textFilter(cellValue, filterValue)) {
+            return false
+          }
+        }
+      }
+      return true
+    })
+  }
+
+  const handleColumnFilterChange = (columnKey: string, value: string | string[] | null) => {
+    setColumnFilters((prev) => ({
+      ...prev,
+      [columnKey]: value,
+    }))
+  }
+
+  const handleClearAllFilters = () => {
+    setColumnFilters({})
   }
 
   
@@ -344,7 +384,7 @@ function TaxIdTable() {
   )
 
   // Use taxData directly (no role filter)
-  const filteredData = useMemo(() => taxData, [taxData])
+  const filteredData = useMemo(() => applyColumnFilters(taxData), [taxData, columnFilters])
 
   const table = useReactTable({
     data: filteredData,
@@ -548,6 +588,18 @@ function TaxIdTable() {
               </Button>
             )}
 
+            {/* Clear filters button */}
+            {enableColumnFilters && Object.keys(columnFilters).length > 0 && (
+              <Button
+                variant={'secondary'}
+                onClick={handleClearAllFilters}
+                size='sm'
+                className='text-xs'>
+                <Icon icon='solar:close-circle-outline' width={16} height={16} className='me-1' />
+                Clear Filters
+              </Button>
+            )}
+
             <Button
               variant='lightprimary'
               shape='pill'
@@ -682,31 +734,63 @@ function TaxIdTable() {
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => (
-                        <th
-                          key={header.id}
-                          className='px-4 py-2 border-b border-ld text-left'>
-                          {header.isPlaceholder ? null : (
-                            <div
-                              className={
-                                header.column.getCanSort()
-                                  ? 'cursor-pointer select-none'
-                                  : ''
-                              }
-                              onClick={header.column.getToggleSortingHandler()}>
-                              <div className='flex items-center gap-1'>
-                                {flexRender(
-                                  header.column.columnDef.header,
-                                  header.getContext()
-                                )}
-                                {header.column.getCanSort() && (
-                                  <Icon icon='solar:transfer-vertical-line-duotone' />
+                      {headerGroup.headers.map((header) => {
+                        // Get column data for filter
+                        const columnKey =
+                          typeof (header.column.columnDef as any).accessorKey === 'string'
+                            ? (header.column.columnDef as any).accessorKey
+                            : header.column.id
+                        const columnData =
+                          columnKey && enableColumnFilters
+                            ? taxData.map((row) => row[columnKey as keyof TaxType])
+                            : []
+                        const isFilterable =
+                          enableColumnFilters &&
+                          columnKey &&
+                          columnKey !== 'id' &&
+                          ['tbti_ComName', 'tbti_TaxNumber', 'tbti_Address', 'tbti_Phone'].includes(
+                            columnKey
+                          )
+
+                        return (
+                          <th
+                            key={header.id}
+                            className='px-4 py-2 border-b border-ld text-left'>
+                            {header.isPlaceholder ? null : (
+                              <div className='flex items-center justify-between gap-2'>
+                                <button
+                                  type='button'
+                                  onClick={header.column.getToggleSortingHandler()}
+                                  className={
+                                    header.column.getCanSort()
+                                      ? 'flex items-center gap-2 cursor-pointer select-none'
+                                      : 'flex items-center gap-2'
+                                  }>
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext()
+                                  )}
+                                  {header.column.getCanSort() && (
+                                    <Icon icon='solar:transfer-vertical-line-duotone' />
+                                  )}
+                                </button>
+                                {isFilterable && (
+                                  <ColumnFilterInput
+                                    columnData={columnData}
+                                    filterValue={columnFilters[columnKey] || undefined}
+                                    onFilterChange={(value) =>
+                                      handleColumnFilterChange(columnKey, value)
+                                    }
+                                    columnName={String(
+                                      header.column.columnDef.header || columnKey
+                                    )}
+                                  />
                                 )}
                               </div>
-                            </div>
-                          )}
-                        </th>
-                      ))}
+                            )}
+                          </th>
+                        )
+                      })}
                     </tr>
                   ))}
                 </thead>
