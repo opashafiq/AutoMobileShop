@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
+import {getUserName} from "@/app/api/auth";
 
 const Profile = () => {
   const { activeDir } = useContext(CustomizerContext)
@@ -51,7 +52,7 @@ const Profile = () => {
               />
               <div>
                 <h5 className='card-title text-sm mb-0.5 font-medium'>
-                  Mathew Anderson
+                  {getUserName() }
                 </h5>
                 <span className='card-subtitle text-muted font-normal'>
                   Designer

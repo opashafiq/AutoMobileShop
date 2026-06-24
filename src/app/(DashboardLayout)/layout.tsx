@@ -1,5 +1,5 @@
 "use client"
-import React, { Activity, useContext, useEffect } from 'react'
+import React, { Activity, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getToken } from '@/app/api/auth'
 import Sidebar from './layout/vertical/sidebar/Sidebar'
@@ -15,16 +15,23 @@ export default function Layout({
 }>) {
   const { activeLayout, isLayout } = useContext(CustomizerContext)
   const router = useRouter()
+  const [authChecked, setAuthChecked] = useState(false)
 
   useEffect(() => {
-    // redirect to login if not authenticated
-    if (typeof window !== 'undefined') {
-      const token = getToken()
-      if (!token) {
-        router.push('/auth/auth1/login')
-      }
+    if (typeof window === 'undefined') return
+
+    const token = getToken()
+    if (!token) {
+      router.replace('/auth/auth1/login')
+      return
     }
+    setAuthChecked(true)
   }, [router])
+
+  if (!authChecked) {
+    return null
+  }
+
   return (
     <>
       <SidebarProvider>
