@@ -54,7 +54,7 @@ import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
-import { textFilter, selectFilter } from '@/app/components/react-tables/shared/columnFilterUtils'
+import { applyColumnFilters } from '@/app/components/react-tables/shared/columnFilterUtils'
 
 
 
@@ -156,31 +156,8 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     setEditingRowId(null)
   }
 
-  // Apply column filters to data
-  const applyColumnFilters = (data: TaxType[]): TaxType[] => {
-    if (Object.keys(columnFilters).length === 0) return data
+  // Apply column filters to data (delegated to shared generic utility)
 
-    return data.filter((row) => {
-      for (const [columnKey, filterValue] of Object.entries(columnFilters)) {
-        if (filterValue === null) continue
-
-        const cellValue = row[columnKey as keyof TaxType]
-        
-        if (Array.isArray(filterValue)) {
-          // Multiple selection filter
-          if (!selectFilter(cellValue, filterValue)) {
-            return false
-          }
-        } else if (typeof filterValue === 'string') {
-          // Text filter
-          if (!textFilter(cellValue, filterValue)) {
-            return false
-          }
-        }
-      }
-      return true
-    })
-  }
 
   const handleColumnFilterChange = (columnKey: string, value: string | string[] | null) => {
     setColumnFilters((prev) => ({
@@ -384,7 +361,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
   )
 
   // Use taxData directly (no role filter)
-  const filteredData = useMemo(() => applyColumnFilters(taxData), [taxData, columnFilters])
+  const filteredData = useMemo(() => applyColumnFilters(taxData, columnFilters), [taxData, columnFilters])
 
   const table = useReactTable({
     data: filteredData,
