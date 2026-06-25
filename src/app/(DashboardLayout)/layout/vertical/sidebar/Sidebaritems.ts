@@ -112,6 +112,12 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/react-tables/master/tax-id",
       },
+      {
+        name: "Daily Expense",
+        icon: "solar:card-money-linear",
+        id: uniqueId(),
+        url: "/react-tables/master/daily-expense",
+      },
     ],
  },
   {
