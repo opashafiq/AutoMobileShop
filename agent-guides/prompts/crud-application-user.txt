@@ -98,7 +98,7 @@ Instructions:
 
    Here: Key=id
          value=name
-5) For active users, please show some sort of graphical representation in the datatable for example a toggle button image.
+5) For active users (isActive), please show some sort of graphical representation in the datatable for example a toggle button image.
 6) In the Create form, the above field role will be shown as select key-value combo.Use some sort of industry standart representation for the field "isActive".
    In the create post request value will be passed accordingly.
 7) Same goes for edit form.

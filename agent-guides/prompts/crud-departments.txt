@@ -1,0 +1,81 @@
+I need a crud and as reference you can use:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/taxid-datatable/index.tsx
+
+Api details are as follows:
+Get:
+https://localhost:44352/api/Departments
+[
+  {
+    "id": 0,
+    "tbid_DepartmentName": "string",
+    "tbid_IsActive": true,
+    "userName": "string",
+    "setDate": "2026-06-27T14:12:41.658Z"
+  }
+]
+
+Get by Id:
+https://localhost:44352/api/Departments/10
+[
+  {
+    "id": 10,
+    "tbid_DepartmentName": "string",
+    "tbid_IsActive": true,
+    "userName": "string",
+    "setDate": "2026-06-27T14:12:41.658Z"
+  }
+]
+
+  
+  
+Create using Post:
+https://localhost:44352/api/Departments
+[
+  {
+    "id": 0,
+    "tbid_DepartmentName": "string",
+    "tbid_IsActive": true,
+    "userName": "string",
+    "setDate": "2026-06-27T14:12:41.658Z"
+  }
+]
+Update useng Put: https://localhost:44352/api/Departments/12  
+[
+  {
+    "id": 0,
+    "tbid_DepartmentName": "string",
+    "tbid_IsActive": true,
+    "userName": "string",
+    "setDate": "2026-06-27T14:12:41.658Z"
+  }
+]
+
+Delete using Delete:
+https://localhost:44352/api/Departments/12
+
+
+Instructions:
+1) Reference files are:
+   src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+   src/app/components/react-tables/master/taxid-datatable/index.tsx
+2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/Departments')
+3) Column userName= logged in user name, you will get hint from the reference files.
+   Column setDate= current PC time, you will get hint from the reference files.
+4) Create and edit form will be popped up as in reference files.
+5) For active departments (tbid_IsActive), please show some sort of graphical representation in the datatable for example a toggle button image.
+8) For deletion, please check the reference files.
+9) Model interface will be imported from a common file, please check the reference files.
+10) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+    Please create a link under heading: "Master Data".
+11) Please provide the datatable and other variables appropriate name matching with "DailyExpense".
+
+
+
+
+
+
+
+
+
+
