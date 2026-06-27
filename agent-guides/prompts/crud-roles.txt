@@ -1,0 +1,69 @@
+I need a crud and as reference you can use:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/taxid-datatable/index.tsx
+
+Api details are as follows:
+Get:
+https://localhost:44352/Authentication/roles
+[
+  {
+    "id": "10090ff4-1574-4053-9a84-e9406f5a37ae",
+    "name": "Employee",
+    "normalizedName": "EMPLOYEE",
+    "concurrencyStamp": null
+  },
+  {
+    "id": "5417e2ff-c71f-4df3-9992-5273336ad368",
+    "name": "Manager",
+    "normalizedName": "MANAGER",
+    "concurrencyStamp": null
+  }
+] 
+
+Get by Id:
+https://localhost:44352/Authentication/roles/10090ff4-1574-4053-9a84-e9406f5a37ae
+{
+  "id": "10090ff4-1574-4053-9a84-e9406f5a37ae",
+  "name": "Employee",
+  "normalizedName": "EMPLOYEE",
+  "concurrencyStamp": null
+}
+  
+  
+Create using Post:
+https://localhost:44352/Authentication/roles
+{
+  "roleName": "string"
+}
+
+Update useng Put: https://localhost:44352/Authentication/roles/10090ff4-1574-4053-9a84-e9406f5a37ae
+{
+  "roleName": "string"
+}
+
+Delete using Delete:
+https://localhost:44352/Authentication/roles/10090ff4-1574-4053-9a84-e9406f5a37ae
+
+
+Instructions:
+1) Reference files are:
+   src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+   src/app/components/react-tables/master/taxid-datatable/index.tsx
+2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/Authentication/roles')
+
+3) The create and edit form will be popped as in the reference files.
+8) For deletion, please check the reference files.
+9) Model interface will be imported from a common file, please check the reference files.
+10) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+    Please create a link under heading: "Master Data".
+11) Please provide the datatable and other variables appropriate name matching with "roles".
+
+
+
+
+
+
+
+
+
+
