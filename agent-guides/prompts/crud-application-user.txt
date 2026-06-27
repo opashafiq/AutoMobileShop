@@ -1,0 +1,119 @@
+I need a crud and as reference you can use:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/taxid-datatable/index.tsx
+
+Api details are as follows:
+Get:
+https://localhost:44352/api/ApplicationUser
+[
+  {
+    "id": "67d3f904-4fe1-4374-82ce-a64ee9e7fa2e",
+    "userName": "Admin1",
+    "firstName": "Admin 1",
+    "lastName": "Last 1",
+    "isActive": true,
+    "locationId": 1,
+    "locationName": "Apollo Tire & Wheel",
+    "email": "cse.com.bd",
+    "roles": [
+      "Admin"
+    ]
+  },
+  {
+    "id": "90f2716a-7243-465a-af92-4f0a3250c024",
+    "userName": "Admin4",
+    "firstName": "First 4",
+    "lastName": "Last 4",
+    "isActive": true,
+    "locationId": 1,
+    "locationName": "Apollo Tire & Wheel",
+    "email": "admin4@cse.com",
+    "roles": [
+      "Admin"
+    ]
+  }
+]  
+
+Get by Id:
+https://localhost:44352/api/ApplicationUser/90f2716a-7243-465a-af92-4f0a3250c024
+{
+  "id": "90f2716a-7243-465a-af92-4f0a3250c024",
+  "userName": "Admin4",
+  "firstName": "First 4",
+  "lastName": "Last 4",
+  "isActive": true,
+  "locationId": 1,
+  "locationName": "Apollo Tire & Wheel",
+  "email": "admin4@cse.com",
+  "roles": [
+    "Admin"
+  ]
+}
+  
+  
+Create using Post:
+https://localhost:44352/api/ApplicationUser
+{
+  "userName": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "isActive": true,
+  "locationId": 0,
+  "email": "string",
+  "password": "string",
+  "role": "string"
+}
+
+Update useng Put: https://localhost:44352/api/ApplicationUser/90f2716a-7243-465a-af92-4f0a3250c024 
+{
+  "userName": "string",
+  "firstName": "string",
+  "lastName": "string",
+  "isActive": true,
+  "locationId": 0,
+  "email": "string",
+  "password": "string",
+  "role": "string"
+}
+
+Delete using Delete:
+https://localhost:44352/api/ApplicationUser/90f2716a-7243-465a-af92-4f0a3250c024
+
+
+Instructions:
+1) Reference files are:
+   src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+   src/app/components/react-tables/master/taxid-datatable/index.tsx
+2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/ApplicationUser')
+
+4) List of expenseHeadName can be achieved using get api: /Authentication/roles
+[
+  {
+    "id": "10090ff4-1574-4053-9a84-e9406f5a37ae",
+    "name": "Employee",
+    "normalizedName": "EMPLOYEE",
+    "concurrencyStamp": null
+  }
+]
+
+   Here: Key=id
+         value=name
+5) For active users, please show some sort of graphical representation in the datatable for example a toggle button image.
+6) In the Create form, the above field role will be shown as select key-value combo.Use some sort of industry standart representation for the field "isActive".
+   In the create post request value will be passed accordingly.
+7) Same goes for edit form.
+8) For deletion, please check the reference files.
+9) Model interface will be imported from a common file, please check the reference files.
+10) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+    Please create a link under heading: "Master Data".
+11) Please provide the datatable and other variables appropriate name matching with "ApplicationUser".
+
+
+
+
+
+
+
+
+
+
