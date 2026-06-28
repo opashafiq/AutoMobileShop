@@ -70,3 +70,10 @@ Column userName= logged in user name, you will get hint from the reference files
 
 
 
+
+=== CRUD CREATION INSTRUCTIONS ===
+1. In the page.tsx file, do NOT add any <h1> title below the <BreadcrumbComp> — the breadcrumb already displays the title. Remove any redundant <h1> that repeats the breadcrumb.
+2. In the datatable index.tsx component card title, use a meaningful verb-prefixed title instead of a generic one. E.g. "Manage <Entity>" (like "Manage Daily Expenses", "Manage Tax IDs", "Manage Application Users") rather than "<Entity> Table" or "<Entity> Records".
+3. Refer to the latest versions of these files (after the fixes were applied) as the canonical pattern:
+   - src/app/(DashboardLayout)/react-tables/master/application-user/page.tsx (no h1 after breadcrumb)
+   - src/app/components/react-tables/master/applicationuser-datatable/index.tsx (card title: "Manage Application Users")

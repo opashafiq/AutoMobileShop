@@ -21,7 +21,6 @@ function page() {
   return (
     <>
       <BreadcrumbComp title='Application Users' items={BCrumb} />
-      <h1>Application Users</h1>
       <ApplicationUserTable enableColumnFilters={true} />
     </>
   )

@@ -561,7 +561,7 @@ function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilt
         {/* title */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            Application Users
+            Manage Application Users
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {/* Search */}

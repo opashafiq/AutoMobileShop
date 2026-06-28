@@ -40,6 +40,14 @@ This file is the main agent guide for working on the AutoMobileShop repo. Agents
 - `src/components/ui` — reusable button/input/checkbox selectors.
 - `src/app/api/globalFetcher.ts` — shared fetch helpers.
 
+## CRUD page conventions
+
+- **No redundant `<h1>`**: In `page.tsx`, do not add an `<h1>` title below the `<BreadcrumbComp>` — the breadcrumb already displays the title.
+- **Meaningful card titles**: In the datatable `index.tsx`, use a verb-prefixed title like `"Manage <Entity>"` (e.g. `"Manage Daily Expenses"`, `"Manage Tax IDs"`, `"Manage Application Users"`) rather than a generic `<Entity> Table` or `<Entity> Records`.
+- For canonical examples, see the latest versions of:
+  - `src/app/(DashboardLayout)/react-tables/master/application-user/page.tsx`
+  - `src/app/components/react-tables/master/applicationuser-datatable/index.tsx`
+
 ## File naming guidance
 
 - Add new agent docs inside `agent-guides/`.

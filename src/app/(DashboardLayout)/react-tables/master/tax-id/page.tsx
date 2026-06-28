@@ -22,7 +22,6 @@ function page() {
   return (
     <>
       <BreadcrumbComp title='Tax ID' items={BCrumb} />
-      <h1>Tax ID Records</h1>
       <TaxIdTable enableColumnFilters={true}/>
     </>
   )

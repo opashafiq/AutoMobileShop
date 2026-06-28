@@ -21,7 +21,6 @@ function page() {
   return (
     <>
       <BreadcrumbComp title='Daily Expense' items={BCrumb} />
-      <h1>Daily Expense Records</h1>
       <DailyExpenseTable enableColumnFilters={true} />
     </>
   )
