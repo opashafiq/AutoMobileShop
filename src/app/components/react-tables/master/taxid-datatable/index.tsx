@@ -793,7 +793,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                       <React.Fragment key={row.id}>
                         <AnimatedTableRow
                           index={index}
-                          className='border-b last:border-b-0 border-ld'>
+                          className='border-b last:border-b-0 border-ld hover:bg-lightprimary transition-colors duration-200'>
                           {row.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
