@@ -197,8 +197,8 @@ export const ColumnFilterInput: React.FC<ColumnFilterInputProps> = ({
 
       <PopoverContent
         side='bottom'
-        align='start'
-        sideOffset={4}
+        align='end'
+        sideOffset={18}
         className={`p-0 ${filterType === 'numeric' || filterType === 'date' ? 'w-64' : 'w-56'}`}>
         <div className='p-4 space-y-3'>
           <div className='flex items-center justify-between'>
