@@ -54,7 +54,7 @@ import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
-import { applyColumnFilters } from '@/app/components/react-tables/shared/columnFilterUtils'
+import { applyColumnFilters, ColumnFilterValue } from '@/app/components/react-tables/shared/columnFilterUtils'
 
 function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
   const { activeMode } = useContext(CustomizerContext)
@@ -96,10 +96,9 @@ function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters
     amount: true,
     checkNo: true,
     payType: true,
-    userName: true,
     locationDetailsName: true,
   })
-  const [columnFilters, setColumnFilters] = useState<Record<string, string | string[] | null>>({})
+  const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
@@ -163,7 +162,7 @@ function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters
     setEditingRowId(null)
   }
 
-  const handleColumnFilterChange = (columnKey: string, value: string | string[] | null) => {
+  const handleColumnFilterChange = (columnKey: string, value: ColumnFilterValue) => {
     setColumnFilters((prev) => ({
       ...prev,
       [columnKey]: value,
@@ -334,11 +333,6 @@ function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters
           cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
         }),
 
-        columnHelper.accessor('userName', {
-          header: 'User',
-          cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
-        }),
-
         columnHelper.accessor('locationDetailsName', {
           header: 'Location',
           cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
@@ -407,7 +401,14 @@ function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters
     [allColumns, columnVisibility]
   )
 
-  const filteredData = useMemo(() => applyColumnFilters(dailyExpenseData, columnFilters), [dailyExpenseData, columnFilters])
+  const filteredData = useMemo(
+    () =>
+      applyColumnFilters(
+        dailyExpenseData as unknown as Record<string, unknown>[],
+        columnFilters
+      ) as unknown as DailyExpenseType[],
+    [dailyExpenseData, columnFilters]
+  )
 
   const table = useReactTable({
     data: filteredData,
@@ -825,30 +826,29 @@ function DailyExpenseTable({ enableColumnFilters = true }: { enableColumnFilters
                             'amount',
                             'checkNo',
                             'payType',
-                            'userName',
                             'locationDetailsName',
                           ].includes(columnKey)
 
                         return (
                           <th
                             key={header.id}
-                            className='px-4 py-2 border-b border-ld text-left'>
+                            className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
-                              <div className='flex items-center justify-between gap-2'>
+                              <div className='inline-flex items-center gap-0.5'>
                                 <button
                                   type='button'
                                   onClick={header.column.getToggleSortingHandler()}
-                                  className={
+                                  className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${
                                     header.column.getCanSort()
-                                      ? 'flex items-center gap-2 cursor-pointer select-none'
-                                      : 'flex items-center gap-2'
-                                  }>
+                                      ? 'cursor-pointer select-none'
+                                      : ''
+                                  }`}>
                                   {flexRender(
                                     header.column.columnDef.header,
                                     header.getContext()
                                   )}
                                   {header.column.getCanSort() && (
-                                    <Icon icon='solar:transfer-vertical-line-duotone' />
+                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
                                   )}
                                 </button>
                                 {isFilterable && (

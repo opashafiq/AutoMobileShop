@@ -1,0 +1,85 @@
+I need a crud and as reference you can use:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/taxid-datatable/index.tsx
+
+Api details are as follows:
+Get:
+https://localhost:44352/api/TaxId
+[
+  {
+    "id": 0,
+    "tbti_ComName": "string",
+    "tbti_TaxNumber": "string",
+    "tbti_Address": "string",
+    "tbti_Phone": "string",
+    "userName": "string",
+    "setDate": "2026-06-28T04:38:08.540Z"
+  }
+]
+
+Get by Id:
+https://localhost:44352/api/TaxId/10
+  {
+    "id": 0,
+    "tbti_ComName": "string",
+    "tbti_TaxNumber": "string",
+    "tbti_Address": "string",
+    "tbti_Phone": "string",
+    "userName": "string",
+    "setDate": "2026-06-28T04:38:08.540Z"
+  }
+
+  
+  
+Create using Post:
+https://localhost:44352/api/TaxId
+  {
+    "id": 0,
+    "tbti_ComName": "string",
+    "tbti_TaxNumber": "string",
+    "tbti_Address": "string",
+    "tbti_Phone": "string",
+    "userName": "string",
+    "setDate": "2026-06-28T04:38:08.540Z"
+  }
+
+Update useng Put: https://localhost:44352/api/TaxId/12  
+  {
+    "id": 0,
+    "tbti_ComName": "string",
+    "tbti_TaxNumber": "string",
+    "tbti_Address": "string",
+    "tbti_Phone": "string",
+    "userName": "string",
+    "setDate": "2026-06-28T04:38:08.540Z"
+  }
+
+Delete using Delete:
+https://localhost:44352/api/TaxId/12
+
+
+Instructions:
+1) Reference files are:
+   src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+   src/app/components/react-tables/master/taxid-datatable/index.tsx
+2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/TaxId')
+3) No need to show the username and setdate in the datatable and in the create and edit form.
+Column userName= logged in user name, you will get hint from the reference files.
+   Column setDate= current PC time, you will get hint from the reference files.
+
+4) Create and Edit will be popped up as in reference files.
+5) For deletion, please check the reference files.
+6) Model interface will be imported from a common file, please check the reference files.
+7) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+    Please create a link under heading: "Master Data".
+8) Please provide the datatable and other variables appropriate name matching with "TaxId".
+
+
+
+
+
+
+
+
+
+

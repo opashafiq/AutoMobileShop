@@ -1,0 +1,175 @@
+I need a crud and as reference you can use:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/taxid-datatable/index.tsx
+
+Api details are as follows:
+Get:
+https://localhost:44352/api/ItemMaster
+[
+  {
+    "id": 0,
+    "tbim_ItemCategoryId": 0,
+    "tbim_Size": "string",
+    "tbim_Brand": "string",
+    "tbim_Series": "string",
+    "tbim_Bolt": "string",
+    "tbim_HoleS": "string",
+    "tbim_Zone": "string",
+    "tbim_Qty": 0,
+    "tbim_QtyOp": 0,
+    "tbim_Code": 0,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 0,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 0,
+    "userName": "string",
+    "setDate": "2026-06-28T04:48:16.624Z",
+    "departmentName": "string",
+    "distributorName": "string",
+    "locationName": "string"
+  }
+]
+
+Get by Id:
+https://localhost:44352/api/ItemMaster/10
+  {
+    "id": 0,
+    "tbim_ItemCategoryId": 0,
+    "tbim_Size": "string",
+    "tbim_Brand": "string",
+    "tbim_Series": "string",
+    "tbim_Bolt": "string",
+    "tbim_HoleS": "string",
+    "tbim_Zone": "string",
+    "tbim_Qty": 0,
+    "tbim_QtyOp": 0,
+    "tbim_Code": 0,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 0,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 0,
+    "userName": "string",
+    "setDate": "2026-06-28T04:48:16.624Z",
+    "departmentName": "string",
+    "distributorName": "string",
+    "locationName": "string"
+  }
+
+  
+  
+Create using Post:
+https://localhost:44352/api/ItemMaster
+{
+  "id": 10,
+  "tbim_ItemCategoryId": 0,
+  "tbim_Size": "string",
+  "tbim_Brand": "string",
+  "tbim_Series": "string",
+  "tbim_Bolt": "string",
+  "tbim_HoleS": "string",
+  "tbim_Zone": "string",
+  "tbim_Qty": 0,
+  "tbim_QtyOp": 0,
+  "tbim_Code": 0,
+  "tbim_CodeTOT": 0,
+  "tbim_DistributorId": 0,
+  "tbim_OURP": 0,
+  "tbim_LocationId": 0
+}
+
+Update useng Put: https://localhost:44352/api/ItemMaster/12  
+{
+  "id": 10,
+  "tbim_ItemCategoryId": 0,
+  "tbim_Size": "string",
+  "tbim_Brand": "string",
+  "tbim_Series": "string",
+  "tbim_Bolt": "string",
+  "tbim_HoleS": "string",
+  "tbim_Zone": "string",
+  "tbim_Qty": 0,
+  "tbim_QtyOp": 0,
+  "tbim_Code": 0,
+  "tbim_CodeTOT": 0,
+  "tbim_DistributorId": 0,
+  "tbim_OURP": 0,
+  "tbim_LocationId": 0
+}
+
+Delete using Delete:
+https://localhost:44352/api/ItemMaster/12
+
+
+Instructions:
+1) Reference files are:
+   src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+   src/app/components/react-tables/master/taxid-datatable/index.tsx
+2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/ItemMaster')
+3) No need to show the username and setdate in the datatable and in the create and edit form.
+Column userName= logged in user name, you will get hint from the reference files.
+   Column setDate= current PC time, you will get hint from the reference files.
+4) List of DepartmentName can be achieved using get api: /api/Departments
+[
+  {
+    "id": 0,
+    "tbid_DepartmentName": "string",
+    "tbid_IsActive": true,
+    "userName": "string",
+    "setDate": "2026-06-28T04:19:54.476Z"
+  }
+]
+
+   Here: Key=id
+         value=tbid_DepartmentName
+5) List of locationDetailsName can be achieved using get api: /api/LocationDetails
+   [
+    {
+        "id": 1,
+        "tbld_LocationName": "Apollo Tire & Wheel",
+        "companyInfoId": 1,
+        "tbld_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+        "tbld_Address2": "SEABROOK TEXAS 77586",
+        "tbld_City": null,
+        "tbld_State": null,
+        "tbld_ZipCode": null,
+        "tbld_Phone": null,
+        "tbld_Fax": null,
+        "tbld_Email": "test@yahoo.com",
+        "companyName": "Apollo Tire & Wheel"
+    }
+   ]
+
+   Here: Key=id
+         value=tbld_LocationName
+		 
+5) List of DistributorName  can be achieved using get api: /api/Distibritutors
+[
+  {
+    "id": 0,
+    "name": "string",
+    "address": "string",
+    "userName": "string",
+    "setDate": "2026-06-28T04:21:36.016Z"
+  }
+]
+
+   Here: Key=id
+         value=name
+6) In the Create form, the above fields DepartmentName,DistributorName and locationDetailsName will be shown as select key-value combo.
+   In the create post request key will be passed accordingly.
+7) Same goes for edit form.
+8) For deletion, please check the reference files.
+9) Model interface will be imported from a common file, please check the reference files.
+10) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+    Please create a link under heading: "Master Data".
+11) Please provide the datatable and other variables appropriate name matching with "ItemMaster".
+
+
+
+
+
+
+
+
+
+

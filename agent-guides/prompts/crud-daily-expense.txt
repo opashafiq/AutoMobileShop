@@ -92,7 +92,8 @@ Instructions:
    src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
    src/app/components/react-tables/master/taxid-datatable/index.tsx
 2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/DailyExpense')
-3) Column userName= logged in user name, you will get hint from the reference files.
+3) No need to show the username and setdate in the datatable and in the create and edit form.
+Column userName= logged in user name, you will get hint from the reference files.
    Column setDate= current PC time, you will get hint from the reference files.
 4) List of expenseHeadName can be achieved using get api: /api/ExpenseHead
     [ 

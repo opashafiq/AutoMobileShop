@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Switch } from '@/components/ui/switch'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,7 +42,7 @@ import {
 } from '@/components/ui/select'
 import { Icon } from '@iconify/react/dist/iconify.js'
 import React from 'react'
-import type { TaxType } from '@/app/models/interfaces'
+import type { ApplicationUserType, RoleType, LocationDetailsType } from '@/app/models/interfaces'
 import {
   AnimatedTableWrapper,
   AnimatedTableBody,
@@ -51,103 +52,110 @@ import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
 import useSWR from 'swr'
 import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
-import { getUserName } from '@/app/api/auth'
-import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
 import { applyColumnFilters, ColumnFilterValue } from '@/app/components/react-tables/shared/columnFilterUtils'
 
-
-
-function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
-  ////////////////////////////////////
-  // Implemented a simple console log to verify component rendering and data fetching
-  ///////////////////////////////////////////////////////
-  console.log('Rendering TaxIdTable')
-  // const fetcher = (url: string) =>
-  // fetch(url).then(res => res.json());
-  // // API Fetching with SWR (uncomment and replace API_URL to use)
-  // //const API_URL = 'https://jsonplaceholder.typicode.com/todos/1';
-  // const API_URL = 'https://localhost:7184/api/Departments/1';
-  //   const { data, error, isLoading } = useSWR(
-  //   API_URL,
-  //   getFetcher
-  // );
-  // // console.log('Fetched data:', data, 'Error:', error, 'Loading:', isLoading)
-  // console.log('Record: ' + data.tbid_DepartmentName)
-  //console.log('Title: ' + data.title)
-  ////////////////////////////////////////////
-  // Implementation complete
-  /////////////////////////////////////////
-
-
+function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
   const { activeMode } = useContext(CustomizerContext)
-  // console.log('Current theme mode from context:', activeMode)
-  // setActiveMode('dark') // Example of changing theme mode from the component
-  // console.log('Current theme mode from context after change:', activeMode)
 
+  const [userData, setUserData] = useState<ApplicationUserType[]>([])
 
-  const [taxData, setTaxData] = useState<TaxType[]>([])
+  // SWR fetch from ApplicationUser API
+  const API_URL = getApiUrl('/api/ApplicationUser')
+  const { data, mutate } = useSWR(API_URL, getFetcher)
 
-  // SWR fetch from API
-  const API_URL = getApiUrl('/api/TaxId')
-  const { data } = useSWR(API_URL, getFetcher)
+  // Fetch roles list for dropdown
+  const ROLES_API_URL = getApiUrl('/Authentication/roles')
+  const { data: rolesData } = useSWR(ROLES_API_URL, getFetcher)
+
+  // Fetch LocationDetails list for dropdown
+  const LOCATION_API_URL = getApiUrl('/api/LocationDetails')
+  const { data: locationData } = useSWR(LOCATION_API_URL, getFetcher)
 
   useEffect(() => {
     if (data && Array.isArray(data)) {
-      setTaxData(data as TaxType[])
+      setUserData(data as ApplicationUserType[])
     }
   }, [data])
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
-  const [editingRowId, setEditingRowId] = useState<number | null>(null)
+  const [editingRowId, setEditingRowId] = useState<string | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     id: true,
-    tbti_ComName: true,
-    tbti_TaxNumber: true,
-    tbti_Address: true,
-    tbti_Phone: true,
+    userName: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+    isActive: true,
+    locationName: true,
+    roles: true,
   })
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-  const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<number | string | null>(null)
+  const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<string | null>(null)
   const [confirmDeleteCount, setConfirmDeleteCount] = useState(0)
   const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
   const [apiLoading, setApiLoading] = useState(false)
-  const [currentTax, setCurrentTax] = useState<Partial<TaxType>>({
-    id: 0,
-    tbti_ComName: '',
-    tbti_TaxNumber: '',
-    tbti_Address: '',
-    tbti_Phone: '',
+  const [currentUser, setCurrentUser] = useState<Partial<ApplicationUserType> & { password?: string; role?: string }>({
+    id: '',
+    userName: '',
+    firstName: '',
+    lastName: '',
+    email: '',
+    isActive: true,
+    locationId: undefined,
+    locationName: '',
+    password: '',
+    role: '',
   })
 
-  const resetCurrentTax = () => {
-    setCurrentTax({
-      id: 0,
-      tbti_ComName: '',
-      tbti_TaxNumber: '',
-      tbti_Address: '',
-      tbti_Phone: '',
+  // Build dropdown option maps for lookup
+  const roleOptions = useMemo(() => {
+    if (!Array.isArray(rolesData)) return []
+    return rolesData as RoleType[]
+  }, [rolesData])
+
+  const locationOptions = useMemo(() => {
+    if (!Array.isArray(locationData)) return []
+    return locationData as LocationDetailsType[]
+  }, [locationData])
+
+  const resetCurrentUser = () => {
+    setCurrentUser({
+      id: '',
+      userName: '',
+      firstName: '',
+      lastName: '',
+      email: '',
+      isActive: true,
+      locationId: undefined,
+      locationName: '',
+      password: '',
+      role: '',
     })
   }
 
   const openCreateDialog = () => {
-    resetCurrentTax()
+    resetCurrentUser()
     setDialogMode('create')
     setEditingRowId(null)
     setIsDialogOpen(true)
   }
 
-  const openEditDialog = (row: TaxType) => {
+  const openEditDialog = (row: ApplicationUserType) => {
     setDialogMode('edit')
     setEditingRowId(row.id)
-    setCurrentTax({ ...row })
+    setCurrentUser({
+      ...row,
+      password: '',
+      role: row.roles?.length > 0 ? row.roles[0] : '',
+    })
     setIsDialogOpen(true)
   }
 
@@ -155,9 +163,6 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     setIsDialogOpen(false)
     setEditingRowId(null)
   }
-
-  // Apply column filters to data (delegated to shared generic utility)
-
 
   const handleColumnFilterChange = (columnKey: string, value: ColumnFilterValue) => {
     setColumnFilters((prev) => ({
@@ -170,62 +175,82 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     setColumnFilters({})
   }
 
-  
+  const handleRoleChange = (value: string) => {
+    setCurrentUser((prev) => ({
+      ...prev,
+      role: value,
+    }))
+  }
+
+  const handleLocationChange = (value: string) => {
+    const id = Number(value)
+    const selected = locationOptions.find((opt) => opt.id === id)
+    setCurrentUser((prev) => ({
+      ...prev,
+      locationId: id,
+      locationName: selected?.tbld_LocationName ?? '',
+    }))
+  }
 
   const handleSave = async () => {
     setApiLoading(true)
 
     try {
-      const payload: TaxType = {
-        id: dialogMode === 'create' ? 0 : editingRowId ?? 0,
-        tbti_ComName: currentTax.tbti_ComName ?? '',
-        tbti_TaxNumber: currentTax.tbti_TaxNumber ?? '',
-        tbti_Address: currentTax.tbti_Address ?? '',
-        tbti_Phone: currentTax.tbti_Phone ?? '',
-        userName: getUserName() ?? '',
-        setDate: getLocalISO(),
+      const payload: Record<string, any> = {
+        userName: currentUser.userName ?? '',
+        firstName: currentUser.firstName ?? '',
+        lastName: currentUser.lastName ?? '',
+        isActive: currentUser.isActive ?? true,
+        locationId: currentUser.locationId ?? 0,
+        email: currentUser.email ?? '',
+        role: currentUser.role ?? '',
+      }
+
+      // Only include password if provided (for both create and edit it's part of the API contract)
+      if (currentUser.password) {
+        payload.password = currentUser.password
       }
 
       if (dialogMode === 'create') {
         const response = await postFetcher(API_URL, payload)
-        setTaxData((prev) => [response as TaxType, ...prev])
-        setFeedback('Tax ID created')
+        setUserData((prev) => [response as ApplicationUserType, ...prev])
+        setFeedback('Application User created')
       } else if (editingRowId !== null) {
-        const updatedTax = (await putFetcher(`${API_URL}/${editingRowId}`, payload)) as TaxType | null
-        setTaxData((prev) =>
+        const updatedUser = (await putFetcher(`${API_URL}/${editingRowId}`, payload)) as ApplicationUserType | null
+        setUserData((prev) =>
           prev.map((item) =>
-            item.id === editingRowId ? (updatedTax ?? payload) : item
+            item.id === editingRowId ? (updatedUser ?? { ...item, ...payload }) : item
           )
         )
-        setFeedback('Tax ID updated')
+        setFeedback('Application User updated')
       }
 
       closeDialog()
     } catch (error) {
-      console.error('Unable to save tax id', error)
-      setFeedback('Unable to save Tax ID')
+      console.error('Unable to save application user', error)
+      setFeedback('Unable to save Application User')
     } finally {
       setApiLoading(false)
     }
   }
 
-  const openDeleteConfirm = (rowId: number | string) => {
+  const openDeleteConfirm = (rowId: string) => {
     setConfirmDeleteTargetId(rowId)
     setConfirmDeleteCount(1)
     setConfirmDeleteMessage(
-      'Are you sure you want to delete this Tax ID? This action cannot be undone.'
+      'Are you sure you want to delete this Application User? This action cannot be undone.'
     )
     setConfirmDialogOpen(true)
   }
 
-  const handleDelete = (rowId: number | string) => {
+  const handleDelete = (rowId: string) => {
     openDeleteConfirm(rowId)
   }
 
   const handleConfirmDelete = async () => {
-    if (confirmDeleteCount > 1) {
+    if (confirmDeleteCount > 1 && confirmDeleteTargetId === null) {
       const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
-      setTaxData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
+      setUserData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
       table.resetRowSelection()
       setFeedback(`Deleted ${selectedIds.length} record(s)`)
       setConfirmDialogOpen(false)
@@ -239,10 +264,10 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
 
     try {
       await deleteFetcher(`${API_URL}/${confirmDeleteTargetId}`)
-      setTaxData((prev) => prev.filter((item) => item.id !== confirmDeleteTargetId))
+      setUserData((prev) => prev.filter((item) => item.id !== confirmDeleteTargetId))
       setFeedback('Record deleted')
     } catch (error) {
-      console.error('Unable to delete tax id', error)
+      console.error('Unable to delete application user', error)
       setFeedback('Unable to delete record')
     } finally {
       setConfirmDialogOpen(false)
@@ -251,10 +276,10 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     }
   }
 
-  // Create column helper for TaxType
-  const columnHelper = createColumnHelper<TaxType>()
+  // Create column helper for ApplicationUserType
+  const columnHelper = createColumnHelper<ApplicationUserType>()
 
-  // Build columns matching the TaxId API
+  // Build columns matching the ApplicationUser API
   const allColumns = useMemo(
     () =>
       [
@@ -276,26 +301,76 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
           ),
         }),
 
-        columnHelper.accessor('tbti_ComName', {
-          header: 'Company',
+        columnHelper.accessor('userName', {
+          header: 'Username',
           cell: (info) => <p className='text-sm font-medium'>{info.getValue()}</p>,
         }),
 
-        columnHelper.accessor('tbti_TaxNumber', {
-          header: 'Tax Number',
+        columnHelper.accessor('firstName', {
+          header: 'First Name',
           cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
         }),
 
-        columnHelper.accessor('tbti_Address', {
-          header: 'Address',
+        columnHelper.accessor('lastName', {
+          header: 'Last Name',
+          cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
+        }),
+
+        columnHelper.accessor('email', {
+          header: 'Email',
           cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
         }),
 
-        columnHelper.accessor('tbti_Phone', {
-          header: 'Phone',
-          cell: (info) => <p className='text-sm'>{info.getValue()}</p>,
+        columnHelper.accessor('isActive', {
+          header: 'Active',
+          cell: (info) => {
+            const isActive = info.getValue()
+            return (
+              <div className='flex items-center justify-center'>
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    isActive
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  }`}>
+                  <Icon
+                    icon={isActive ? 'solar:check-circle-bold' : 'solar:close-circle-bold'}
+                    width={14}
+                    height={14}
+                  />
+                  {isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            )
+          },
         }),
 
+        columnHelper.accessor('locationName', {
+          header: 'Location',
+          cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
+        }),
+
+        columnHelper.accessor('roles', {
+          header: 'Roles',
+          cell: (info) => {
+            const roles = info.getValue()
+            return (
+              <div className='flex flex-wrap gap-1'>
+                {roles && roles.length > 0 ? (
+                  roles.map((role, idx) => (
+                    <span
+                      key={idx}
+                      className='inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'>
+                      {role}
+                    </span>
+                  ))
+                ) : (
+                  <span className='text-xs text-muted'>-</span>
+                )}
+              </div>
+            )
+          },
+        }),
 
         columnHelper.display({
           id: 'actions',
@@ -342,11 +417,11 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
             )
           },
         }),
-      ] as ColumnDef<TaxType>[],
-    [handleDelete]
+      ] as ColumnDef<ApplicationUserType>[],
+    []
   )
 
-  // Filter columns based on columnVisibility before passing to useReactTable
+  // Filter columns based on columnVisibility
   const visibleColumns = useMemo(
     () =>
       allColumns.filter((col) => {
@@ -360,14 +435,13 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     [allColumns, columnVisibility]
   )
 
-  // Use taxData directly (no role filter)
   const filteredData = useMemo(
     () =>
       applyColumnFilters(
-        taxData as unknown as Record<string, unknown>[],
+        userData as unknown as Record<string, unknown>[],
         columnFilters
-      ) as unknown as TaxType[],
-    [taxData, columnFilters]
+      ) as unknown as ApplicationUserType[],
+    [userData, columnFilters]
   )
 
   const table = useReactTable({
@@ -385,7 +459,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    autoResetPageIndex: true, // Enable row highlighting on data changes
+    autoResetPageIndex: true,
   })
 
   // Memoize visible column keys for export
@@ -395,7 +469,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
         .filter(
           (col) => (col as any).accessorKey && col.id !== 'select' && col.id !== 'actions'
         )
-        .map((col) => (col as any).accessorKey as keyof TaxType),
+        .map((col) => (col as any).accessorKey as keyof ApplicationUserType),
     [visibleColumns]
   )
 
@@ -417,10 +491,15 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     [visibleColumns]
   )
 
-  // Optimized CSV export handler
+  // CSV export handler
   const handleExportCSV = useCallback(() => {
     const rows = filteredData.map((row) =>
-      visibleExportKeys.map((key) => row[key] ?? '')
+      visibleExportKeys.map((key) => {
+        const val = row[key]
+        if (key === 'roles' && Array.isArray(val)) return val.join('; ')
+        if (key === 'isActive') return val ? 'Active' : 'Inactive'
+        return val ?? ''
+      })
     )
     const csvContent = [
       exportHeaders.join(','),
@@ -432,13 +511,13 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'users.csv')
+    link.setAttribute('download', 'application-users.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
   }, [filteredData, visibleExportKeys, exportHeaders])
 
-  // Optimized bulk delete handler
+  // Bulk delete handler
   const handleBulkDelete = useCallback(() => {
     const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
     if (selectedIds.length === 0) return
@@ -456,12 +535,11 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
 
     const timer = setTimeout(() => {
       setFeedback(null)
-    }, 3000) // 3 seconds
+    }, 3000)
 
-    return () => clearTimeout(timer) // Cleanup on unmount or feedback change
+    return () => clearTimeout(timer)
   }, [feedback])
 
-  // react toastify setup.
   const toastColor = activeMode === 'dark' ? 'dark' : 'light'
   useEffect(() => {
     if (feedback) {
@@ -483,7 +561,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
         {/* title */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            Tax ID Table
+            Application Users
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {/* Search */}
@@ -508,7 +586,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                 onBlur={() => {
                   if (!globalFilter) setShowSearch(false)
                 }}
-                aria-label='Search orders'
+                aria-label='Search users'
               />
             )}
 
@@ -588,76 +666,152 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
               variant='lightprimary'
               shape='pill'
               onClick={openCreateDialog}
-              aria-label='Create Tax ID'>
-              Create Tax ID
+              aria-label='Create Application User'>
+              Create User
             </Button>
           </div>
         </div>
 
+        {/* Create/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent>
+          <DialogContent className='sm:max-w-lg'>
             <DialogHeader>
               <DialogTitle>
-                {dialogMode === 'create' ? 'Create Tax ID' : 'Edit Tax ID'}
+                {dialogMode === 'create' ? 'Create Application User' : 'Edit Application User'}
               </DialogTitle>
               <DialogDescription>
                 {dialogMode === 'create'
-                  ? 'Enter new tax information and save to the database.'
-                  : 'Update the tax record and save your changes.'}
+                  ? 'Enter new application user information and save to the database.'
+                  : 'Update the application user record and save your changes.'}
               </DialogDescription>
             </DialogHeader>
 
             <div className='grid gap-4 py-4'>
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='grid gap-2'>
+                  <label className='text-sm font-medium'>Username</label>
+                  <Input
+                    value={currentUser.userName ?? ''}
+                    onChange={(e) =>
+                      setCurrentUser((prev) => ({
+                        ...prev,
+                        userName: e.target.value,
+                      }))
+                    }
+                    placeholder='Username'
+                  />
+                </div>
+                <div className='grid gap-2'>
+                  <label className='text-sm font-medium'>Email</label>
+                  <Input
+                    type='email'
+                    value={currentUser.email ?? ''}
+                    onChange={(e) =>
+                      setCurrentUser((prev) => ({
+                        ...prev,
+                        email: e.target.value,
+                      }))
+                    }
+                    placeholder='Email'
+                  />
+                </div>
+              </div>
+
+              <div className='grid grid-cols-2 gap-4'>
+                <div className='grid gap-2'>
+                  <label className='text-sm font-medium'>First Name</label>
+                  <Input
+                    value={currentUser.firstName ?? ''}
+                    onChange={(e) =>
+                      setCurrentUser((prev) => ({
+                        ...prev,
+                        firstName: e.target.value,
+                      }))
+                    }
+                    placeholder='First Name'
+                  />
+                </div>
+                <div className='grid gap-2'>
+                  <label className='text-sm font-medium'>Last Name</label>
+                  <Input
+                    value={currentUser.lastName ?? ''}
+                    onChange={(e) =>
+                      setCurrentUser((prev) => ({
+                        ...prev,
+                        lastName: e.target.value,
+                      }))
+                    }
+                    placeholder='Last Name'
+                  />
+                </div>
+              </div>
+
               <div className='grid gap-2'>
-                <label className='text-sm font-medium'>Company Name</label>
+                <label className='text-sm font-medium'>Password {dialogMode === 'edit' && '(leave blank to keep current)'}</label>
                 <Input
-                  value={currentTax.tbti_ComName ?? ''}
+                  type='password'
+                  value={currentUser.password ?? ''}
                   onChange={(e) =>
-                    setCurrentTax((prev) => ({
+                    setCurrentUser((prev) => ({
                       ...prev,
-                      tbti_ComName: e.target.value,
+                      password: e.target.value,
                     }))
                   }
-                  placeholder='Company Name'
+                  placeholder={dialogMode === 'create' ? 'Password' : 'New Password (optional)'}
                 />
               </div>
+
               <div className='grid gap-2'>
-                <label className='text-sm font-medium'>Tax Number</label>
-                <Input
-                  value={currentTax.tbti_TaxNumber ?? ''}
-                  onChange={(e) =>
-                    setCurrentTax((prev) => ({
-                      ...prev,
-                      tbti_TaxNumber: e.target.value,
-                    }))
-                  }
-                  placeholder='Tax Number'
-                />
+                <label className='text-sm font-medium'>Role</label>
+                <Select
+                  value={currentUser.role ?? ''}
+                  onValueChange={handleRoleChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select role' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roleOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.name}>
+                        {option.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
               <div className='grid gap-2'>
-                <label className='text-sm font-medium'>Address</label>
-                <Input
-                  value={currentTax.tbti_Address ?? ''}
-                  onChange={(e) =>
-                    setCurrentTax((prev) => ({
-                      ...prev,
-                      tbti_Address: e.target.value,
-                    }))
-                  }
-                  placeholder='Address'
-                />
+                <label className='text-sm font-medium'>Location</label>
+                <Select
+                  value={currentUser.locationId ? String(currentUser.locationId) : ''}
+                  onValueChange={handleLocationChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select location' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {locationOptions.map((option) => (
+                      <SelectItem key={option.id} value={String(option.id)}>
+                        {option.tbld_LocationName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className='grid gap-2'>
-                <label className='text-sm font-medium'>Phone</label>
-                <Input
-                  value={currentTax.tbti_Phone ?? ''}
-                  onChange={(e) =>
-                    setCurrentTax((prev) => ({
+
+              <div className='flex items-center justify-between rounded-lg border p-3'>
+                <div>
+                  <label className='text-sm font-medium'>Active</label>
+                  <p className='text-xs text-muted-foreground'>
+                    {currentUser.isActive ? 'User is active' : 'User is inactive'}
+                  </p>
+                </div>
+                <Switch
+                  checked={currentUser.isActive ?? true}
+                  onCheckedChange={(checked) =>
+                    setCurrentUser((prev) => ({
                       ...prev,
-                      tbti_Phone: e.target.value,
+                      isActive: checked,
                     }))
                   }
-                  placeholder='Phone'
                 />
               </div>
             </div>
@@ -674,7 +828,15 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                 type='button'
                 variant='success'
                 onClick={handleSave}
-                disabled={apiLoading || !currentTax.tbti_ComName || !currentTax.tbti_TaxNumber}>
+                disabled={
+                  apiLoading ||
+                  !currentUser.userName ||
+                  !currentUser.firstName ||
+                  !currentUser.email ||
+                  !currentUser.role ||
+                  !currentUser.locationId ||
+                  (dialogMode === 'create' && !currentUser.password)
+                }>
                 {apiLoading
                   ? dialogMode === 'create'
                     ? 'Creating...'
@@ -687,6 +849,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
           </DialogContent>
         </Dialog>
 
+        {/* Delete Confirmation Dialog */}
         <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
           <DialogContent>
             <DialogHeader>
@@ -710,7 +873,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
         {/* Feedback Toast */}
         {feedback && <ToastContainer />}
 
-        {/* user table */}
+        {/* Table */}
         <div className='overflow-x-auto'>
           <div className='border rounded-md border-ld overflow-hidden'>
             <AnimatedTableWrapper className='overflow-x-auto'>
@@ -719,20 +882,19 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                   {table.getHeaderGroups().map((headerGroup) => (
                     <tr key={headerGroup.id}>
                       {headerGroup.headers.map((header) => {
-                        // Get column data for filter
                         const columnKey =
                           typeof (header.column.columnDef as any).accessorKey === 'string'
                             ? (header.column.columnDef as any).accessorKey
                             : header.column.id
                         const columnData =
                           columnKey && enableColumnFilters
-                            ? taxData.map((row) => row[columnKey as keyof TaxType])
+                            ? (userData.map((row) => row[columnKey as keyof ApplicationUserType]) as (string | number | boolean | string[] | undefined)[])
                             : []
                         const isFilterable =
                           enableColumnFilters &&
                           columnKey &&
                           columnKey !== 'id' &&
-                          ['tbti_ComName', 'tbti_TaxNumber', 'tbti_Address', 'tbti_Phone'].includes(
+                          ['userName', 'firstName', 'lastName', 'email', 'locationName'].includes(
                             columnKey
                           )
 
@@ -760,7 +922,7 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                                 </button>
                                 {isFilterable && (
                                   <ColumnFilterInput
-                                    columnData={columnData}
+                                    columnData={columnData as (string | number | undefined)[]}
                                     filterValue={columnFilters[columnKey] || undefined}
                                     onFilterChange={(value) =>
                                       handleColumnFilterChange(columnKey, value)
@@ -779,13 +941,12 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                   ))}
                 </thead>
                 <AnimatedTableBody>
-                  {/* Add new-row removed for TaxId table (read-only) */}
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td
                         colSpan={visibleColumns.length}
                         className='text-center py-4'>
-                        No orders found.
+                        No users found.
                       </td>
                     </tr>
                   ) : (
@@ -799,7 +960,8 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                               key={cell.id}
                               className={`px-4 py-2 ${
                                 cell.column.id === 'userName' ||
-                                cell.column.id === 'phone'
+                                cell.column.id === 'email' ||
+                                cell.column.id === 'locationName'
                                   ? 'min-w-[180px]'
                                   : ''
                               }`}>
@@ -818,10 +980,10 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
             </AnimatedTableWrapper>
           </div>
         </div>
+
         {/* Pagination Controls */}
         {table.getPageCount() > 0 ? (
           <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 gap-3'>
-            {/* Page Size Selector */}
             <div className='flex items-center gap-2'>
               <p className='text-sm text-muted dark:text-lightgray'>Show</p>
               <Select
@@ -843,7 +1005,6 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
               <p className='text-sm text-muted dark:text-lightgray'>per page</p>
             </div>
             <div className='flex items-center gap-3'>
-              {/* Page Summary */}
               <div>
                 <p className='text-sm font-normal text-muted dark:text-lightgray'>
                   {table.getRowModel().rows.length > 0
@@ -860,7 +1021,6 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
                 </p>
               </div>
 
-              {/* Custom Pagination Controls */}
               <div className='flex items-center gap-2'>
                 <Icon
                   icon='solar:arrow-left-line-duotone'
@@ -900,4 +1060,4 @@ function TaxIdTable({ enableColumnFilters = true }: { enableColumnFilters?: bool
   )
 }
 
-export default TaxIdTable
+export default ApplicationUserTable

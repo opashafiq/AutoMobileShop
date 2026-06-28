@@ -60,7 +60,8 @@ Instructions:
    src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
    src/app/components/react-tables/master/taxid-datatable/index.tsx
 2) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/api/Departments')
-3) Column userName= logged in user name, you will get hint from the reference files.
+3) No need to show the username and setdate in the datatable and in the create and edit form.
+Column userName= logged in user name, you will get hint from the reference files.
    Column setDate= current PC time, you will get hint from the reference files.
 4) Create and edit form will be popped up as in reference files.
 5) For active departments (tbid_IsActive), please show some sort of graphical representation in the datatable for example a toggle button image.

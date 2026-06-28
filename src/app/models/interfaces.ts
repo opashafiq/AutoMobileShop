@@ -29,6 +29,25 @@ export interface ExpenseHeadType {
   setDate: string
 }
 
+export interface ApplicationUserType {
+  id: string
+  userName: string
+  firstName: string
+  lastName: string
+  isActive: boolean
+  locationId: number
+  locationName: string
+  email: string
+  roles: string[]
+}
+
+export interface RoleType {
+  id: string
+  name: string
+  normalizedName: string
+  concurrencyStamp: string | null
+}
+
 export interface LocationDetailsType {
   id: number
   tbld_LocationName: string

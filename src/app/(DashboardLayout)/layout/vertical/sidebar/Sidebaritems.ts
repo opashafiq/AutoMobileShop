@@ -118,6 +118,12 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/react-tables/master/daily-expense",
       },
+      {
+        name: "Application Users",
+        icon: "solar:users-group-rounded-linear",
+        id: uniqueId(),
+        url: "/react-tables/master/application-user",
+      },
     ],
  },
   {
