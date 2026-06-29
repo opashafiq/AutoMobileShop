@@ -91,11 +91,15 @@ const deleteFetcher = (url:string, arg?: any) => {
         options.body = JSON.stringify(arg)
     }
 
-    return fetch(url, options).then((res) => {
+    return fetch(url, options).then(async (res) => {
         if(!res.ok){
             throw new Error("Failed to delete data")
         }
-        return res.json()
+        // The backend DELETE endpoint returns an empty body (204 / 200 with no content).
+        // res.json() would throw "Unexpected end of JSON input" on an empty body,
+        // which would abort the caller before it can update local state.
+        const text = await res.text()
+        return text ? JSON.parse(text) : null
     })
 }
 
