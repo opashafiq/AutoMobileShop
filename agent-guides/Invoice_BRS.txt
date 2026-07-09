@@ -925,9 +925,13 @@ Invoice Master List Grid and CRUD:
       field in the create invoice popup window. It will be shown in the edit invoice window as readonly field.
    2) For editing in InvoiceDetailsDto:
       a) If and existing details row is edited, the corresponding InvoiceDetailsDto Id will be in the Json that will be sent to server.
-	  b) If a new entry is entered in the InvoiceDetailsDto, the Id will be 0.
+	    b) If a new entry is entered in the InvoiceDetailsDto, the Id will be 0.
    3) The same policy will be applied while editing InvoicePaymentDto.
    4) All the endpoints along with the responses are provided in the begening of this document.
+   5) Please create a Main Menu Named "Transaction" (like "Master Data") and under that create link "Invoice".
+   6) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/Authentication/roles')
+   7) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
+   8) Please Keep track of what you are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
    
    
    Most Important:
