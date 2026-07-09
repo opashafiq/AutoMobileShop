@@ -931,7 +931,13 @@ Invoice Master List Grid and CRUD:
    5) Please create a Main Menu Named "Transaction" (like "Master Data") and under that create link "Invoice".
    6) If you search the reference files, you will see that BASE_URL can be added using: const API_URL = getApiUrl('/Authentication/roles')
    7) Menu is in: src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx  
-   8) Please Keep track of what you are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
+   8) No need to show the username and setdate in the datatable and in the create and edit form.
+      Column userName= logged in user name, you will get hint from the reference files.
+      Column setDate= current PC time, you will get hint from the reference files.
+   9) You can check following files for how to use SWR and JWT for request:
+      src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+      src/app/components/react-tables/master/taxid-datatable/index.tsx
+   9) Please Keep track of what you are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
    
    
    Most Important:
