@@ -935,7 +935,9 @@ Invoice Master List Grid and CRUD:
    I am trying to implement a sale product form implementation. The requirement that i described above, is already implemented in an older application and I have given you the idea.
    But modern front end design has changed completely and you have the liberty to design the forms as per modern industry standard. I am sharing the screenshot from the older software in the following location:
       
+   \agent-guides\Invoice_Creation_Existing_System.docx 
    
+   ** You will see that, there is a car image along with the checkboxes: LF,RF,LR,RR. You have to keep this in the new desing as well.
    
    
    
