@@ -651,7 +651,7 @@ And Response will be:
    
    
 6) Getting Tax ID:
-	https://localhost:7184/api/TaxId
+	https://localhost:44352/api/TaxId
 	Response:
 	[
   {
@@ -675,7 +675,7 @@ And Response will be:
   ]
 
 7) Getting Tax Id by Id:
-https://localhost:7184/api/TaxId/18
+https://localhost:44352/api/TaxId/18
 Response:
 {
   "id": 18,
@@ -688,7 +688,7 @@ Response:
 }
 
 8) Getting Item Master:
-   https://localhost:7184/api/ItemMaster
+   https://localhost:44352/api/ItemMaster
    Response:
    [
   {
@@ -740,7 +740,7 @@ Response:
   ]
   
 9) Get ItemMaster by Id:
-   https://localhost:7184/api/ItemMaster/1987
+   https://localhost:44352/api/ItemMaster/1987
 {
   "id": 1987,
   "tbim_ItemCategoryId": 19,
@@ -766,7 +766,7 @@ Response:
 }   
 
 10) Get payment Methods:
-https://localhost:7184/api/PaymentNames
+https://localhost:44352/api/PaymentNames
 
 Response:
 [
@@ -787,7 +787,7 @@ Response:
   ]
 
 11) Getting Payment Method by ID:
-https://localhost:7184/api/PaymentNames/1
+https://localhost:44352/api/PaymentNames/1
 Response:
 {
   "id": 1,
@@ -826,9 +826,9 @@ Invoice Master List Grid and CRUD:
    Phone No | tbim_Phone
    Date | tbim_InvDate
    Customer Name | tbim_Name
-   Tax Id | tbim_TaxId | An autocomplete dropdown. Key-value is Id-tbti_TaxNumber from https://localhost:7184/api/TaxId shown above.
-   Company Name | taxCompanyName | Will have the value of field tbti_ComName from https://localhost:7184/api/TaxId/{id} on "Tax Id" autocomplete box change.
-   Address | taxAddress | Will have the value of field tbti_Address from https://localhost:7184/api/TaxId/{id} on "Tax Id" autocomplete box change.
+   Tax Id | tbim_TaxId | An autocomplete dropdown. Key-value is Id-tbti_TaxNumber from https://localhost:44352/api/TaxId shown above.
+   Company Name | taxCompanyName | Will have the value of field tbti_ComName from https://localhost:44352/api/TaxId/{id} on "Tax Id" autocomplete box change.
+   Address | taxAddress | Will have the value of field tbti_Address from https://localhost:44352/api/TaxId/{id} on "Tax Id" autocomplete box change.
    Email Address | tbim_EmailAddress
    ID# | tbim_IDNo
    Vehicle Make | tbim_VehicleMake
@@ -869,8 +869,8 @@ Invoice Master List Grid and CRUD:
    ----------------------------------
    Input Label Name | ColumnName | Remarks
    ----------------------------------
-   Item | | AutoComplete Box, Key-value (Id - tbid_DepartmentName + "," +	tbid_Size + "," +	tbid_Brand + "," +	tbid_Series + "," +	tbid_Bolt + "," + tbid_HoleS + "," + tbid_Zone) from https://localhost:7184/api/ItemMaster
-   Unit Price | tbim_Code | will be loaded on change in Item autocomplete box change using: https://localhost:7184/api/ItemMaster/{Id}
+   Item | | AutoComplete Box, Key-value (Id - tbid_DepartmentName + "," +	tbid_Size + "," +	tbid_Brand + "," +	tbid_Series + "," +	tbid_Bolt + "," + tbid_HoleS + "," + tbid_Zone) from https://localhost:44352/api/ItemMaster
+   Unit Price | tbim_Code | will be loaded on change in Item autocomplete box change using: https://localhost:44352/api/ItemMaster/{Id}
    Qty | tbid_Qty
    Taxable || Checbox
    Tax Rate || Readonly, Will load Taxrate from endpoint if Taxable is checked.Checking/Unchecking will populate value in Tax Amount
@@ -894,7 +894,7 @@ Invoice Master List Grid and CRUD:
    ----------------------------------
    Input Label Name | ColumnName | Remarks
    ----------------------------------
-   Payment Method | Key-value from PaymentNames: Id - tbpn_PaymentName from https://localhost:7184/api/PaymentNames/
+   Payment Method | Key-value from PaymentNames: Id - tbpn_PaymentName from https://localhost:44352/api/PaymentNames/
    Amount | tbip_PayAmt
    Date | tbip_Date
    
