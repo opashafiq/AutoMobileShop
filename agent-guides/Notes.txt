@@ -1,0 +1,12 @@
+Invoice Page:
+/react-tables/transaction/invoice - List page
+/react-tables/transaction/invoice/[id]/edit - Edit page
+/react-tables/transaction/invoice/create - Create page
+
+Yes — I created agent-guides/transaction-module-guide.md at the start. Let me update it with everything we've built since then so the next module (LayawayMaster, RefundMaster, etc.) can mirror the exact pattern.
+
+User enters credentials → auth.login() runs → token stored → fetchUserSession(username, token) runs → user saved to localStorage
+Page redirects to dashboard → UserProvider rehydrates from localStorage → useUser() returns user object
+Invoice create/edit → useUser() returns locationId → on save, tbim_LocationDetailsId = locationId
+Logout → clearToken() → user object cleared → useUser() returns { locationId: 0 }
+Browser/tab closed → sessionStorage would be lost but localStorage persists; since the token also persists, the user stays logged in and UserProvider rehydrates on next load. To fully clear on browser close you'd need sessionStorage, but then rehydration on a reopened tab would fail — localStorage was chosen to match the token's existing persistence behaviour (the token uses localStorage too).

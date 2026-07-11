@@ -6,6 +6,7 @@ import Sidebar from './layout/vertical/sidebar/Sidebar'
 import Header from './layout/vertical/header/Header'
 import { Customizer } from './layout/shared/customizer/Customizer'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
+import { UserProvider } from '@/app/context/UserContext'
 import { SidebarProvider } from '@/components/ui/sidebar'
 
 export default function Layout({
@@ -35,6 +36,7 @@ export default function Layout({
   return (
     <>
       <SidebarProvider>
+        <UserProvider>
         <div className='flex w-full min-h-screen'>
           <div className='page-wrapper flex w-full'>
             {/* Header/sidebar */}
@@ -67,6 +69,7 @@ export default function Layout({
             </div>
           </div>
         </div>
+        </UserProvider>
       </SidebarProvider>
     </>
   )

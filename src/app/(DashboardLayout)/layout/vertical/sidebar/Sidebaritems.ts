@@ -181,6 +181,17 @@ const SidebarContent: MenuItem[] = [
     ],
  },
   {
+    heading: "Transaction",
+    children: [
+      {
+        name: "Invoice",
+        icon: "solar:bill-list-linear",
+        id: uniqueId(),
+        url: "/react-tables/transaction/invoice",
+      },
+    ],
+  },
+  {
     heading: "Apps",
     children: [
       {

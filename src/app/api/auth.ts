@@ -3,6 +3,21 @@ import { getApiUrl } from './globalFetcher'
 
 const TOKEN_KEY = 'NEXT_AUTH_TOKEN'
 const USERNAME_KEY = 'NEXT_AUTH_USER'
+const USER_KEY = 'NEXT_AUTH_USER_SESSION'
+
+// Logged-in user details, fetched once after a successful login and held
+// for the duration of the session. Cleared together with the token on logout.
+export interface UserSession {
+  id: string
+  userName: string
+  firstName: string
+  lastName: string
+  isActive: boolean
+  locationId: number
+  locationName: string
+  email: string
+  roles: string[]
+}
 
 export const setToken = (token: string | null) => {
   if (typeof window === 'undefined') return
@@ -32,12 +47,72 @@ export const getUserName = (): string | null => {
   return localStorage.getItem(USERNAME_KEY)
 }
 
+// Persist/restore the full user session object so it survives page refresh
+// within an authenticated session, but is wiped on logout (see clearToken).
+export const setUserSession = (user: UserSession | null) => {
+  if (typeof window === 'undefined') return
+  if (user === null) {
+    localStorage.removeItem(USER_KEY)
+  } else {
+    localStorage.setItem(USER_KEY, JSON.stringify(user))
+  }
+}
+
+export const getUserSession = (): UserSession | null => {
+  if (typeof window === 'undefined') return null
+  const raw = localStorage.getItem(USER_KEY)
+  if (!raw) return null
+  try {
+    return JSON.parse(raw) as UserSession
+  } catch {
+    return null
+  }
+}
+
 export const clearToken = () => {
   setToken(null)
   setUserName(null)
+  setUserSession(null)
 }
 
 export const isLoggedIn = () => !!getToken()
+
+// Fetch the authenticated user's details by username and persist them.
+// Called right after a successful token grant during login().
+export const fetchUserSession = async (
+  username: string,
+  token: string,
+): Promise<UserSession> => {
+  const url = getApiUrl(`/api/ApplicationUser/getbyusername/${encodeURIComponent(username)}`)
+  const res = await fetch(url, {
+    method: 'GET',
+    headers: {
+      accept: 'application/json, text/plain',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  if (!res.ok) {
+    // Non-fatal: a failed user fetch shouldn't block login, but the caller
+    // should know the session details are unavailable.
+    throw new Error(`Failed to load user details (status ${res.status})`)
+  }
+
+  const body = await res.json()
+  const user: UserSession = {
+    id: body?.id ?? '',
+    userName: body?.userName ?? username,
+    firstName: body?.firstName ?? '',
+    lastName: body?.lastName ?? '',
+    isActive: body?.isActive ?? true,
+    locationId: Number(body?.locationId) || 0,
+    locationName: body?.locationName ?? '',
+    email: body?.email ?? '',
+    roles: Array.isArray(body?.roles) ? body.roles : [],
+  }
+  setUserSession(user)
+  return user
+}
 
 export const login = async (username: string, password: string) => {
   const url = getApiUrl('/Authentication/Login')
@@ -99,6 +174,15 @@ export const login = async (username: string, password: string) => {
   }
 
   setToken(token)
+
+  // Best-effort: fetch the user details now so the session (incl. locationId)
+  // is available app-wide. A failure here doesn't fail the login itself.
+  try {
+    await fetchUserSession(username, token as string)
+  } catch (err) {
+    console.error('User session fetch failed', err)
+  }
+
   return token
 }
 
@@ -108,4 +192,7 @@ export default {
   getToken,
   clearToken,
   isLoggedIn,
+  getUserSession,
+  setUserSession,
+  fetchUserSession,
 }
