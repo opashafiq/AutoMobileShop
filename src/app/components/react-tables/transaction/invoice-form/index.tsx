@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { Icon } from '@iconify/react'
@@ -43,7 +43,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-import { Combobox, type ComboboxOption } from '../shared/Combobox'
+import { Combobox, type ComboboxOption, type ComboboxHandle } from '../shared/Combobox'
 import { useUser } from '@/app/context/UserContext'
 import { CarVisual } from './CarVisual'
 
@@ -192,13 +192,15 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [draftItem, setDraftItem] = useState<DraftItem>(emptyDraftItem)
 
+  // Rapid-add state: Combobox imperative handle, flash banner, cancel-→-done.
+  const itemComboboxRef = useRef<ComboboxHandle | null>(null)
+  const [itemFlash, setItemFlash] = useState<{ key: number; name: string; verb: string } | null>(null)
+  const [itemsAddedInSession, setItemsAddedInSession] = useState(0)
+  const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false)
   const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
   const [draftPayment, setDraftPayment] = useState<InvoicePaymentsDto>(() => emptyPayment())
-
-  const [layawaySheetOpen, setLayawaySheetOpen] = useState(false)
-  const [editingLayawayIndex, setEditingLayawayIndex] = useState<number | null>(null)
-  const [draftLayaway, setDraftLayaway] = useState<LayawayRefundDto>(() => emptyLayaway())
 
   const [saving, setSaving] = useState(false)
 
@@ -216,6 +218,12 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
       setHydrated(true)
     }
   }, [isEdit, editData, hydrated])
+
+  // Cleanup the flash-notification timer on unmount so there is no stale
+  // timeout after the component is gone.
+  useEffect(() => () => {
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+  }, [])
 
   // ----- Derived totals -----
   const totals = useMemo(() => {
@@ -313,7 +321,18 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const openAddItemSheet = () => {
     setEditingItemIndex(null)
     setDraftItem(emptyDraftItem())
+    setItemsAddedInSession(0)
+    setItemFlash(null)
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
     setItemSheetOpen(true)
+  }
+  const handleItemSheetOpenChange = (open: boolean) => {
+    setItemSheetOpen(open)
+    if (!open) {
+      setItemsAddedInSession(0)
+      setItemFlash(null)
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    }
   }
   const openEditItemSheet = (index: number) => {
     const d = details[index]
@@ -325,6 +344,10 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
     setItemSheetOpen(true)
   }
   const commitItem = () => {
+    if (!draftItem.tbid_ItemId) {
+      toast.error('Please select an item')
+      return
+    }
     const lineTotal = computeLineTotal(draftItem.tbid_UnitPrice, draftItem.tbid_Qty)
     const taxAmt = computeTaxAmt(lineTotal, draftItem.tbid_Taxable, draftItem.taxRate)
     const row: InvoiceDetailsDto = {
@@ -351,15 +374,34 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
       itemLocationName: draftItem.itemLocationName,
       itemDisplay: draftItem.itemDisplay,
     }
-    setDetails((prev) => {
-      if (editingItemIndex !== null) {
+
+    if (editingItemIndex !== null) {
+      // Editing an existing row: update and close (standard flow).
+      setDetails((prev) => {
         const copy = [...prev]
         copy[editingItemIndex] = row
         return copy
-      }
-      return [...prev, row]
-    })
-    setItemSheetOpen(false)
+      })
+      setEditingItemIndex(null)
+      setItemSheetOpen(false)
+      return
+    }
+
+    // ---- Add flow: keep the sheet open for rapid entry ----
+
+    setDetails((prev) => [...prev, row])
+
+    // Flash a subtle success banner at the top of the panel.
+    const addedName = itemDescription(draftItem) || draftItem.tbid_DepartmentName || 'Item'
+    if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
+    setItemFlash({ key: (itemFlash?.key ?? 0) + 1, name: addedName, verb: 'added' })
+    flashTimerRef.current = setTimeout(() => setItemFlash(null), 2500)
+    setItemsAddedInSession((n) => n + 1)
+
+    // Reset the entry fields and refocus the item search box so the operator
+    // can immediately start typing the next item without clicking again.
+    setDraftItem({ ...emptyDraftItem(), tbid_Qty: 0 })
+    setTimeout(() => itemComboboxRef.current?.focus(), 0)
   }
   const removeItem = (index: number) => {
     setDetails((prev) => prev.filter((_, i) => i !== index))
@@ -413,54 +455,6 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   }
   const removePayment = (index: number) => setPayments((prev) => prev.filter((_, i) => i !== index))
 
-  // ----- Layaway refund helpers -----
-  function emptyLayaway(): LayawayRefundDto {
-    return {
-      id: 0,
-      tbip_InvoiceId: Number(invoiceId ?? 0),
-      tbip_PaymentId: 0,
-      tbip_PayAmt: 0,
-      tbip_Date: getLocalISO(),
-      tbip_PaymentType: '',
-      tbip_LayawayId: 0,
-      tdip_fromlayaway: 'Y',
-      tbip_LayawayDate: getLocalISO(),
-      paymentName: '',
-    }
-  }
-  const openAddLayawaySheet = () => {
-    setEditingLayawayIndex(null)
-    setDraftLayaway(emptyLayaway())
-    setLayawaySheetOpen(true)
-  }
-  const openEditLayawaySheet = (index: number) => {
-    setEditingLayawayIndex(index)
-    setDraftLayaway({ ...layawayRefunds[index] })
-    setLayawaySheetOpen(true)
-  }
-  const commitLayaway = () => {
-    if (!draftLayaway.tbip_PaymentId) {
-      toast.error('Please select a payment method')
-      return
-    }
-    const method = paymentNamesData?.find((p) => p.id === Number(draftLayaway.tbip_PaymentId))
-    const row: LayawayRefundDto = {
-      ...draftLayaway,
-      tbip_PayAmt: Number(draftLayaway.tbip_PayAmt) || 0,
-      paymentName: method?.tbpn_PaymentName ?? '',
-    }
-    setLayawayRefunds((prev) => {
-      if (editingLayawayIndex !== null) {
-        const copy = [...prev]
-        copy[editingLayawayIndex] = row
-        return copy
-      }
-      return [...prev, row]
-    })
-    setLayawaySheetOpen(false)
-  }
-  const removeLayaway = (index: number) =>
-    setLayawayRefunds((prev) => prev.filter((_, i) => i !== index))
 
   // ----- Save -----
   const handleSave = async () => {
@@ -918,7 +912,9 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
             </div>
           </Card>
 
-          {/* Layaway refund */}
+          {/* Layaway refund — view-only, shown only when editing (refund entries
+              originate from a layaway; not applicable when creating a new invoice) */}
+          {isEdit && (
           <Card className='p-4 md:p-5'>
             <div className='mb-4 flex items-center gap-2'>
               <Icon icon='solar:undo-left-round-linear' width={20} height={20} className='text-primary' />
@@ -928,10 +924,6 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
               <span className='text-sm text-darklink dark:text-bodytext'>Layaway Refund Total</span>
               <span className='font-semibold text-success'>${money(totals.layawayTotal)}</span>
             </div>
-            <Button size='sm' variant='outline' className='mb-3 w-full' onClick={openAddLayawaySheet}>
-              <Icon icon='solar:add-circle-linear' width={18} height={18} />
-              Add Refund
-            </Button>
             <div className='overflow-x-auto rounded-lg border border-ld'>
               <Table>
                 <TableHeader>
@@ -939,13 +931,12 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                     <TableHead className='text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Method</TableHead>
                     <TableHead className='text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Amount</TableHead>
                     <TableHead className='text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Date</TableHead>
-                    <TableHead className='w-16 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {layawayRefunds.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={4} className='h-16 text-center text-sm text-darklink dark:text-bodytext'>
+                      <TableCell colSpan={3} className='h-16 text-center text-sm text-darklink dark:text-bodytext'>
                         No layaway refunds.
                       </TableCell>
                     </TableRow>
@@ -955,16 +946,6 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                         <TableCell>{r.paymentName || '-'}</TableCell>
                         <TableCell className='text-right font-medium'>${money(r.tbip_PayAmt)}</TableCell>
                         <TableCell>{formatShortDate(r.tbip_Date)}</TableCell>
-                        <TableCell className='text-right'>
-                          <div className='flex justify-end gap-1'>
-                            <button type='button' onClick={() => openEditLayawaySheet(i)} className='flex h-7 w-7 items-center justify-center rounded-md text-ld hover:bg-lightprimary hover:text-primary' title='Edit'>
-                              <Icon icon='solar:pen-2-linear' width={16} height={16} />
-                            </button>
-                            <button type='button' onClick={() => removeLayaway(i)} className='flex h-7 w-7 items-center justify-center rounded-md text-ld hover:bg-error/10 hover:text-error' title='Remove'>
-                              <Icon icon='solar:trash-bin-trash-linear' width={16} height={16} />
-                            </button>
-                          </div>
-                        </TableCell>
                       </TableRow>
                     ))
                   )}
@@ -972,6 +953,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
               </Table>
             </div>
           </Card>
+          )}
 
           {/* ---- Settlement summary + actions ---- */}
           <Card className='p-4 md:p-5'>
@@ -984,10 +966,12 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                 <span className='text-darklink dark:text-bodytext'>Total Paid</span>
                 <span className='font-semibold text-success'>${money(totals.totalPaid)}</span>
               </div>
+              {isEdit && (
               <div className='flex items-center justify-between text-sm'>
                 <span className='text-darklink dark:text-bodytext'>Layaway Refund</span>
                 <span className='font-semibold text-success'>${money(totals.layawayTotal)}</span>
               </div>
+              )}
               <div className='flex items-center justify-between rounded-md bg-primary/10 px-3 py-2'>
                 <span className='text-sm font-medium text-primary'>Balance</span>
                 <span className='text-sm font-bold text-primary'>
@@ -1019,15 +1003,28 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
       </div>
 
       {/* ===== Add/Edit Item Sheet ===== */}
-      <Sheet open={itemSheetOpen} onOpenChange={setItemSheetOpen}>
+      <Sheet open={itemSheetOpen} onOpenChange={handleItemSheetOpenChange}>
         <SheetContent side='right' className='w-full overflow-y-auto sm:max-w-xl'>
-          <SheetHeader>
+          <SheetHeader className='px-4 pt-4'>
             <SheetTitle>{editingItemIndex !== null ? 'Edit Item' : 'Add Item'}</SheetTitle>
             <SheetDescription>Select an item from inventory, then set quantity and tax.</SheetDescription>
           </SheetHeader>
           <div className='space-y-4 px-4 pb-8'>
+            {/* Success flash banner — auto-dismissed after each add */}
+            {itemFlash && (
+              <div
+                key={itemFlash.key}
+                className='flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-3 py-2 text-sm font-medium text-success animate-in fade-in-0 slide-in-from-top-2 duration-300'
+                role='status'
+                aria-live='polite'
+              >
+                <Icon icon='solar:check-circle-linear' width={16} height={16} className='shrink-0' />
+                <span className='truncate'>{itemFlash.name} {itemFlash.verb} successfully</span>
+              </div>
+            )}
             <Field label='Item' required>
               <Combobox
+                ref={itemComboboxRef}
                 options={itemOptions}
                 value={draftItem.tbid_ItemId ? String(draftItem.tbid_ItemId) : ''}
                 onChange={handleItemSelect}
@@ -1086,8 +1083,8 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
               </div>
             </div>
             <div className='flex justify-end gap-2 pt-2'>
-              <Button variant='outline' onClick={() => setItemSheetOpen(false)}>
-                Cancel
+              <Button variant='outline' onClick={() => handleItemSheetOpenChange(false)}>
+                {itemsAddedInSession > 0 ? 'Done' : 'Cancel'}
               </Button>
               <Button onClick={commitItem}>
                 <Icon icon='solar:check-circle-linear' width={18} height={18} />
@@ -1101,7 +1098,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
       {/* ===== Add/Edit Payment Sheet ===== */}
       <Sheet open={paymentSheetOpen} onOpenChange={setPaymentSheetOpen}>
         <SheetContent side='right' className='w-full overflow-y-auto sm:max-w-md'>
-          <SheetHeader>
+          <SheetHeader className='px-4 pt-4'>
             <SheetTitle>{editingPaymentIndex !== null ? 'Edit Payment' : 'Add Payment'}</SheetTitle>
             <SheetDescription>Record a payment against this invoice.</SheetDescription>
           </SheetHeader>
@@ -1140,47 +1137,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
         </SheetContent>
       </Sheet>
 
-      {/* ===== Add/Edit Layaway Refund Sheet ===== */}
-      <Sheet open={layawaySheetOpen} onOpenChange={setLayawaySheetOpen}>
-        <SheetContent side='right' className='w-full overflow-y-auto sm:max-w-md'>
-          <SheetHeader>
-            <SheetTitle>{editingLayawayIndex !== null ? 'Edit Layaway Refund' : 'Add Layaway Refund'}</SheetTitle>
-            <SheetDescription>Record a refund from layaway.</SheetDescription>
-          </SheetHeader>
-          <div className='space-y-4 px-4 pb-8'>
-            <Field label='Payment Method' required>
-              <Combobox
-                options={paymentOptions}
-                value={draftLayaway.tbip_PaymentId ? String(draftLayaway.tbip_PaymentId) : ''}
-                onChange={(v) => setDraftLayaway((p) => ({ ...p, tbip_PaymentId: Number(v) || 0 }))}
-                placeholder='Select payment method'
-                searchPlaceholder='Search...'
-              />
-            </Field>
-            <Field label='Amount' required>
-              <Input
-                type='number'
-                value={Number(draftLayaway.tbip_PayAmt) || 0}
-                onChange={(e) => setDraftLayaway((p) => ({ ...p, tbip_PayAmt: Number(e.target.value) || 0 }))}
-              />
-            </Field>
-            <Field label='Date'>
-              <Input
-                type='date'
-                value={toDateInput(draftLayaway.tbip_Date)}
-                onChange={(e) => setDraftLayaway((p) => ({ ...p, tbip_Date: fromDateInput(e.target.value) }))}
-              />
-            </Field>
-            <div className='flex justify-end gap-2 pt-2'>
-              <Button variant='outline' onClick={() => setLayawaySheetOpen(false)}>Cancel</Button>
-              <Button onClick={commitLayaway}>
-                <Icon icon='solar:check-circle-linear' width={18} height={18} />
-                {editingLayawayIndex !== null ? 'Update Refund' : 'Add Refund'}
-              </Button>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
+      {/* Layaway Refund is view-only — the Add/Edit Sheet has been removed */}
     </div>
   )
 }

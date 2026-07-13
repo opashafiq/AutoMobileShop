@@ -81,8 +81,8 @@ export function CarVisual({ lf, rf, lr, rr, onChange }: CarVisualProps) {
               className={cn(
                 'absolute flex h-9 w-9 cursor-pointer flex-col items-center justify-center rounded-full border-2 transition-all',
                 checked
-                  ? 'z-10 scale-110 border-primary bg-primary text-white shadow-md'
-                  : 'z-10 border-darklink/40 bg-white text-darklink hover:border-primary hover:text-primary dark:bg-darkgray dark:text-bodytext'
+                  ? 'z-[1] scale-110 border-primary bg-primary text-white shadow-md'
+                  : 'z-[1] border-darklink/40 bg-white text-darklink hover:border-primary hover:text-primary dark:bg-darkgray dark:text-bodytext'
               )}
               title={pos.label}
             >

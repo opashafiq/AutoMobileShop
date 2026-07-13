@@ -132,11 +132,16 @@ export interface InvoiceCreateRequest {
   invoicePaymentsDto: InvoicePaymentsDto[]
 }
 
-// Response from list endpoint
+// Response from list endpoint (server-side paginated)
 export interface InvoiceListResponseItem {
   invoiceMasterDto: InvoiceMasterDto
   invoiceDetailsDto: InvoiceDetailsDto[]
   invoicePaymentsDto: InvoicePaymentsDto[]
 }
 
-export type InvoiceListResponse = InvoiceListResponseItem[]
+export interface InvoiceListResponse {
+  items: InvoiceListResponseItem[]
+  totalCount: number
+  pageNumber: number
+  totalPages: number
+}

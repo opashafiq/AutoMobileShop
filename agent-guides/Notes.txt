@@ -3,8 +3,8 @@ Invoice Page:
 /react-tables/transaction/invoice/[id]/edit - Edit page
 /react-tables/transaction/invoice/create - Create page
 
-Yes — I created agent-guides/transaction-module-guide.md at the start. Let me update it with everything we've built since then so the next module (LayawayMaster, RefundMaster, etc.) can mirror the exact pattern.
-
+Yes — I created  at the start. Let me update it with everything we've built since then so the next module (LayawayMaster, RefundMaster, etc.) can mirror the exact pattern.
+agent-guides/transaction-module-guide.md
 User enters credentials → auth.login() runs → token stored → fetchUserSession(username, token) runs → user saved to localStorage
 Page redirects to dashboard → UserProvider rehydrates from localStorage → useUser() returns user object
 Invoice create/edit → useUser() returns locationId → on save, tbim_LocationDetailsId = locationId

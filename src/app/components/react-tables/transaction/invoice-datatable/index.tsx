@@ -9,7 +9,6 @@ import {
   getCoreRowModel,
   getExpandedRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -110,9 +109,15 @@ export default function InvoiceDatatable() {
   const [paymentSlot, setPaymentSlot] = useState('')
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
-  // The query string is the actual SWR key — changing it triggers a refetch.
-  const [queryString, setQueryString] = useState('pageNumber=1&pageSize=10')
+  // ---- Server-side pagination ----
+  const [pageNumber, setPageNumber] = useState(1)
+  const [pageSize, setPageSize] = useState(10)
+  const [totalCount, setTotalCount] = useState(0)
+  const [totalPages, setTotalPages] = useState(0)
+  // The committed filter-string (only updated on Search/Reset so keystrokes don't refetch).
+  const [filterParams, setFilterParams] = useState('')
 
+  const queryString = `pageNumber=${pageNumber}&pageSize=${pageSize}${filterParams ? `&${filterParams}` : ''}`
   const API_URL = getApiUrl(`/api/InvoiceMaster?${queryString}`)
   const { data, isLoading, error, mutate } = useSWR<InvoiceListResponse>(API_URL, getFetcher)
 
@@ -141,10 +146,21 @@ export default function InvoiceDatatable() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
-    if (data && Array.isArray(data)) {
-      setTableData(data)
+    if (data) {
+      setTableData(data.items ?? [])
+      setTotalCount(data.totalCount ?? 0)
+      setTotalPages(data.totalPages ?? 0)
     }
   }, [data])
+
+  // If the server reports fewer pages than our current pageNumber (e.g. after a
+  // filter narrows the result set, or a delete removed the last page), snap back
+  // to the last valid page so the Next arrow state and the fetched page stay sane.
+  useEffect(() => {
+    if (totalPages > 0 && pageNumber > totalPages) {
+      setPageNumber(totalPages)
+    }
+  }, [totalPages, pageNumber])
 
   useEffect(() => {
     if (!feedback) return
@@ -168,7 +184,10 @@ export default function InvoiceDatatable() {
     try {
       const id = deleteTarget.invoiceMasterDto.id
       await deleteFetcher(`${getApiUrl('/api/InvoiceMaster')}/${id}`)
-      setTableData((prev) => prev.filter((row) => row.invoiceMasterDto.id !== id))
+      // If this was the last row on the current page, step back one page so
+      // we don't end up fetching an empty page.
+      if (tableData.length === 1 && pageNumber > 1) setPageNumber((p) => p - 1)
+      else mutate()
       setFeedback('Invoice deleted')
       setDeleteTarget(null)
     } catch {
@@ -309,10 +328,8 @@ export default function InvoiceDatatable() {
   )
 
   // ---- API filter bar (customerName, phoneNo, paymentSlot, startDate, endDate) ----
-  const buildSearchUrl = useCallback(() => {
+  const buildFilterParams = useCallback(() => {
     const params = new URLSearchParams()
-    params.set('pageNumber', '1')
-    params.set('pageSize', '10')
     if (customerName.trim()) params.set('customerName', customerName.trim())
     if (phoneNo.trim()) params.set('phoneNo', phoneNo.trim())
     if (paymentSlot && paymentSlot !== 'all') params.set('paymentSlot', paymentSlot)
@@ -322,7 +339,8 @@ export default function InvoiceDatatable() {
   }, [customerName, phoneNo, paymentSlot, startDate, endDate])
 
   const handleSearch = () => {
-    setQueryString(buildSearchUrl())
+    setFilterParams(buildFilterParams())
+    setPageNumber(1)
   }
 
   const resetFilters = () => {
@@ -331,7 +349,8 @@ export default function InvoiceDatatable() {
     setPaymentSlot('')
     setStartDate(undefined)
     setEndDate(undefined)
-    setQueryString('pageNumber=1&pageSize=10')
+    setFilterParams('')
+    setPageNumber(1)
   }
 
   // ---- column filters ----
@@ -364,6 +383,26 @@ export default function InvoiceDatatable() {
     [tableData, columnFilters],
   )
 
+  // Build a compact list of page numbers (with ellipses) for the pager.
+  // e.g. 1 … 4 [5] 6 … 14
+  const pageNumbers = useMemo<(number | '…')[]>(() => {
+    if (totalPages <= 1) return totalPages === 1 ? [1] : []
+    const pages: (number | '…')[] = []
+    const windowSize = 1 // number of neighbours on each side of the current page
+    const start = Math.max(1, pageNumber - windowSize)
+    const end = Math.min(totalPages, pageNumber + windowSize)
+    if (start > 1) {
+      pages.push(1)
+      if (start > 2) pages.push('…')
+    }
+    for (let p = start; p <= end; p++) pages.push(p)
+    if (end < totalPages) {
+      if (end < totalPages - 1) pages.push('…')
+      pages.push(totalPages)
+    }
+    return pages
+  }, [pageNumber, totalPages])
+
   const table = useReactTable({
     data: filteredData,
     columns: visibleColumns,
@@ -373,12 +412,11 @@ export default function InvoiceDatatable() {
     onRowSelectionChange: setRowSelection,
     onExpandedChange: setExpanded,
     getRowCanExpand: () => true,
+    manualPagination: true,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getExpandedRowModel: getExpandedRowModel(),
-    autoResetPageIndex: true,
   })
 
   // ---- bulk delete (defined after `table` so it can reference it) ----
@@ -388,10 +426,13 @@ export default function InvoiceDatatable() {
     selectedIds.forEach((id) => {
       deleteFetcher(`${getApiUrl('/api/InvoiceMaster')}/${id}`).catch(() => {})
     })
-    setTableData((prev) => prev.filter((row) => !selectedIds.includes(row.invoiceMasterDto.id)))
+    // Re-fetch the current page from the server so totals/counts stay in sync.
+    // If the whole page was selected, step back a page so we don't fetch an empty one.
+    if (selectedIds.length >= tableData.length && pageNumber > 1) setPageNumber((p) => p - 1)
+    else mutate()
     table.resetRowSelection()
     setFeedback(`Deleted ${selectedIds.length} invoice(s)`)
-  }, [table])
+  }, [table, tableData, pageNumber, mutate])
 
   // ---- CSV export ----
   const visibleExportKeys = useMemo(
@@ -679,18 +720,21 @@ export default function InvoiceDatatable() {
           </div>
         </div>
 
-        {/* ---- Pagination ---- */}
-        {table.getPageCount() > 0 ? (
+        {/* ---- Pagination (server-side: pageNumber / pageSize / totalCount / totalPages) ---- */}
+        {totalCount > 0 ? (
           <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 gap-3'>
             <div className='flex items-center gap-2'>
               <p className='text-sm text-muted dark:text-lightgray'>Show</p>
-              <Select value={String(table.getState().pagination.pageSize)} onValueChange={(value) => table.setPageSize(Number(value))}>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(value) => { setPageSize(Number(value)); setPageNumber(1) }}
+              >
                 <SelectTrigger className='w-fit' aria-label='Select number of rows per page'>
                   <SelectValue placeholder='Rows per page' />
                 </SelectTrigger>
                 <SelectContent>
-                  {[3, 10, 20, 30, 40, 50].map((pageSize) => (
-                    <SelectItem key={pageSize} value={String(pageSize)}>{pageSize}</SelectItem>
+                  {[3, 10, 20, 30, 40, 50].map((size) => (
+                    <SelectItem key={size} value={String(size)}>{size}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -699,21 +743,40 @@ export default function InvoiceDatatable() {
             <div className='flex items-center gap-3'>
               <div>
                 <p className='text-sm font-normal text-muted dark:text-lightgray'>
-                  {table.getRowModel().rows.length > 0
-                    ? `${table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}-${Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, table.getFilteredRowModel().rows.length)} of ${table.getFilteredRowModel().rows.length}`
-                    : '0 of 0'}
+                  {`${(pageNumber - 1) * pageSize + 1}-${Math.min(pageNumber * pageSize, totalCount)} of ${totalCount}`}
                 </p>
               </div>
-              <div className='flex items-center gap-2'>
-                <Icon icon='solar:arrow-left-line-duotone'
-                  className={`text-dark dark:text-white hover:text-primary cursor-pointer ${table.getState().pagination.pageIndex === 0 ? 'opacity-50 cursor-not-allowed!' : ''}`}
-                  width={20} height={20} onClick={() => table.previousPage()} />
-                <span className='w-8 h-8 bg-lightprimary text-primary flex items-center justify-center rounded-md dark:bg-darkprimary dark:text-white text-sm font-normal'>
-                  {table.getState().pagination.pageIndex + 1}
-                </span>
-                <Icon icon='solar:arrow-right-line-duotone'
-                  className={`text-dark dark:text-white hover:text-primary cursor-pointer ${table.getState().pagination.pageIndex + 1 === table.getPageCount() ? 'opacity-50 cursor-not-allowed!' : ''}`}
-                  width={20} height={20} onClick={() => table.getState().pagination.pageIndex + 1 < table.getPageCount() && table.nextPage()} />
+              <div className='flex items-center gap-1.5'>
+                <Icon
+                  icon='solar:arrow-left-line-duotone'
+                  className={`text-dark dark:text-white hover:text-primary ${pageNumber <= 1 ? 'opacity-50 cursor-not-allowed!' : 'cursor-pointer'}`}
+                  width={20} height={20}
+                  onClick={() => setPageNumber((p) => Math.max(1, p - 1))}
+                />
+                {pageNumbers.map((p, idx) =>
+                  p === '…' ? (
+                    <span key={`ellipsis-${idx}`} className='w-8 h-8 flex items-center justify-center text-sm text-muted dark:text-lightgray'>…</span>
+                  ) : (
+                    <button
+                      key={p}
+                      type='button'
+                      onClick={() => setPageNumber(p)}
+                      className={`w-8 h-8 flex items-center justify-center rounded-md text-sm font-normal transition-colors ${
+                        p === pageNumber
+                          ? 'bg-lightprimary text-primary dark:bg-darkprimary dark:text-white'
+                          : 'text-dark dark:text-white hover:bg-lightprimary/60 dark:hover:bg-darkprimary/60'
+                      }`}
+                    >
+                      {p}
+                    </button>
+                  ),
+                )}
+                <Icon
+                  icon='solar:arrow-right-line-duotone'
+                  className={`text-dark dark:text-white hover:text-primary ${pageNumber >= totalPages || totalPages <= 1 ? 'opacity-50 cursor-not-allowed!' : 'cursor-pointer'}`}
+                  width={20} height={20}
+                  onClick={() => setPageNumber((p) => Math.min(totalPages, p + 1))}
+                />
               </div>
             </div>
           </div>

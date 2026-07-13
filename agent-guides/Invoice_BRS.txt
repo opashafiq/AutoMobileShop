@@ -937,7 +937,7 @@ Invoice Master List Grid and CRUD:
    9) You can check following files for how to use SWR and JWT for request:
       src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
       src/app/components/react-tables/master/taxid-datatable/index.tsx
-   9) Please Keep track of what you are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
+   10) Please Keep track of what you are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
    
    
    Most Important:

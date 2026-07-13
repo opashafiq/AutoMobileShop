@@ -32,6 +32,16 @@ interface ComboboxProps {
 }
 
 /**
+ * Imperative handle exposed via a ref. Used by rapid-entry flows (e.g. the
+ * invoice "Add Item" sheet) to reopen the dropdown and focus the search input
+ * after each commit without requiring the user to click again.
+ */
+export interface ComboboxHandle {
+  /** Open the dropdown and focus the search input. */
+  focus: () => void
+}
+
+/**
  * Reusable searchable combobox built on Popover + cmdk Command.
  * Standard shadcn combobox pattern, themed to the project.
  *
@@ -43,7 +53,7 @@ interface ComboboxProps {
  *     placeholder="Select Tax ID"
  *   />
  */
-export function Combobox({
+export const Combobox = React.forwardRef<ComboboxHandle, ComboboxProps>(function Combobox({
   options,
   value,
   onChange,
@@ -52,9 +62,21 @@ export function Combobox({
   emptyText = 'No results found.',
   disabled = false,
   className,
-}: ComboboxProps) {
+}, ref) {
   const [open, setOpen] = React.useState(false)
+  const inputRef = React.useRef<HTMLInputElement>(null)
   const currentLabel = options.find((o) => o.value === value)?.label
+
+  React.useImperativeHandle(ref, () => ({
+    focus: () => {
+      setOpen(true)
+      // PopoverContent mounts in a portal; wait two frames so the cmdk input
+      // is rendered, then focus it so the user can immediately keep typing.
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => inputRef.current?.focus())
+      })
+    },
+  }))
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -80,7 +102,7 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className='w-[--radix-popover-trigger-width] p-0' align='start'>
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput ref={inputRef} placeholder={searchPlaceholder} />
           <CommandList>
             <CommandEmpty>{emptyText}</CommandEmpty>
             <CommandGroup>
@@ -109,6 +131,6 @@ export function Combobox({
       </PopoverContent>
     </Popover>
   )
-}
+})
 
 export default Combobox
