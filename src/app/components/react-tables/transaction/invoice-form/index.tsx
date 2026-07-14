@@ -186,7 +186,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
 
   // ----- Edit-mode fetching -----
   const editUrl = isEdit && invoiceId ? getApiUrl(`/api/InvoiceMaster/${invoiceId}`) : null
-  const { data: editData, isLoading: editLoading } = useSWR<InvoiceListResponseItem>(editUrl, getFetcher)
+  const { data: editData, isLoading: editLoading, mutate: mutateEdit } = useSWR<InvoiceListResponseItem>(editUrl, getFetcher)
 
   // ----- Form state -----
   const [master, setMaster] = useState<InvoiceMasterDto>(emptyMaster)
@@ -521,6 +521,9 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
         // Note: EditInvoice uses POST, not PUT — the .NET controller
         // decorates this action with [HttpPost] despite the "Edit" naming.
         await postFetcher(getApiUrl(`/api/InvoiceMaster/EditInvoice?id=${invoiceId}`), payload)
+        // Invalidate the SWR cache for this invoice so the next time the
+        // edit form mounts, it fetches fresh data instead of stale cache.
+        mutateEdit()
         toast.success('Invoice updated successfully')
       } else {
         await postFetcher(getApiUrl('/api/InvoiceMaster/CreateInvoice'), payload)

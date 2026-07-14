@@ -1,0 +1,1073 @@
+Related API's:
+1) Get the list of Layaways with all the details and payments.
+   https://localhost:44352/api/LayawayMaster?pageNumber=1&pageSize=2
+   
+   Optional query parameters:
+   invoiceId long
+   customerName string
+   phoneNo string
+   paymentSlot string
+   startDate string($date-time)
+   endDate string($date-time)
+   
+   Response will be:
+   
+   {
+  "items": [
+    {
+      "layawayMasterDto": {
+        "id": 3968,
+        "tbim_InvoiceIdRad": 155657451017,
+        "tbim_Phone": "409-789-3928",
+        "tbim_InvDate": "2025-12-23T00:00:00",
+        "tbim_Name": "DERRICK ALVON RANDLE",
+        "tbim_TaxId": null,
+        "tbim_VehicleMake": "CHEVROLET",
+        "tbim_Model": "SILVERADO 1500",
+        "tbim_Year": "2024",
+        "tbim_Odometer": null,
+        "tbim_TreadDepth": null,
+        "tbim_License": "DR4N TX",
+        "tbim_SubTotal": 270,
+        "tbim_SaleTax": 22.28,
+        "tbim_Labour": 0,
+        "tbim_DisPer": 0,
+        "tbim_DisAmt": 0,
+        "tbim_Total": 292.28,
+        "tbim_PaidAmt": 292.28,
+        "tbim_AdjAmt": 0,
+        "tbim_AdjTotal": 292.28,
+        "tbim_PayInfo": "F",
+        "tbim_Note": null,
+        "tbim_Delinfo": "A",
+        "tbim_CompanyName": null,
+        "tbim_CompanyAddress": "221 WILLWOOD LEAGUE CITY TX 77573",
+        "tbim_Item_Delete_after_Layaway_Create": false,
+        "userName": "emp111",
+        "setDate": "2025-12-23T16:00:00",
+        "tbim_Left_Front": false,
+        "tbim_Right_Front": false,
+        "tbim_Left_Rear": false,
+        "tbim_Right_Rear": false,
+        "tbim_EmailAddress": null,
+        "tbim_IDNo": null,
+        "tbim_RefundType": "P",
+        "tbim_LocationId": 1,
+        "refundAmount": 292.28,
+        "locationName": "Apollo Tire & Wheel",
+        "taxCompanyName": "",
+        "taxIdentificationNumber": "",
+        "taxAddress": "",
+        "taxPhone": "",
+        "paymentMethodName": "Debit Card"
+      },
+      "layawayDetailsDto": [
+        {
+          "id": 7373,
+          "tbid_InvoiceId": 3968,
+          "tbid_ItemId": null,
+          "tbid_ItemCategory": 11,
+          "tbid_DepartmentName": "New Tires",
+          "tbid_Size": "295-25-28",
+          "tbid_Brand": "VENOM RAGNAROK GTS 103W",
+          "tbid_Series": null,
+          "tbid_Bolt": null,
+          "tbid_HoleS": null,
+          "tbid_Zone": "SPO",
+          "tbid_DistributorId": 124,
+          "tbid_DistributorName": "HESSELBEIN TIRE",
+          "tbid_Qty": 1,
+          "tbid_Taxable": true,
+          "tbid_UnitPrice": 270,
+          "tbid_LineTotal": 270,
+          "tbid_TaxAmt": 22.275,
+          "itemDepartmentName": "",
+          "itemDistributorName": "",
+          "itemLocationName": "",
+          "itemDisplay": ""
+        }
+      ],
+      "layawayPaymentsDto": [
+        {
+          "id": 3444,
+          "tbip_InvoiceId": 3968,
+          "tbip_PaymentId": 4,
+          "tbip_PayAmt": 292.28,
+          "tbip_Date": "2025-12-23T00:00:00",
+          "tbip_PaymentType": "F",
+          "paymentName": "Debit Card"
+        }
+      ]
+    },
+    {
+      "layawayMasterDto": {
+        "id": 3907,
+        "tbim_InvoiceIdRad": 141605442878,
+        "tbim_Phone": "832-249-0373",
+        "tbim_InvDate": "2025-11-05T00:00:00",
+        "tbim_Name": "OSCAR SARMIENTO",
+        "tbim_TaxId": null,
+        "tbim_VehicleMake": "CHEVROLET",
+        "tbim_Model": "CAMARO",
+        "tbim_Year": "2015",
+        "tbim_Odometer": null,
+        "tbim_TreadDepth": null,
+        "tbim_License": null,
+        "tbim_SubTotal": 120,
+        "tbim_SaleTax": 0,
+        "tbim_Labour": 0,
+        "tbim_DisPer": 0,
+        "tbim_DisAmt": 0,
+        "tbim_Total": 120,
+        "tbim_PaidAmt": 120,
+        "tbim_AdjAmt": 0,
+        "tbim_AdjTotal": 120,
+        "tbim_PayInfo": "F",
+        "tbim_Note": null,
+        "tbim_Delinfo": "A",
+        "tbim_CompanyName": null,
+        "tbim_CompanyAddress": "11907 POMTON DR HOUSTON TX 77089",
+        "tbim_Item_Delete_after_Layaway_Create": false,
+        "userName": "emp111",
+        "setDate": "2025-11-05T14:20:00",
+        "tbim_Left_Front": false,
+        "tbim_Right_Front": false,
+        "tbim_Left_Rear": false,
+        "tbim_Right_Rear": false,
+        "tbim_EmailAddress": null,
+        "tbim_IDNo": null,
+        "tbim_RefundType": "P",
+        "tbim_LocationId": 1,
+        "refundAmount": 120,
+        "locationName": "Apollo Tire & Wheel",
+        "taxCompanyName": "",
+        "taxIdentificationNumber": "",
+        "taxAddress": "",
+        "taxPhone": "",
+        "paymentMethodName": "Debit Card"
+      },
+      "layawayDetailsDto": [
+        {
+          "id": 7256,
+          "tbid_InvoiceId": 3907,
+          "tbid_ItemId": 3064,
+          "tbid_ItemCategory": 32,
+          "tbid_DepartmentName": "Wheel Fix",
+          "tbid_Size": ".",
+          "tbid_Brand": ".",
+          "tbid_Series": null,
+          "tbid_Bolt": null,
+          "tbid_HoleS": null,
+          "tbid_Zone": null,
+          "tbid_DistributorId": null,
+          "tbid_DistributorName": null,
+          "tbid_Qty": 1,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 120,
+          "tbid_LineTotal": 120,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Wheel Fix",
+          "itemDistributorName": "",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": ". ."
+        }
+      ],
+      "layawayPaymentsDto": [
+        {
+          "id": 3403,
+          "tbip_InvoiceId": 3907,
+          "tbip_PaymentId": 4,
+          "tbip_PayAmt": 120,
+          "tbip_Date": "2025-11-05T00:00:00",
+          "tbip_PaymentType": "F",
+          "paymentName": "Debit Card"
+        }
+      ]
+    }
+  ],
+  "totalCount": 12,
+  "pageNumber": 1,
+  "totalPages": 6
+}
+
+2) Get a specific Layaway with details:
+   https://localhost:44352/api/LayawayMaster/3968
+   
+   Response will be:
+   
+   {
+  "layawayMasterDto": {
+    "id": 3968,
+    "tbim_InvoiceIdRad": 155657451017,
+    "tbim_Phone": "409-789-3928",
+    "tbim_InvDate": "2025-12-23T00:00:00",
+    "tbim_Name": "DERRICK ALVON RANDLE",
+    "tbim_TaxId": null,
+    "tbim_VehicleMake": "CHEVROLET",
+    "tbim_Model": "SILVERADO 1500",
+    "tbim_Year": "2024",
+    "tbim_Odometer": null,
+    "tbim_TreadDepth": null,
+    "tbim_License": "DR4N TX",
+    "tbim_SubTotal": 270,
+    "tbim_SaleTax": 22.28,
+    "tbim_Labour": 0,
+    "tbim_DisPer": 0,
+    "tbim_DisAmt": 0,
+    "tbim_Total": 292.28,
+    "tbim_PaidAmt": 292.28,
+    "tbim_AdjAmt": 0,
+    "tbim_AdjTotal": 292.28,
+    "tbim_PayInfo": "F",
+    "tbim_Note": null,
+    "tbim_Delinfo": "A",
+    "tbim_CompanyName": null,
+    "tbim_CompanyAddress": "221 WILLWOOD LEAGUE CITY TX 77573",
+    "tbim_Item_Delete_after_Layaway_Create": false,
+    "userName": "emp111",
+    "setDate": "2025-12-23T16:00:00",
+    "tbim_Left_Front": false,
+    "tbim_Right_Front": false,
+    "tbim_Left_Rear": false,
+    "tbim_Right_Rear": false,
+    "tbim_EmailAddress": null,
+    "tbim_IDNo": null,
+    "tbim_RefundType": "P",
+    "tbim_LocationId": 1,
+    "refundAmount": 292.28,
+    "locationName": "Apollo Tire & Wheel",
+    "taxCompanyName": "",
+    "taxIdentificationNumber": "",
+    "taxAddress": "",
+    "taxPhone": "",
+    "paymentMethodName": "Debit Card"
+  },
+  "layawayDetailsDto": [
+    {
+      "id": 7373,
+      "tbid_InvoiceId": 3968,
+      "tbid_ItemId": null,
+      "tbid_ItemCategory": 11,
+      "tbid_DepartmentName": "New Tires",
+      "tbid_Size": "295-25-28",
+      "tbid_Brand": "VENOM RAGNAROK GTS 103W",
+      "tbid_Series": null,
+      "tbid_Bolt": null,
+      "tbid_HoleS": null,
+      "tbid_Zone": "SPO",
+      "tbid_DistributorId": 124,
+      "tbid_DistributorName": "HESSELBEIN TIRE",
+      "tbid_Qty": 1,
+      "tbid_Taxable": true,
+      "tbid_UnitPrice": 270,
+      "tbid_LineTotal": 270,
+      "tbid_TaxAmt": 22.275,
+      "itemDepartmentName": "",
+      "itemDistributorName": "",
+      "itemLocationName": "",
+      "itemDisplay": ""
+    }
+  ],
+  "layawayPaymentsDto": [
+    {
+      "id": 3444,
+      "tbip_InvoiceId": 3968,
+      "tbip_PaymentId": 4,
+      "tbip_PayAmt": 292.28,
+      "tbip_Date": "2025-12-23T00:00:00",
+      "tbip_PaymentType": "F",
+      "paymentName": "Debit Card"
+    }
+  ]
+}
+
+
+3) Create a new invoice:
+   https://localhost:44352/api/LayawayMaster/CreateLayaway
+Input will be:
+ {
+  "layawayMasterDto": {
+    "id": 0,
+    "tbim_InvoiceIdRad": 0,
+    "tbim_Phone": "string",
+    "tbim_InvDate": "2026-07-14T09:28:40.320Z",
+    "tbim_Name": "string",
+    "tbim_TaxId": 0,
+    "tbim_VehicleMake": "string",
+    "tbim_Model": "string",
+    "tbim_Year": "string",
+    "tbim_Odometer": "string",
+    "tbim_TreadDepth": "string",
+    "tbim_License": "string",
+    "tbim_SubTotal": 0,
+    "tbim_SaleTax": 0,
+    "tbim_Labour": 0,
+    "tbim_DisPer": 0,
+    "tbim_DisAmt": 0,
+    "tbim_Total": 0,
+    "tbim_PaidAmt": 0,
+    "tbim_AdjAmt": 0,
+    "tbim_AdjTotal": 0,
+    "tbim_PayInfo": "string",
+    "tbim_Note": "string",
+    "tbim_Delinfo": "string",
+    "tbim_CompanyName": "string",
+    "tbim_CompanyAddress": "string",
+    "tbim_Item_Delete_after_Layaway_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-14T09:28:40.320Z",
+    "tbim_Left_Front": true,
+    "tbim_Right_Front": true,
+    "tbim_Left_Rear": true,
+    "tbim_Right_Rear": true,
+    "tbim_EmailAddress": "string",
+    "tbim_IDNo": "string",
+    "tbim_RefundType": "string",
+    "tbim_LocationId": 0,
+    "refundAmount": 0,
+    "locationName": "string",
+    "taxCompanyName": "string",
+    "taxIdentificationNumber": "string",
+    "taxAddress": "string",
+    "taxPhone": "string",
+    "paymentMethodName": "string"
+  },
+  "layawayDetailsDto": [
+    {
+      "id": 0,
+      "tbid_InvoiceId": 0,
+      "tbid_ItemId": 0,
+      "tbid_ItemCategory": 0,
+      "tbid_DepartmentName": "string",
+      "tbid_Size": "string",
+      "tbid_Brand": "string",
+      "tbid_Series": "string",
+      "tbid_Bolt": "string",
+      "tbid_HoleS": "string",
+      "tbid_Zone": "string",
+      "tbid_DistributorId": 0,
+      "tbid_DistributorName": "string",
+      "tbid_Qty": 0,
+      "tbid_Taxable": true,
+      "tbid_UnitPrice": 0,
+      "tbid_LineTotal": 0,
+      "tbid_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "layawayPaymentsDto": [
+    {
+      "id": 0,
+      "tbip_InvoiceId": 0,
+      "tbip_PaymentId": 0,
+      "tbip_PayAmt": 0,
+      "tbip_Date": "2026-07-14T09:28:40.320Z",
+      "tbip_PaymentType": "string",
+      "paymentName": "string"
+    }
+  ]
+}
+
+And response will be:
+{
+  "layawayMasterDto": {
+    "id": 123,
+    "tbim_InvoiceIdRad": 0,
+    "tbim_Phone": "string",
+    "tbim_InvDate": "2026-07-14T09:28:40.327Z",
+    "tbim_Name": "string",
+    "tbim_TaxId": 0,
+    "tbim_VehicleMake": "string",
+    "tbim_Model": "string",
+    "tbim_Year": "string",
+    "tbim_Odometer": "string",
+    "tbim_TreadDepth": "string",
+    "tbim_License": "string",
+    "tbim_SubTotal": 0,
+    "tbim_SaleTax": 0,
+    "tbim_Labour": 0,
+    "tbim_DisPer": 0,
+    "tbim_DisAmt": 0,
+    "tbim_Total": 0,
+    "tbim_PaidAmt": 0,
+    "tbim_AdjAmt": 0,
+    "tbim_AdjTotal": 0,
+    "tbim_PayInfo": "string",
+    "tbim_Note": "string",
+    "tbim_Delinfo": "string",
+    "tbim_CompanyName": "string",
+    "tbim_CompanyAddress": "string",
+    "tbim_Item_Delete_after_Layaway_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-14T09:28:40.327Z",
+    "tbim_Left_Front": true,
+    "tbim_Right_Front": true,
+    "tbim_Left_Rear": true,
+    "tbim_Right_Rear": true,
+    "tbim_EmailAddress": "string",
+    "tbim_IDNo": "string",
+    "tbim_RefundType": "string",
+    "tbim_LocationId": 0,
+    "refundAmount": 0,
+    "locationName": "string",
+    "taxCompanyName": "string",
+    "taxIdentificationNumber": "string",
+    "taxAddress": "string",
+    "taxPhone": "string",
+    "paymentMethodName": "string"
+  },
+  "layawayDetailsDto": [
+    {
+      "id": 0,
+      "tbid_InvoiceId": 0,
+      "tbid_ItemId": 0,
+      "tbid_ItemCategory": 0,
+      "tbid_DepartmentName": "string",
+      "tbid_Size": "string",
+      "tbid_Brand": "string",
+      "tbid_Series": "string",
+      "tbid_Bolt": "string",
+      "tbid_HoleS": "string",
+      "tbid_Zone": "string",
+      "tbid_DistributorId": 0,
+      "tbid_DistributorName": "string",
+      "tbid_Qty": 0,
+      "tbid_Taxable": true,
+      "tbid_UnitPrice": 0,
+      "tbid_LineTotal": 0,
+      "tbid_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "layawayPaymentsDto": [
+    {
+      "id": 0,
+      "tbip_InvoiceId": 0,
+      "tbip_PaymentId": 0,
+      "tbip_PayAmt": 0,
+      "tbip_Date": "2026-07-14T09:28:40.327Z",
+      "tbip_PaymentType": "string",
+      "paymentName": "string"
+    }
+  ]
+}
+
+4) Edit an existing Layaway and related details,payments:
+   https://localhost:44352/api/LayawayMaster/EditLayaway?id=54120
+   Input will be:
+   {
+  "layawayMasterDto": {
+    "id": 0,
+    "tbim_InvoiceIdRad": 0,
+    "tbim_Phone": "string",
+    "tbim_InvDate": "2026-07-14T09:31:15.898Z",
+    "tbim_Name": "string",
+    "tbim_TaxId": 0,
+    "tbim_VehicleMake": "string",
+    "tbim_Model": "string",
+    "tbim_Year": "string",
+    "tbim_Odometer": "string",
+    "tbim_TreadDepth": "string",
+    "tbim_License": "string",
+    "tbim_SubTotal": 0,
+    "tbim_SaleTax": 0,
+    "tbim_Labour": 0,
+    "tbim_DisPer": 0,
+    "tbim_DisAmt": 0,
+    "tbim_Total": 0,
+    "tbim_PaidAmt": 0,
+    "tbim_AdjAmt": 0,
+    "tbim_AdjTotal": 0,
+    "tbim_PayInfo": "string",
+    "tbim_Note": "string",
+    "tbim_Delinfo": "string",
+    "tbim_CompanyName": "string",
+    "tbim_CompanyAddress": "string",
+    "tbim_Item_Delete_after_Layaway_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-14T09:31:15.898Z",
+    "tbim_Left_Front": true,
+    "tbim_Right_Front": true,
+    "tbim_Left_Rear": true,
+    "tbim_Right_Rear": true,
+    "tbim_EmailAddress": "string",
+    "tbim_IDNo": "string",
+    "tbim_RefundType": "string",
+    "tbim_LocationId": 0,
+    "refundAmount": 0,
+    "locationName": "string",
+    "taxCompanyName": "string",
+    "taxIdentificationNumber": "string",
+    "taxAddress": "string",
+    "taxPhone": "string",
+    "paymentMethodName": "string"
+  },
+  "layawayDetailsDto": [
+    {
+      "id": 0,
+      "tbid_InvoiceId": 0,
+      "tbid_ItemId": 0,
+      "tbid_ItemCategory": 0,
+      "tbid_DepartmentName": "string",
+      "tbid_Size": "string",
+      "tbid_Brand": "string",
+      "tbid_Series": "string",
+      "tbid_Bolt": "string",
+      "tbid_HoleS": "string",
+      "tbid_Zone": "string",
+      "tbid_DistributorId": 0,
+      "tbid_DistributorName": "string",
+      "tbid_Qty": 0,
+      "tbid_Taxable": true,
+      "tbid_UnitPrice": 0,
+      "tbid_LineTotal": 0,
+      "tbid_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "layawayPaymentsDto": [
+    {
+      "id": 0,
+      "tbip_InvoiceId": 0,
+      "tbip_PaymentId": 0,
+      "tbip_PayAmt": 0,
+      "tbip_Date": "2026-07-14T09:31:15.898Z",
+      "tbip_PaymentType": "string",
+      "paymentName": "string"
+    }
+  ]
+}
+And Response will be:
+{
+  "message": "Layaway adjusted successfully",
+  "LayawayId": 54120
+}
+
+5) Delete an Layaway:
+   https://localhost:44352/api/LayawayMaster/250005
+   
+   
+6) Getting Tax ID:
+	https://localhost:7184/api/TaxId
+	Response:
+	[
+  {
+    "id": 18,
+    "tbti_ComName": " Com 112",
+    "tbti_TaxNumber": "3-20331-5504-10",
+    "tbti_Address": "7550 BELLFORT ST. HOUSTON TX 77061",
+    "tbti_Phone": "832-423-0317",
+    "userName": "Admin1",
+    "setDate": "2026-06-22T15:59:00"
+  },
+  {
+    "id": 20,
+    "tbti_ComName": " ",
+    "tbti_TaxNumber": " ",
+    "tbti_Address": "4122 WARREN ST. BACLIFF TX 77518",
+    "tbti_Phone": "8328083408",
+    "userName": "emp111",
+    "setDate": "2017-04-12T08:30:00"
+  }
+  ]
+
+7) Getting Tax Id by Id:
+https://localhost:7184/api/TaxId/18
+Response:
+{
+  "id": 18,
+  "tbti_ComName": " Com 112",
+  "tbti_TaxNumber": "3-20331-5504-10",
+  "tbti_Address": "7550 BELLFORT ST. HOUSTON TX 77061",
+  "tbti_Phone": "832-423-0317",
+  "userName": "Admin1",
+  "setDate": "2026-06-22T15:59:00"
+}
+
+8) Getting Item Master:
+   https://localhost:7184/api/ItemMaster
+   Response:
+   [
+  {
+    "id": 1987,
+    "tbim_ItemCategoryId": 19,
+    "tbim_Size": "12",
+    "tbim_Brand": "STEEL WHEEL",
+    "tbim_Series": null,
+    "tbim_Bolt": "4-100",
+    "tbim_HoleS": null,
+    "tbim_Zone": null,
+    "tbim_Qty": 3,
+    "tbim_QtyOp": 4,
+    "tbim_Code": 50,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 69,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 1,
+    "tbim_ThrashDate": null,
+    "userName": "emp111",
+    "setDate": "2017-04-10T22:05:00",
+    "departmentName": "Used Wheels",
+    "distributorName": "ModificationTest",
+    "locationName": "Apollo Tire & Wheel"
+  },
+  {
+    "id": 1990,
+    "tbim_ItemCategoryId": 19,
+    "tbim_Size": "13X7",
+    "tbim_Brand": "PANTHER",
+    "tbim_Series": "",
+    "tbim_Bolt": "4-4½",
+    "tbim_HoleS": "SILVER",
+    "tbim_Zone": "",
+    "tbim_Qty": 4,
+    "tbim_QtyOp": 4,
+    "tbim_Code": 50,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 90,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 1,
+    "tbim_ThrashDate": null,
+    "userName": "amir",
+    "setDate": "2017-04-10T22:05:00",
+    "departmentName": "Used Wheels",
+    "distributorName": "SILVER",
+    "locationName": "Apollo Tire & Wheel"
+  }
+  ]
+  
+9) Get ItemMaster by Id:
+   https://localhost:7184/api/ItemMaster/1987
+{
+  "id": 1987,
+  "tbim_ItemCategoryId": 19,
+  "tbim_Size": "12",
+  "tbim_Brand": "STEEL WHEEL",
+  "tbim_Series": null,
+  "tbim_Bolt": "4-100",
+  "tbim_HoleS": null,
+  "tbim_Zone": null,
+  "tbim_Qty": 3,
+  "tbim_QtyOp": 4,
+  "tbim_Code": 50,
+  "tbim_CodeTOT": 0,
+  "tbim_DistributorId": 69,
+  "tbim_OURP": 0,
+  "tbim_LocationId": 1,
+  "tbim_ThrashDate": null,
+  "userName": "emp111",
+  "setDate": "2017-04-10T22:05:00",
+  "departmentName": "Used Wheels",
+  "distributorName": "ModificationTest",
+  "locationName": "Apollo Tire & Wheel"
+}   
+
+10) Get ItemMaster by category:
+    https://localhost:44352/api/ItemMaster/getbycategory/19
+	
+	Response:
+	[
+  {
+    "id": 1987,
+    "tbim_ItemCategoryId": 19,
+    "tbim_Size": "12",
+    "tbim_Brand": "STEEL WHEEL",
+    "tbim_Series": null,
+    "tbim_Bolt": "4-100",
+    "tbim_HoleS": null,
+    "tbim_Zone": null,
+    "tbim_Qty": 3,
+    "tbim_QtyOp": 4,
+    "tbim_Code": 50,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 69,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 1,
+    "tbim_ThrashDate": null,
+    "userName": "emp111",
+    "setDate": "2017-04-10T22:05:00",
+    "departmentName": "Used Wheels",
+    "distributorName": "ModificationTest",
+    "locationName": "Apollo Tire & Wheel"
+  },
+  {
+    "id": 1990,
+    "tbim_ItemCategoryId": 19,
+    "tbim_Size": "13X7",
+    "tbim_Brand": "PANTHER",
+    "tbim_Series": "",
+    "tbim_Bolt": "4-4½",
+    "tbim_HoleS": "SILVER",
+    "tbim_Zone": "",
+    "tbim_Qty": 4,
+    "tbim_QtyOp": 4,
+    "tbim_Code": 50,
+    "tbim_CodeTOT": 0,
+    "tbim_DistributorId": 90,
+    "tbim_OURP": 0,
+    "tbim_LocationId": 1,
+    "tbim_ThrashDate": null,
+    "userName": "amir",
+    "setDate": "2017-04-10T22:05:00",
+    "departmentName": "Used Wheels",
+    "distributorName": "SILVER",
+    "locationName": "Apollo Tire & Wheel"
+  }]
+    
+
+11) Get payment Methods:
+https://localhost:7184/api/PaymentNames
+
+Response:
+[
+  {
+    "id": 1,
+    "tbpn_PaymentName": "Check",
+    "tbpn_IsActive": true,
+    "userName": "Amir",
+    "setDate": "2014-07-30T23:03:00"
+  },
+  {
+    "id": 2,
+    "tbpn_PaymentName": "Cash",
+    "tbpn_IsActive": true,
+    "userName": "Amir",
+    "setDate": "2014-07-30T23:03:00"
+  }
+  ]
+
+12) Getting Payment Method by ID:
+https://localhost:7184/api/PaymentNames/1
+Response:
+{
+  "id": 1,
+  "tbpn_PaymentName": "Check",
+  "tbpn_IsActive": true,
+  "userName": "Amir",
+  "setDate": "2014-07-30T23:03:00"
+}
+
+13) List of categories:
+    https://localhost:44352/api/Departments 
+	
+	[
+	  {
+		"id": 1,
+		"tbid_DepartmentName": "Accessories",
+		"tbid_IsActive": true,
+		"userName": "adminuser",
+		"setDate": "2015-02-16T23:56:00"
+	  },
+	  {
+		"id": 2,
+		"tbid_DepartmentName": "Adapters",
+		"tbid_IsActive": true,
+		"userName": "amir",
+		"setDate": "2015-02-16T23:56:00"
+	  }
+   ]
+
+===============================
+Layaway Master List Grid and CRUD:
+==============================
+1) Store all the columns from the  rest API: https://localhost:44352/api/LayawayMaster?pageNumber=1&pageSize=1.
+2) Show following columns in the datatable from invoiceMasterDto:
+   ----------------------------------
+   HeaderName | ColumnName | Remarks
+   ----------------------------------
+   Transaction Id | tbim_InvoiceIdRad | This will be generated from server side
+   Customer Name | tbim_Name |
+   Date | tbim_InvDate | Show in dd/mm/yyyy
+   Total Amount | tbim_Total |
+   Phone No | tbim_Phone |
+   Payment Type | paymentMethodName
+   Paid Amount | tbim_PaidAmt
+   Refund Amount | RefundAmount
+3) Clicking a master will show the details. You can follow the format in src\app\components\react-tables\order-datatable\OrderDataTable.tsx.
+4) Clicking the Create New Invoice button will popup a window for taking invoice details for saving to db:
+   InvoiceMasterDto Information:
+   ----------------------------------
+   Input Label Name | ColumnName | Remarks
+   ----------------------------------
+   LF | tbim_Left_Front | It will be a check box
+   RF | tbim_Right_Front | It will be a check box
+   LR | tbim_Left_Rear | It will be a check box
+   RR | tbim_Right_Rear | It will be a check box
+   Phone No | tbim_Phone
+   Date | tbim_InvDate
+   Customer Name | tbim_Name
+   Tax Id | tbim_TaxId | An autocomplete dropdown. Key-value is Id-tbti_TaxNumber from https://localhost:7184/api/TaxId shown above.
+   Company Name | taxCompanyName | Will have the value of field tbti_ComName from https://localhost:7184/api/TaxId/{id} on "Tax Id" autocomplete box change.
+   Address | taxAddress | Will have the value of field tbti_Address from https://localhost:7184/api/TaxId/{id} on "Tax Id" autocomplete box change.
+   Email Address | tbim_EmailAddress
+   ID# | tbim_IDNo
+   Vehicle Make | tbim_VehicleMake
+   Vehicle Model | tbim_Model
+   Year | tbim_Year
+   Odometer | tbim_Odometer
+   Tread Depth | tbim_TreadDepth
+   License Plate | tbim_License
+   NOte | tbim_Note | Will be a text area for receiving multiline text.
+   
+   Some InvoiceMasterDto fields will be shown in the bottom right side apprpriate for showing final payment:
+   ---------------------------------------
+   Input Label Name | ColumnName | Remarks
+   ---------------------------------------
+   Adjusted Amount | tbim_AdjAmt | Change will regenerate value in Total Amount Field
+   Sub Total | tbim_SubTotal | Readonly, will show the sum of amount in InvoiceDetailsDto datatable described below.
+   Tax | tbim_SaleTax | Readonly, will show the sum of Tax Amount in InvoiceDetailsDto datatable described below.
+   Labour | tbim_Labour | Readwrite | Change will regenerate value in Total Amount Field
+   Discount% | tbim_DisPer | | Change will regenerate value in Discount Amount Field and Total Amount Field . Discount will be applicable on Sub Total multiplied by Discount%.
+   Discount Amount | tbim_DisAmt | Readonly
+   Total Amount | tbim_Total | Readonly, sum of Adjusted Amount,Sub Total,Tax,Labour minus Discount Amount.
+   
+   
+   In the Same popup window (InvoiceMasterDto) InvoiceDetailsDto Information from the selected InvoiceMaster record:
+   It will be a datatable having columns:
+   ----------------------------------
+   Header Name | ColumnName | Remarks
+   ----------------------------------
+   Taxable | tbid_Taxable
+   Quantity | tbid_Qty
+   Item Description | tbid_DepartmentName + "," +	tbid_Size + "," +	tbid_Brand + "," +	tbid_Series + "," +	tbid_Bolt + "," + tbid_HoleS + "," + tbid_Zone from 
+   Unit Price | tbid_UnitPrice | 
+   Amount | tbid_LineTotal
+   Tax Amount | tbid_TaxAmt
+   
+   An add item button on top of the datatable will popup the item selection window as follows:
+   ItemMasterDto
+   ----------------------------------
+   Input Label Name | ColumnName | Remarks
+   ----------------------------------
+   Item | | AutoComplete Box, Key-value (Id - tbid_DepartmentName + "," +	tbid_Size + "," +	tbid_Brand + "," +	tbid_Series + "," +	tbid_Bolt + "," + tbid_HoleS + "," + tbid_Zone) from https://localhost:7184/api/ItemMaster
+   Unit Price | tbim_Code | will be loaded on change in Item autocomplete box change using: https://localhost:7184/api/ItemMaster/{Id}
+   Qty | tbid_Qty
+   Taxable || Checbox
+   Tax Rate || Readonly, Will load Taxrate from endpoint if Taxable is checked.Checking/Unchecking will populate value in Tax Amount
+   Tax Amount || Readonly,Unit Price*Qty*Tax Rate%
+   Total Amount || Unit Price*Qty + Tax Amount
+   
+   An add button will add the item to the grid and create the list of InvoiceDetailsDto.
+   There will be provision to edit/remove selected item in the datatable.
+
+      
+   In the Same popup window (InvoiceMasterDto) invoicePaymentsDto information:
+   It will be a datatable with following contents:
+   ----------------------------------
+   Header Name | ColumnName | Remarks
+   ----------------------------------
+   Payment Method | paymentName
+   Amount | tbip_PayAmt
+   Date | tbip_Date
+   
+   An add item button on top of the datatable will popup the payment window as follows:
+   ----------------------------------
+   Input Label Name | ColumnName | Remarks
+   ----------------------------------
+   Payment Method | Key-value from PaymentNames: Id - tbpn_PaymentName from https://localhost:7184/api/PaymentNames/
+   Amount | tbip_PayAmt
+   Date | tbip_Date
+   
+   In the Same popup window (InvoiceMasterDto) there will be three option button:
+   Full Payment -> For this value of field tbim_PayInfo will be "F"
+   Partial Payment -> For this value of field tbim_PayInfo will be "P"
+   Pending -> For this value of field tbim_PayInfo will be "L"
+   
+   There will be a read only input box that will show the sum of total paid amount.
+   
+   
+   
+   In the Same popup window (InvoiceMasterDto) there will be a "Payment refund from layaway" datatable.
+   This will show the value of the field layawayRefund from InvoiceMasterDto. There will be provision for adding/editing and deleting in this datatable.
+   There will be a read only input box that will show the sum of Layout Refund amount.
+   
+   
+   In the Same popup window (InvoiceMasterDto), finally there will be a Save button to save the information to DB. It will close the popup,read the response and update the datatable accordingly.
+   
+5) Edit will follow the same window and mecanism used in Create Invoice.
+6) Deletiion will delete an invoice.
+  
+   
+   
+   Instructions:
+   =========================================================
+   1) The InvoiceMasterDto field tbim_InvoiceIdRad will be generated from server side while creating a new invoice. It is the transaction ID. So There is no need to show this
+      field in the create invoice popup window. It will be shown in the edit invoice window as readonly field.
+   2) For editing in InvoiceDetailsDto:
+      a) If and existing details row is edited, the corresponding InvoiceDetailsDto Id will be in the Json that will be sent to server.
+	  b) If a new entry is entered in the InvoiceDetailsDto, the Id will be 0.
+   3) The same policy will be applied while editing InvoicePaymentDto.
+   4) All the endpoints along with the responses are provided in the begening of this document.
+   5) Please Keep track of what are doing in a seperate file. I want to use this file in future for creating same types of module so that it will be easier for you on making decesion.
+   
+   
+   Most Important:
+   ====================================================================
+   I am trying to implement a sale product form implementation. The requirement that i described above, is already implemented in an older application and I have given you the idea.
+   But modern front end design has changed completely and you have the liberty to design the forms as per modern industry standard. I am sharing the screenshot from the older software in the following location:
+   \agent-guides\Invoice_Creation_Existing_System.docx 
+   
+   ** You will see that, there is a car image along with the checkboxes: LF,RF,LR,RR. You have to keep this in the new desing as well.
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   {
+  "items": [
+    { "CreateInvoiceDto": {...}, "invoiceDetailsDto": [...], "invoicePaymentsDto": [...] }
+  ],
+  "totalCount": 137,
+  "pageNumber": 1,
+  "totalPages": 14
+}
+
+
+
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<CreateInvoiceDto>>> GetInvoiceMasters(
+            [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
+            [FromQuery] long? invoiceId=null,
+            [FromQuery] string? customerName=null,
+            [FromQuery] string? phoneNo=null,
+            [FromQuery] string? paymentSlot=null,
+            [FromQuery] DateTime? startDate=null,
+            [FromQuery] DateTime? endDate=null
+            )
+        {
+            // Fail-safe check to prevent massive memory overloads
+            if (pageSize > 100) pageSize = 100;
+            if (pageNumber < 1) pageNumber = 1;
+
+            // Start with a base, un-executed query
+            var query = _context.InvoiceMasters.AsNoTracking();
+
+            // Dynamically apply date filtering if parameters exist
+            if (startDate.HasValue)
+            {
+                // Evaluates to: >= 2026-04-08 00:00:00
+                query = query.Where(o => o.tbim_InvDate >= startDate.Value.Date);
+            }
+
+            if (endDate.HasValue)
+            {
+                // Crucial: Advance the day by 1 and subtract 1 tick.
+                // This transforms "2026-04-08 00:00:00" into "2026-04-08 23:59:59.999"
+                var inclusiveEndDate = endDate.Value.Date.AddDays(1).AddTicks(-1);
+
+                query = query.Where(o => o.tbim_InvDate <= inclusiveEndDate);
+            }
+
+            if (invoiceId.HasValue) 
+            {
+                query = query.Where(o => o.Id == (long)invoiceId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(customerName))
+            {
+                query = query.Where(o => o.tbim_Name.Contains(customerName));
+            }
+
+            if (!string.IsNullOrWhiteSpace(phoneNo))
+            {
+                // Trim removes accidental spaces from frontend typing (e.g., " 0171... ")
+                var cleanPhone = phoneNo.Trim();
+
+                query = query.Where(o => o.tbim_Phone.Contains(cleanPhone));
+            }
+
+            if (!string.IsNullOrWhiteSpace(paymentSlot))
+            {
+                query = query.Where(o => o.tbim_PayInfo==paymentSlot);
+            }
+
+
+            // 1. Fetch only the paginated slice of Master Invoices first (Eager load lookups)
+            var invoiceMasters = await query
+                .Include(m => m.InvoiceDetails)
+                .Include(m => m.InvoicePayments)
+                    .ThenInclude(m => m.tbip_Payment)
+                .Include(m => m.InvoiceRefundMasters)
+                .Include(m => m.tbim_Tax)
+                .Include(m => m.tbim_LocationDetails)
+                .OrderByDescending(m => m.tbim_InvDate) // Show newest invoices first
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // 2. Map each master record in memory using your instance mapping functions
+            var dtos = new List<CreateInvoiceDto>();
+            foreach (var im in invoiceMasters)
+            {
+                var dto = MapToCreateInvoiceDto(im);
+                //TestMapping(im); // Optional: for debugging or logging purposes
+                dtos.Add(dto);
+            }
+
+            // 3. Add pagination metadata headers so your Next.js SWR configuration knows total pages
+            int totalRecords = await _context.InvoiceMasters.CountAsync();
+            Response.Headers.Add("X-Total-Count", totalRecords.ToString());
+
+
+            
+
+            return Ok(dtos);
+        }
+   
+   
+   
+       public class CreateInvoiceDto
+    {
+        public InvoiceMasterDto invoiceMasterDto { get; set; } = new InvoiceMasterDto();
+        public List<InvoiceDetailsDto> invoiceDetailsDto { get; set; } = new List<InvoiceDetailsDto>();
+        public List<InvoicePaymentsDto> invoicePaymentsDto { get; set; } = new List<InvoicePaymentsDto>();
+    }
+   
+   
+   
+   Now I want to return like as follows:
+      {
+  "items": [
+    { "CreateInvoiceDto": {...}, "invoiceDetailsDto": [...], "invoicePaymentsDto": [...] }
+  ],
+  "totalCount": 137,
+  "pageNumber": 1,
+  "totalPages": 14
+}
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+   
+
+
+
+
+
+
+
+
+
+
