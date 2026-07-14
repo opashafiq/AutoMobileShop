@@ -812,6 +812,7 @@ export default function InvoiceDatatable() {
 function FragmentRow({ row, index }: { row: any; index: number }) {
   const master: InvoiceMasterDto = row.original.invoiceMasterDto
   const details: InvoiceDetailsDto[] = row.original.invoiceDetailsDto || []
+  const hasRefund = (Number(master.refundAmount) || 0) > 0
 
   const buildDescription = (d: InvoiceDetailsDto): string =>
     [d.tbid_DepartmentName, d.tbid_Size, d.tbid_Brand, d.tbid_Series, d.tbid_Bolt, d.tbid_HoleS, d.tbid_Zone]
@@ -820,7 +821,14 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
 
   return (
     <>
-      <AnimatedTableRow index={index} className='border-b last:border-b-0 border-ld hover:bg-lightprimary transition-colors duration-200'>
+      <AnimatedTableRow
+        index={index}
+        className={`border-b last:border-b-0 border-ld transition-colors duration-200 ${
+          hasRefund
+            ? 'bg-lightsuccess/20 hover:bg-lightsuccess/30 dark:bg-lightsuccess/10 dark:hover:bg-lightsuccess/15'
+            : 'hover:bg-lightprimary'
+        }`}
+      >
         {row.getVisibleCells().map((cell: any) => (
           <td key={cell.id} className='px-4 py-2'>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}

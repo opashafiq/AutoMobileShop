@@ -78,6 +78,13 @@ const itemDescription = (d: { tbid_DepartmentName?: string; tbid_Size?: string; 
     .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
     .join(', ')
 
+// ---------- Departments (used by the Category combobox in the Item sheet) ----------
+interface DepartmentType {
+  id: number
+  tbid_DepartmentName: string
+  tbid_IsActive: boolean
+}
+
 // ---------- Draft line item (local-only "taxRate" for calc) ----------
 interface DraftItem extends Omit<InvoiceDetailsDto, 'tbid_LineTotal' | 'tbid_TaxAmt' | 'tbid_InvoiceId'> {
   taxRate: number
@@ -175,6 +182,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const { data: taxIdsData } = useSWR<TaxIdType[]>(getApiUrl('/api/TaxId'), getFetcher)
   const { data: itemsData } = useSWR<ItemMasterType[]>(getApiUrl('/api/ItemMaster'), getFetcher)
   const { data: paymentNamesData } = useSWR<PaymentNameType[]>(getApiUrl('/api/PaymentNames'), getFetcher)
+  const { data: departmentsData } = useSWR<DepartmentType[]>(getApiUrl('/api/Departments'), getFetcher)
 
   // ----- Edit-mode fetching -----
   const editUrl = isEdit && invoiceId ? getApiUrl(`/api/InvoiceMaster/${invoiceId}`) : null
@@ -191,12 +199,17 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const [itemSheetOpen, setItemSheetOpen] = useState(false)
   const [editingItemIndex, setEditingItemIndex] = useState<number | null>(null)
   const [draftItem, setDraftItem] = useState<DraftItem>(emptyDraftItem)
+  const [itemCategory, setItemCategory] = useState('all') // 'all' | department id string
 
   // Rapid-add state: Combobox imperative handle, flash banner, cancel-→-done.
   const itemComboboxRef = useRef<ComboboxHandle | null>(null)
   const [itemFlash, setItemFlash] = useState<{ key: number; name: string; verb: string } | null>(null)
   const [itemsAddedInSession, setItemsAddedInSession] = useState(0)
   const flashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // String state for the Adjustment input — allows typing "-" (the intermediate
+  // keystroke for negative numbers) without a controlled number field coercing it
+  // to 0 via `Number("-") || 0`.
+  const [adjInput, setAdjInput] = useState('')
 
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false)
   const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
@@ -209,6 +222,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
     if (isEdit && editData && !hydrated) {
       const m = editData.invoiceMasterDto
       setMaster({ ...m })
+      setAdjInput(String(m.tbim_AdjAmt ?? 0)) // sync Adjustment string state
       setDetails(editData.invoiceDetailsDto ?? [])
       setPayments(editData.invoicePaymentsDto ?? [])
       setLayawayRefunds(m.layawayRefund ?? [])
@@ -321,6 +335,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const openAddItemSheet = () => {
     setEditingItemIndex(null)
     setDraftItem(emptyDraftItem())
+    setItemCategory('all')
     setItemsAddedInSession(0)
     setItemFlash(null)
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
@@ -400,7 +415,9 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
 
     // Reset the entry fields and refocus the item search box so the operator
     // can immediately start typing the next item without clicking again.
-    setDraftItem({ ...emptyDraftItem(), tbid_Qty: 0 })
+    // Keep qty=1 (the sensible default for the next line item) — only the
+    // item/price selection is cleared.
+    setDraftItem({ ...emptyDraftItem(), tbid_Qty: 1 })
     setTimeout(() => itemComboboxRef.current?.focus(), 0)
   }
   const removeItem = (index: number) => {
@@ -523,13 +540,37 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
       label: t.tbti_TaxNumber ? `${t.tbti_TaxNumber} — ${t.tbti_ComName ?? ''}`.trim() : `#${t.id}`,
     }))
 
-  const itemOptions: ComboboxOption[] =
-    (itemsData ?? []).map((i) => ({
+  // Category combobox: "All" + the active departments
+  const categoryOptions: ComboboxOption[] = useMemo(
+    () => [
+      { value: 'all', label: 'All' },
+      ...(departmentsData ?? [])
+        .filter((d) => d.tbid_IsActive)
+        .map((d) => ({ value: String(d.id), label: d.tbid_DepartmentName })),
+    ],
+    [departmentsData],
+  )
+
+  // Items filtered by the selected category
+  const itemOptions: ComboboxOption[] = useMemo(() => {
+    const list = itemsData ?? []
+    const filtered = itemCategory === 'all'
+      ? list
+      : list.filter((i) => i.tbim_ItemCategoryId === Number(itemCategory))
+    return filtered.map((i) => ({
       value: String(i.id),
       label: [i.departmentName, i.tbim_Size, i.tbim_Brand, i.tbim_Series, i.tbim_Bolt, i.tbim_HoleS, i.tbim_Zone]
         .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
         .join(', '),
     }))
+  }, [itemsData, itemCategory])
+
+  // Clear the selected item when the category filter changes so the
+  // Combobox doesn't show a stale item that isn't in the new category.
+  const handleCategoryChange = (value: string) => {
+    setItemCategory(value)
+    setDraftItem((prev) => ({ ...prev, tbid_ItemId: null, tbid_UnitPrice: 0, tbid_DepartmentName: '' }))
+  }
 
   const paymentOptions: ComboboxOption[] =
     (paymentNamesData ?? [])
@@ -589,9 +630,9 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                 </Field>
                 <Field label='Date'>
                   <Input
-                    type='datetime-local'
-                    value={toDateTimeLocal(master.tbim_InvDate)}
-                    onChange={(e) => setMasterField('tbim_InvDate', fromDateTimeLocal(e.target.value))}
+                    type='date'
+                    value={toDateInput(master.tbim_InvDate)}
+                    onChange={(e) => setMasterField('tbim_InvDate', fromDateInput(e.target.value))}
                   />
                 </Field>
                 <Field label='Customer Name' required>
@@ -809,8 +850,16 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                   <div className='w-32'>
                     <Input
                       type='number'
-                      value={Number(master.tbim_AdjAmt) || 0}
-                      onChange={(e) => setMasterField('tbim_AdjAmt', Number(e.target.value) || 0)}
+                      value={adjInput}
+                      onChange={(e) => {
+                        setAdjInput(e.target.value)
+                        setMasterField('tbim_AdjAmt', e.target.value === '' || e.target.value === '-' ? 0 : Number(e.target.value))
+                      }}
+                      onBlur={() => {
+                        // On blur, ensure the display is synced to the canonical numeric value
+                        // (handles cases like typing "-" then clicking away)
+                        setAdjInput(String(master.tbim_AdjAmt))
+                      }}
                       className='h-8 text-right'
                       aria-label='Adjustment amount'
                     />
@@ -1022,6 +1071,15 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
                 <span className='truncate'>{itemFlash.name} {itemFlash.verb} successfully</span>
               </div>
             )}
+            <Field label='Category'>
+              <Combobox
+                options={categoryOptions}
+                value={itemCategory}
+                onChange={handleCategoryChange}
+                placeholder='Select category'
+                searchPlaceholder='Search categories...'
+              />
+            </Field>
             <Field label='Item' required>
               <Combobox
                 ref={itemComboboxRef}
@@ -1084,7 +1142,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
             </div>
             <div className='flex justify-end gap-2 pt-2'>
               <Button variant='outline' onClick={() => handleItemSheetOpenChange(false)}>
-                {itemsAddedInSession > 0 ? 'Done' : 'Cancel'}
+                {itemsAddedInSession > 0 ? 'Close' : 'Cancel'}
               </Button>
               <Button onClick={commitItem}>
                 <Icon icon='solar:check-circle-linear' width={18} height={18} />
