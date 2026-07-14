@@ -18,6 +18,7 @@ import {
   type PaymentNameType,
   type ItemMasterType,
   type InvoiceListResponseItem,
+  type TaxRateModifiedType,
 } from '@/app/(DashboardLayout)/types/apps/invoiceMaster'
 
 import { Card } from '@/components/ui/card'
@@ -182,6 +183,16 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   const { data: taxIdsData } = useSWR<TaxIdType[]>(getApiUrl('/api/TaxId'), getFetcher)
   const { data: itemsData } = useSWR<ItemMasterType[]>(getApiUrl('/api/ItemMaster'), getFetcher)
   const { data: paymentNamesData } = useSWR<PaymentNameType[]>(getApiUrl('/api/PaymentNames'), getFetcher)
+  const { data: taxRateData } = useSWR<TaxRateModifiedType | TaxRateModifiedType[]>(getApiUrl('/api/TaxRateModified'), getFetcher)
+
+  // Extract the effective default tax rate from the API, falling back to 8.25.
+  // The endpoint may return a single object or an array.
+  const effectiveTaxRate = useMemo(() => {
+    const raw = taxRateData
+    if (!raw) return DEFAULT_TAX_RATE
+    if (Array.isArray(raw)) return raw[0]?.tbtm_TaxRate ?? DEFAULT_TAX_RATE
+    return (raw as TaxRateModifiedType).tbtm_TaxRate ?? DEFAULT_TAX_RATE
+  }, [taxRateData])
   const { data: departmentsData } = useSWR<DepartmentType[]>(getApiUrl('/api/Departments'), getFetcher)
 
   // ----- Edit-mode fetching -----
@@ -334,7 +345,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
   // ----- Item add/update/remove -----
   const openAddItemSheet = () => {
     setEditingItemIndex(null)
-    setDraftItem(emptyDraftItem())
+    setDraftItem({ ...emptyDraftItem(), taxRate: effectiveTaxRate })
     setItemCategory('all')
     setItemsAddedInSession(0)
     setItemFlash(null)
@@ -354,7 +365,7 @@ export default function InvoiceForm({ mode, invoiceId }: InvoiceFormProps) {
     setEditingItemIndex(index)
     setDraftItem({
       ...d,
-      taxRate: d.tbid_Taxable && d.tbid_LineTotal ? (d.tbid_TaxAmt / d.tbid_LineTotal) * 100 : DEFAULT_TAX_RATE,
+      taxRate: d.tbid_Taxable && d.tbid_LineTotal ? (d.tbid_TaxAmt / d.tbid_LineTotal) * 100 : effectiveTaxRate,
     })
     setItemSheetOpen(true)
   }

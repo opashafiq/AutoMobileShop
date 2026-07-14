@@ -166,8 +166,23 @@ A modern CSS/HTML car top-down schematic with position markers LF, RF, LR, RR as
 | Items | GET | `/api/ItemMaster` | Autocomplete data |
 | Item by ID | GET | `/api/ItemMaster/{id}` | Price details |
 | Payment Names | GET | `/api/PaymentNames` | Payment method options |
+| Tax Rate | GET | `/api/TaxRateModified` | Returns a single object `{ tbtm_TaxRate: number }` or an array; used as the default tax rate in the Add-Item Sheet |
 
 All URLs are resolved via `getApiUrl()` which prepends `NEXT_PUBLIC_API_BASE_URL`.
+
+---
+
+### Tax Rate Resolution (in the Add-Item Sheet)
+
+Instead of the old hardcoded `DEFAULT_TAX_RATE = 8.25`, the form now:
+
+1. Fetches `/api/TaxRateModified` via SWR **once** on mount (stored as `taxRateData`).
+2. Derives `effectiveTaxRate` via `useMemo`, handling both single-object and array responses.
+3. When the user opens the **Add Item sheet**, the draft item's `taxRate` field is pre-filled with `effectiveTaxRate` (not `DEFAULT_TAX_RATE`).
+4. When **editing** an existing item whose taxable status is known, the rate is computed from `(tbid_TaxAmt / tbid_LineTotal) * 100`, falling back to `effectiveTaxRate` if the calculation isn't possible.
+5. The user can still manually type any rate in the Add-Item Sheet if needed — the API rate is just the default, not a lock.
+
+This keeps the default rate synchronized with the server while staying out of the user's way for manual override.
 
 ---
 

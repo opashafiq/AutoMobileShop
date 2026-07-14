@@ -83,6 +83,12 @@ const formatMoney = (n: number | null | undefined): string => {
 
 const PAY_LABEL: Record<string, string> = { F: 'Full', P: 'Partial', L: 'Pending' }
 
+const getBalanceClass = (total: number, paid: number): string => {
+  const bal = (total || 0) - (paid || 0)
+  if (bal <= 0) return 'font-medium text-success'
+  return 'font-medium text-error'
+}
+
 // Map a column id to the nested path on InvoiceListResponseItem for filter data extraction.
 const MASTER_ACCESSORS: Record<string, string> = {
   transactionId: 'tbim_InvoiceIdRad',
@@ -876,18 +882,68 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
                   </table>
                 </div>
               )}
-              <div className='mt-3 flex justify-end gap-6 text-sm'>
-                <div>
-                  <span className='text-darklink dark:text-bodytext'>Sub Total: </span>
-                  <span className='font-semibold text-ld dark:text-darklink'>${formatMoney(master.tbim_SubTotal)}</span>
+              {/* ---- Financial breakdown: cost on the left, payment on the right ---- */}
+              <div className='mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2'>
+                {/* Cost build-up */}
+                <div className='space-y-1 rounded-md border border-ld/60 p-3 text-sm'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-darklink dark:text-bodytext'>Sub Total</span>
+                    <span className='font-medium text-ld dark:text-darklink'>${formatMoney(master.tbim_SubTotal)}</span>
+                  </div>
+                  {(master.tbim_Labour || 0) > 0 && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-darklink dark:text-bodytext'>Labour</span>
+                      <span className='font-medium text-ld dark:text-darklink'>${formatMoney(master.tbim_Labour)}</span>
+                    </div>
+                  )}
+                  <div className='flex items-center justify-between'>
+                    <span className='text-darklink dark:text-bodytext'>Tax</span>
+                    <span className='font-medium text-ld dark:text-darklink'>${formatMoney(master.tbim_SaleTax)}</span>
+                  </div>
+                  {(master.tbim_DisPer || 0) > 0 && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-darklink dark:text-bodytext'>Discount ({master.tbim_DisPer}%)</span>
+                      <span className='font-medium text-error'>−${formatMoney(master.tbim_DisAmt)}</span>
+                    </div>
+                  )}
+                  {(master.tbim_AdjAmt || 0) !== 0 && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-darklink dark:text-bodytext'>Adjustment</span>
+                      <span className='font-medium text-ld dark:text-darklink'>${formatMoney(master.tbim_AdjAmt)}</span>
+                    </div>
+                  )}
+                  <div className='border-t border-ld pt-1'>
+                    <div className='flex items-center justify-between font-semibold'>
+                      <span className='text-ld dark:text-darklink'>Total</span>
+                      <span className='text-primary'>${formatMoney(master.tbim_Total)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <span className='text-darklink dark:text-bodytext'>Tax: </span>
-                  <span className='font-semibold text-ld dark:text-darklink'>${formatMoney(master.tbim_SaleTax)}</span>
-                </div>
-                <div>
-                  <span className='text-darklink dark:text-bodytext'>Total: </span>
-                  <span className='font-semibold text-primary'>${formatMoney(master.tbim_Total)}</span>
+
+                {/* Payment side */}
+                <div className='space-y-1 rounded-md border border-ld/60 p-3 text-sm'>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-darklink dark:text-bodytext'>Total Amount</span>
+                    <span className='font-medium text-ld dark:text-darklink'>${formatMoney(master.tbim_Total)}</span>
+                  </div>
+                  <div className='flex items-center justify-between'>
+                    <span className='text-darklink dark:text-bodytext'>Paid</span>
+                    <span className='font-medium text-success'>−${formatMoney(master.tbim_PaidAmt)}</span>
+                  </div>
+                  {(master.refundAmount || 0) > 0 && (
+                    <div className='flex items-center justify-between'>
+                      <span className='text-darklink dark:text-bodytext'>Refund</span>
+                      <span className='font-medium text-warning'>−${formatMoney(master.refundAmount)}</span>
+                    </div>
+                  )}
+                  <div className='border-t border-ld pt-1'>
+                    <div className='flex items-center justify-between font-semibold'>
+                      <span className='text-ld dark:text-darklink'>Balance</span>
+                      <span className={getBalanceClass(master.tbim_Total, master.tbim_PaidAmt)}>
+                        ${formatMoney(master.tbim_Total - master.tbim_PaidAmt)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

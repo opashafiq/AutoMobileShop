@@ -67,6 +67,10 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
   useEffect(() => {
     if (data && Array.isArray(data)) {
       setTaxRateData(data as TaxRateModifiedType[])
+    } else if (data && typeof data === 'object') {
+      // This endpoint returns a single record object (the server keeps
+      // only one tax-rate record), so wrap it in an array for the table.
+      setTaxRateData([data as TaxRateModifiedType])
     }
   }, [data])
 
@@ -78,6 +82,7 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
   const [feedback, setFeedback] = useState<string | null>(null)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     id: true,
+    tbtm_TaxRate: true,
     tbtm_Note: true,
   })
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
@@ -90,11 +95,12 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
   const [apiLoading, setApiLoading] = useState(false)
   const [currentTaxRate, setCurrentTaxRate] = useState<Partial<TaxRateModifiedType>>({
     id: 0,
+    tbtm_TaxRate: 0,
     tbtm_Note: '',
   })
 
   const resetCurrentTaxRate = () => {
-    setCurrentTaxRate({ id: 0, tbtm_Note: '' })
+    setCurrentTaxRate({ id: 0, tbtm_TaxRate: 0, tbtm_Note: '' })
   }
 
   const openCreateDialog = () => { resetCurrentTaxRate(); setDialogMode('create'); setEditingRowId(null); setIsDialogOpen(true) }
@@ -109,17 +115,19 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
     try {
       const payload: TaxRateModifiedType = {
         id: dialogMode === 'create' ? 0 : editingRowId ?? 0,
+        tbtm_TaxRate: currentTaxRate.tbtm_TaxRate ?? 0,
         tbtm_Note: currentTaxRate.tbtm_Note ?? '',
         userName: getUserName() ?? '',
         setDate: getLocalISO(),
       }
       if (dialogMode === 'create') {
         const response = await postFetcher(API_URL, payload)
-        setTaxRateData((prev) => [response as TaxRateModifiedType, ...prev])
+        // This API keeps only one record (singleton). Replace the list.
+        setTaxRateData(response ? [response as TaxRateModifiedType] : [payload])
         setFeedback('Tax Rate created')
       } else if (editingRowId !== null) {
         const updated = (await putFetcher(`${API_URL}/${editingRowId}`, payload)) as TaxRateModifiedType | null
-        setTaxRateData((prev) => prev.map((item) => item.id === editingRowId ? (updated ?? payload) : item))
+        setTaxRateData([updated ?? payload])
         setFeedback('Tax Rate updated')
       }
       closeDialog()
@@ -163,6 +171,10 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
           id: 'select',
           header: ({ table }) => (<Checkbox checked={table.getIsAllPageRowsSelected()} onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)} />),
           cell: ({ row }) => (<Checkbox checked={!!row.getIsSelected()} onCheckedChange={(checked) => row.toggleSelected(checked === true)} />),
+        }),
+        columnHelper.accessor('tbtm_TaxRate', {
+          header: 'Tax Rate',
+          cell: (info) => <p className='text-sm'>{info.getValue() != null ? `${info.getValue()}%` : '-'}</p>,
         }),
         columnHelper.accessor('tbtm_Note', {
           header: 'Note',
@@ -283,6 +295,10 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
             </DialogHeader>
             <div className='grid gap-4 py-4'>
               <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Tax Rate (%)</label>
+                <Input type='number' step='0.01' min='0' max='100' value={currentTaxRate.tbtm_TaxRate ?? 0} onChange={(e) => setCurrentTaxRate((p) => ({ ...p, tbtm_TaxRate: parseFloat(e.target.value) || 0 }))} placeholder='e.g. 8.25' />
+              </div>
+              <div className='grid gap-2'>
                 <label className='text-sm font-medium'>Note</label>
                 <Input value={currentTaxRate.tbtm_Note ?? ''} onChange={(e) => setCurrentTaxRate((p) => ({ ...p, tbtm_Note: e.target.value }))} placeholder='Note' />
               </div>
@@ -320,7 +336,7 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
                       {headerGroup.headers.map((header) => {
                         const columnKey = typeof (header.column.columnDef as any).accessorKey === 'string' ? (header.column.columnDef as any).accessorKey : header.column.id
                         const columnData = columnKey && enableColumnFilters ? taxRateData.map((row) => row[columnKey as keyof TaxRateModifiedType]) : []
-                        const isFilterable = enableColumnFilters && columnKey && columnKey !== 'id' && ['tbtm_Note'].includes(columnKey)
+                        const isFilterable = enableColumnFilters && columnKey && columnKey !== 'id' && ['tbtm_TaxRate', 'tbtm_Note'].includes(columnKey)
                         return (
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
@@ -346,7 +362,7 @@ function TaxRateModifiedTable({ enableColumnFilters = true }: { enableColumnFilt
                       <React.Fragment key={row.id}>
                         <AnimatedTableRow index={index} className='border-b last:border-b-0 border-ld hover:bg-lightprimary transition-colors duration-200'>
                           {row.getVisibleCells().map((cell) => (
-                            <td key={cell.id} className={`px-4 py-2 ${cell.column.id === 'tbtm_Note' ? 'min-w-[180px]' : ''}`}>
+                            <td key={cell.id} className={`px-4 py-2 ${cell.column.id === 'tbtm_Note' ? 'min-w-[180px]' : cell.column.id === 'tbtm_TaxRate' ? 'min-w-[120px]' : ''}`}>
                               {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           ))}

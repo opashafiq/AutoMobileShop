@@ -132,6 +132,7 @@ export interface RefundMethodNameType {
 
 export interface TaxRateModifiedType {
   id: number
+  tbtm_TaxRate: number
   tbtm_Note: string
   userName: string
   setDate: string

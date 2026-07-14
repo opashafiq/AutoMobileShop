@@ -122,6 +122,14 @@ export interface PaymentNameType {
   setDate: string
 }
 
+export interface TaxRateModifiedType {
+  id: number
+  tbtm_TaxRate: number
+  tbtm_Note: string
+  userName: string
+  setDate: string
+}
+
 // Re-export the item-master type so the invoice module has a single import surface
 export type { ItemMasterType } from '@/app/models/interfaces'
 
