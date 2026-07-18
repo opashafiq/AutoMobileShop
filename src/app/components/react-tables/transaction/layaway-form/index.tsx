@@ -10,16 +10,15 @@ import { getApiUrl, getFetcher, postFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import {
-  type InvoiceMasterDto,
-  type InvoiceDetailsDto,
-  type InvoicePaymentsDto,
-  type LayawayRefundDto,
+  type LayawayMasterDto,
+  type LayawayDetailsDto,
+  type LayawayPaymentsDto,
   type TaxIdType,
   type PaymentNameType,
   type ItemMasterType,
-  type InvoiceListResponseItem,
+  type LayawayListResponseItem,
   type TaxRateModifiedType,
-} from '@/app/(DashboardLayout)/types/apps/invoiceMaster'
+} from '@/app/(DashboardLayout)/types/apps/layawayMaster'
 
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -46,10 +45,11 @@ import {
 
 import { Combobox, type ComboboxOption, type ComboboxHandle } from '../shared/Combobox'
 import { useUser } from '@/app/context/UserContext'
-import { CarVisual } from './CarVisual'
+import { CarVisual } from '../invoice-form/CarVisual'
+import { format } from 'date-fns'
 
 // Default sales-tax rate used for line-item tax calculation when the backend
-// does not expose a per-item rate. Adjust if a /api/TaxRate endpoint is wired.
+// does not expose a per-item rate.
 const DEFAULT_TAX_RATE = 8.25
 
 interface OptionalFormFieldProps {
@@ -87,7 +87,7 @@ interface DepartmentType {
 }
 
 // ---------- Draft line item (local-only "taxRate" for calc) ----------
-interface DraftItem extends Omit<InvoiceDetailsDto, 'tbid_LineTotal' | 'tbid_TaxAmt' | 'tbid_InvoiceId'> {
+interface DraftItem extends Omit<LayawayDetailsDto, 'tbid_LineTotal' | 'tbid_TaxAmt' | 'tbid_InvoiceId'> {
   taxRate: number
 }
 
@@ -119,7 +119,7 @@ const computeTaxAmt = (lineTotal: number, taxable: boolean, taxRate: number) =>
   taxable ? (lineTotal * (Number(taxRate) || 0)) / 100 : 0
 
 // ---------- Empty master (create) ----------
-const emptyMaster = (): InvoiceMasterDto => ({
+const emptyMaster = (): LayawayMasterDto => ({
   id: 0,
   tbim_InvoiceIdRad: 0,
   tbim_Phone: '',
@@ -146,9 +146,7 @@ const emptyMaster = (): InvoiceMasterDto => ({
   tbim_Delinfo: 'A',
   tbim_CompanyName: '',
   tbim_CompanyAddress: '',
-  tbim_Item_Delete_after_Invoice_Create: true,
-  tbim_LaywayNo: 0,
-  tbim_LaywayDate: getLocalISO(),
+  tbim_Item_Delete_after_Layaway_Create: true,
   userName: getUserName() ?? '',
   setDate: getLocalISO(),
   tbim_Left_Front: false,
@@ -158,7 +156,7 @@ const emptyMaster = (): InvoiceMasterDto => ({
   tbim_EmailAddress: '',
   tbim_IDNo: '',
   tbim_RefundType: 'N',
-  tbim_LocationDetailsId: 0,
+  tbim_LocationId: 0,
   locationName: '',
   taxCompanyName: '',
   taxIdentificationNumber: '',
@@ -166,18 +164,17 @@ const emptyMaster = (): InvoiceMasterDto => ({
   taxPhone: '',
   paymentMethodName: '',
   refundAmount: 0,
-  layawayRefund: [],
 })
 
-interface InvoiceFormProps {
+interface LayawayFormProps {
   mode: 'create' | 'edit'
-  invoiceId?: string
+  layawayId?: string
   /** When present in create mode, pre-fills master data (customer/vehicle/tax info)
-   *  from this source invoice but resets date, totals, details and payments. */
+   *  from this source layaway but resets date, totals, details and payments. */
   reorderId?: string
 }
 
-export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormProps) {
+export default function LayawayForm({ mode, layawayId, reorderId }: LayawayFormProps) {
   const router = useRouter()
   const isEdit = mode === 'edit'
   const isReorder = !isEdit && !!reorderId
@@ -200,19 +197,21 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
   const { data: departmentsData } = useSWR<DepartmentType[]>(getApiUrl('/api/Departments'), getFetcher)
 
   // ----- Edit-mode fetching -----
-  const editUrl = isEdit && invoiceId ? getApiUrl(`/api/InvoiceMaster/${invoiceId}`) : null
-  const { data: editData, isLoading: editLoading, mutate: mutateEdit } = useSWR<InvoiceListResponseItem>(editUrl, getFetcher)
+  const editUrl = isEdit && layawayId ? getApiUrl(`/api/LayawayMaster/${layawayId}`) : null
+  const { data: editData, isLoading: editLoading, mutate: mutateEdit } = useSWR<LayawayListResponseItem>(editUrl, getFetcher)
 
-  // ----- Reorder fetch (create from existing invoice, master data only) -----
-  const reorderUrl = isReorder && reorderId ? getApiUrl(`/api/InvoiceMaster/${reorderId}`) : null
-  const { data: reorderData, isLoading: reorderLoading } = useSWR<InvoiceListResponseItem>(reorderUrl, getFetcher)
+  // ----- Reorder fetch (create from existing layaway, master data only) -----
+  const reorderUrl = isReorder && reorderId ? getApiUrl(`/api/LayawayMaster/${reorderId}`) : null
+  const { data: reorderData, isLoading: reorderLoading } = useSWR<LayawayListResponseItem>(reorderUrl, getFetcher)
 
   // ----- Form state -----
-  const [master, setMaster] = useState<InvoiceMasterDto>(emptyMaster)
-  const [details, setDetails] = useState<InvoiceDetailsDto[]>([])
-  const [payments, setPayments] = useState<InvoicePaymentsDto[]>([])
-  const [layawayRefunds, setLayawayRefunds] = useState<LayawayRefundDto[]>([])
+  const [master, setMaster] = useState<LayawayMasterDto>(emptyMaster)
+  const [details, setDetails] = useState<LayawayDetailsDto[]>([])
+  const [payments, setPayments] = useState<LayawayPaymentsDto[]>([])
   const [hydrated, setHydrated] = useState(false)
+
+  // ----- Extra Layaway fields -----
+  const [importDate, setImportDate] = useState(getLocalISO())
 
   // ----- Child-entry sheet state -----
   const [itemSheetOpen, setItemSheetOpen] = useState(false)
@@ -232,19 +231,20 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
 
   const [paymentSheetOpen, setPaymentSheetOpen] = useState(false)
   const [editingPaymentIndex, setEditingPaymentIndex] = useState<number | null>(null)
-  const [draftPayment, setDraftPayment] = useState<InvoicePaymentsDto>(() => emptyPayment())
+  const [draftPayment, setDraftPayment] = useState<LayawayPaymentsDto>(() => emptyPayment())
 
   const [saving, setSaving] = useState(false)
+  const [importing, setImporting] = useState(false)
 
   // ----- Hydrate form from edit data -----
   useEffect(() => {
     if (isEdit && editData && !hydrated) {
-      const m = editData.invoiceMasterDto
+      const m = editData.layawayMasterDto
       setMaster({ ...m })
-      setAdjInput(String(m.tbim_AdjAmt ?? 0)) // sync Adjustment string state
-      setDetails(editData.invoiceDetailsDto ?? [])
-      setPayments(editData.invoicePaymentsDto ?? [])
-      setLayawayRefunds(m.layawayRefund ?? [])
+      setImportDate(m.tbim_InvDate || getLocalISO())
+      setAdjInput(String(m.tbim_AdjAmt ?? 0))
+      setDetails(editData.layawayDetailsDto ?? [])
+      setPayments(editData.layawayPaymentsDto ?? [])
       setHydrated(true)
     }
     if (!isEdit && !hydrated) {
@@ -252,16 +252,15 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     }
   }, [isEdit, editData, hydrated])
 
-  // Hydrate form from reorder data (create from existing invoice, master only)
+  // Hydrate form from reorder data (create from existing layaway, master only)
   useEffect(() => {
     if (isReorder && reorderData && !hydrated) {
-      const m = reorderData.invoiceMasterDto
+      const m = reorderData.layawayMasterDto
       setMaster({
         ...m,
         id: 0,
         tbim_InvoiceIdRad: 0,
         tbim_InvDate: getLocalISO(),
-        tbim_LaywayDate: getLocalISO(),
         setDate: getLocalISO(),
         tbim_SubTotal: 0,
         tbim_SaleTax: 0,
@@ -270,18 +269,16 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
         tbim_PaidAmt: 0,
         tbim_AdjAmt: 0,
         tbim_AdjTotal: 0,
-        layawayRefund: [],
       })
+      setImportDate(getLocalISO())
       setAdjInput('0')
       setDetails([])
       setPayments([])
-      setLayawayRefunds([])
       setHydrated(true)
     }
   }, [isReorder, reorderData, hydrated])
 
-  // Cleanup the flash-notification timer on unmount so there is no stale
-  // timeout after the component is gone.
+  // Cleanup the flash-notification timer on unmount.
   useEffect(() => () => {
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
   }, [])
@@ -296,12 +293,11 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     const adjAmt = Number(master.tbim_AdjAmt) || 0
     const total = adjAmt + subTotal + saleTax + labour - disAmt
     const totalPaid = payments.reduce((sum, p) => sum + (Number(p.tbip_PayAmt) || 0), 0)
-    const layawayTotal = layawayRefunds.reduce((sum, r) => sum + (Number(r.tbip_PayAmt) || 0), 0)
-    return { subTotal, saleTax, disAmt, labour, adjAmt, total, totalPaid, layawayTotal }
-  }, [details, payments, layawayRefunds, master.tbim_DisPer, master.tbim_Labour, master.tbim_AdjAmt])
+    return { subTotal, saleTax, disAmt, labour, adjAmt, total, totalPaid }
+  }, [details, payments, master.tbim_DisPer, master.tbim_Labour, master.tbim_AdjAmt])
 
   // ----- Setters -----
-  const setMasterField = <K extends keyof InvoiceMasterDto>(key: K, value: InvoiceMasterDto[K]) =>
+  const setMasterField = <K extends keyof LayawayMasterDto>(key: K, value: LayawayMasterDto[K]) =>
     setMaster((prev) => ({ ...prev, [key]: value }))
 
   const setWheel = (wheel: 'lf' | 'rf' | 'lr' | 'rr', value: boolean) => {
@@ -349,7 +345,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     const id = Number(itemId)
     const item = itemsData?.find((i) => i.id === id)
     if (item) {
-      // Pre-fill from the list data we already have
       setDraftItem((prev) => ({
         ...prev,
         tbid_ItemId: id,
@@ -364,7 +359,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
         tbid_DistributorId: item.tbim_DistributorId,
         tbid_DistributorName: item.distributorName ?? '',
       }))
-      // Fetch the canonical price (tbim_Code per BRS)
       try {
         const detail = await fetch(getApiUrl(`/api/ItemMaster/${id}`), {
           headers: {
@@ -412,9 +406,9 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     }
     const lineTotal = computeLineTotal(draftItem.tbid_UnitPrice, draftItem.tbid_Qty)
     const taxAmt = computeTaxAmt(lineTotal, draftItem.tbid_Taxable, draftItem.taxRate)
-    const row: InvoiceDetailsDto = {
+    const row: LayawayDetailsDto = {
       id: draftItem.id,
-      tbid_InvoiceId: Number(invoiceId ?? 0),
+      tbid_InvoiceId: Number(layawayId ?? 0),
       tbid_ItemId: draftItem.tbid_ItemId,
       tbid_ItemCategory: draftItem.tbid_ItemCategory,
       tbid_DepartmentName: draftItem.tbid_DepartmentName,
@@ -438,7 +432,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     }
 
     if (editingItemIndex !== null) {
-      // Editing an existing row: update and close (standard flow).
       setDetails((prev) => {
         const copy = [...prev]
         copy[editingItemIndex] = row
@@ -450,20 +443,14 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     }
 
     // ---- Add flow: keep the sheet open for rapid entry ----
-
     setDetails((prev) => [...prev, row])
 
-    // Flash a subtle success banner at the top of the panel.
     const addedName = itemDescription(draftItem) || draftItem.tbid_DepartmentName || 'Item'
     if (flashTimerRef.current) clearTimeout(flashTimerRef.current)
     setItemFlash({ key: (itemFlash?.key ?? 0) + 1, name: addedName, verb: 'added' })
     flashTimerRef.current = setTimeout(() => setItemFlash(null), 2500)
     setItemsAddedInSession((n) => n + 1)
 
-    // Reset the entry fields and refocus the item search box so the operator
-    // can immediately start typing the next item without clicking again.
-    // Keep qty=1 (the sensible default for the next line item) — only the
-    // item/price selection is cleared.
     setDraftItem({ ...emptyDraftItem(), tbid_Qty: 1 })
     setTimeout(() => itemComboboxRef.current?.focus(), 0)
   }
@@ -472,17 +459,14 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
   }
 
   // ----- Payment helpers -----
-  function emptyPayment(): InvoicePaymentsDto {
+  function emptyPayment(): LayawayPaymentsDto {
     return {
       id: 0,
-      tbip_InvoiceId: Number(invoiceId ?? 0),
+      tbip_InvoiceId: Number(layawayId ?? 0),
       tbip_PaymentId: 0,
       tbip_PayAmt: 0,
       tbip_Date: getLocalISO(),
       tbip_PaymentType: 'F',
-      tbip_LayawayId: 0,
-      tdip_fromlayaway: 'N',
-      tbip_LayawayDate: getLocalISO(),
       paymentName: '',
     }
   }
@@ -502,7 +486,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       return
     }
     const method = paymentNamesData?.find((p) => p.id === Number(draftPayment.tbip_PaymentId))
-    const row: InvoicePaymentsDto = {
+    const row: LayawayPaymentsDto = {
       ...draftPayment,
       tbip_PayAmt: Number(draftPayment.tbip_PayAmt) || 0,
       paymentName: method?.tbpn_PaymentName ?? '',
@@ -519,6 +503,29 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
   }
   const removePayment = (index: number) => setPayments((prev) => prev.filter((_, i) => i !== index))
 
+  // ----- Import to Invoice -----
+  // The "Import Date" datepicker value is sent as an `importDate` query
+  // parameter, formatted yyyy-MM-dd to match the other datepickers in the
+  // project (e.g. the datatable filter bar).
+  const handleImportToInvoice = async () => {
+    if (!isEdit || !layawayId) return
+    setImporting(true)
+    try {
+      const importDateParam = importDate
+        ? format(new Date(importDate), 'yyyy-MM-dd')
+        : format(new Date(), 'yyyy-MM-dd')
+      await postFetcher(
+        getApiUrl(`/api/LayawayMaster/importtoinvoice/${layawayId}?importDate=${importDateParam}`),
+        {},
+      )
+      toast.success('Layaway imported to Invoice successfully')
+      router.push('/react-tables/transaction/invoice')
+    } catch {
+      toast.error('Failed to import layaway to invoice')
+    } finally {
+      setImporting(false)
+    }
+  }
 
   // ----- Save -----
   const handleSave = async () => {
@@ -530,7 +537,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       toast.error('Phone Number is required')
       return
     }
-    // Sanity checks: payment vs amount
     if (totals.totalPaid > totals.total) {
       toast.error('Paid amount cannot exceed the total amount.')
       return
@@ -544,9 +550,9 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       const userName = getUserName() ?? ''
       const setDate = getLocalISO()
       const payload = {
-        invoiceMasterDto: {
+        layawayMasterDto: {
           ...master,
-          tbim_LocationDetailsId: locationId,
+          tbim_LocationId: locationId,
           tbim_SubTotal: totals.subTotal,
           tbim_SaleTax: totals.saleTax,
           tbim_DisAmt: totals.disAmt,
@@ -554,31 +560,25 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
           tbim_PaidAmt: totals.totalPaid,
           tbim_AdjTotal: totals.total,
           tbim_RefundType: master.tbim_RefundType || 'N',
-          refundAmount: totals.layawayTotal,
-          layawayRefund: layawayRefunds,
           userName,
           setDate,
         },
-        invoiceDetailsDto: details.map((d) =>
+        layawayDetailsDto: details.map((d) =>
           d.id === 0 ? { ...d, id: 0 } : d
         ),
-        invoicePaymentsDto: payments,
+        layawayPaymentsDto: payments,
       }
-      if (isEdit && invoiceId) {
-        // Note: EditInvoice uses POST, not PUT — the .NET controller
-        // decorates this action with [HttpPost] despite the "Edit" naming.
-        await postFetcher(getApiUrl(`/api/InvoiceMaster/EditInvoice?id=${invoiceId}`), payload)
-        // Invalidate the SWR cache for this invoice so the next time the
-        // edit form mounts, it fetches fresh data instead of stale cache.
+      if (isEdit && layawayId) {
+        await postFetcher(getApiUrl(`/api/LayawayMaster/EditLayaway?id=${layawayId}`), payload)
         mutateEdit()
-        toast.success('Invoice updated successfully')
+        toast.success('Layaway updated successfully')
       } else {
-        await postFetcher(getApiUrl('/api/InvoiceMaster/CreateInvoice'), payload)
-        toast.success('Invoice created successfully')
+        await postFetcher(getApiUrl('/api/LayawayMaster/CreateLayaway'), payload)
+        toast.success('Layaway created successfully')
       }
-      router.push('/react-tables/transaction/invoice')
+      router.push('/react-tables/transaction/layaway')
     } catch (err) {
-      toast.error(isEdit ? 'Failed to update invoice' : 'Failed to create invoice')
+      toast.error(isEdit ? 'Failed to update layaway' : 'Failed to create layaway')
     } finally {
       setSaving(false)
     }
@@ -615,8 +615,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     }))
   }, [itemsData, itemCategory])
 
-  // Clear the selected item when the category filter changes so the
-  // Combobox doesn't show a stale item that isn't in the new category.
   const handleCategoryChange = (value: string) => {
     setItemCategory(value)
     setDraftItem((prev) => ({ ...prev, tbid_ItemId: null, tbid_UnitPrice: 0, tbid_DepartmentName: '' }))
@@ -627,7 +625,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       .filter((p) => p.tbpn_IsActive)
       .map((p) => ({ value: String(p.id), label: p.tbpn_PaymentName }))
 
-  if ((isEdit && editLoading || isReorder && reorderLoading) && !hydrdratedReady(hydrated)) {
+  if ((isEdit && editLoading || isReorder && reorderLoading) && !hydrated) {
     return (
       <div className='flex h-64 items-center justify-center'>
         <Icon icon='svg-spinners:ring-resize' width={32} height={32} className='text-primary' />
@@ -635,18 +633,17 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     )
   }
 
-  // Close buttons for the bottom toolbar
   return (
     <div className='space-y-5'>
       {/* Page header */}
       <Card className='p-4 md:p-5'>
         <div>
           <h4 className='text-lg font-semibold text-ld dark:text-darklink'>
-            {isEdit ? `Edit Invoice #${master.tbim_InvoiceIdRad || invoiceId}` : 'Create New Invoice'}
+            {isEdit ? `Edit Layaway #${master.tbim_InvoiceIdRad || layawayId}` : 'Create New Layaway'}
           </h4>
           <p className='text-sm text-darklink dark:text-bodytext'>
             {isEdit
-              ? 'Update the invoice details below'
+              ? 'Update the layaway details below'
               : 'Log the work on the left, then settle payment on the right'}
           </p>
         </div>
@@ -769,7 +766,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
             <div className='mb-4 flex items-center justify-between'>
               <div className='flex items-center gap-2'>
                 <Icon icon='solar:bill-list-linear' width={20} height={20} className='text-primary' />
-                <h6 className='font-semibold text-ld dark:text-darklink'>Invoice Items</h6>
+                <h6 className='font-semibold text-ld dark:text-darklink'>Layaway Items</h6>
               </div>
               <Button size='sm' onClick={openAddItemSheet}>
                 <Icon icon='solar:add-circle-linear' width={18} height={18} />
@@ -841,9 +838,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
             </div>
 
             {/* ---- Calculation breakdown (right-aligned, directly under the items) ---- */}
-            {/* Kept under the table — not in a right sidebar — so the operator's eyes stay
-                on the left while verifying how subtotal / tax / discount / labour / adjustment
-                combine into the final Total. */}
             <div className='mt-4 flex justify-end'>
               <div className='w-full max-w-sm space-y-2.5 rounded-lg border border-ld bg-lightprimary/10 p-4 dark:bg-darkinfo/5'>
                 {/* Sub Total */}
@@ -866,13 +860,13 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
                   </div>
                 </div>
 
-                {/* Tax (line-item tax, plainly labeled) */}
+                {/* Tax */}
                 <div className='flex items-center justify-between text-sm'>
                   <span className='text-darklink dark:text-bodytext'>Tax</span>
                   <span className='font-semibold text-ld dark:text-darklink'>${money(totals.saleTax)}</span>
                 </div>
 
-                {/* Discount — cohesive row with % input + live computed amount */}
+                {/* Discount */}
                 <div className='flex items-center justify-between gap-3 text-sm'>
                   <span className='text-darklink dark:text-bodytext'>Discount</span>
                   <div className='flex items-center gap-1.5'>
@@ -906,8 +900,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
                         setMasterField('tbim_AdjAmt', e.target.value === '' || e.target.value === '-' ? 0 : Number(e.target.value))
                       }}
                       onBlur={() => {
-                        // On blur, ensure the display is synced to the canonical numeric value
-                        // (handles cases like typing "-" then clicking away)
                         setAdjInput(String(master.tbim_AdjAmt))
                       }}
                       className='h-8 text-right'
@@ -916,7 +908,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
                   </div>
                 </div>
 
-                {/* Total — large & prominent */}
+                {/* Total */}
                 <div className='mt-1 flex items-center justify-between rounded-lg bg-primary px-3.5 py-2.5'>
                   <span className='font-semibold text-white'>Total Amount</span>
                   <span className='text-xl font-bold text-white'>${money(totals.total)}</span>
@@ -929,7 +921,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
           </Card>
         </div>
 
-        {/* RIGHT: payments + layaway + actions (the payment/settlement workflow) */}
+        {/* RIGHT: payments + layaway-specific actions */}
         <div className='space-y-5'>
 
           {/* Payment type + payments */}
@@ -1011,47 +1003,41 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
             </div>
           </Card>
 
-          {/* Layaway refund — view-only, shown only when editing (refund entries
-              originate from a layaway; not applicable when creating a new invoice) */}
+          {/* ---- Import Date & Import to Invoice (Layaway-specific, shown only in edit mode) ---- */}
           {isEdit && (
-          <Card className='p-4 md:p-5'>
-            <div className='mb-4 flex items-center gap-2'>
-              <Icon icon='solar:undo-left-round-linear' width={20} height={20} className='text-primary' />
-              <h6 className='font-semibold text-ld dark:text-darklink'>Payment Refund from Layaway</h6>
-            </div>
-            <div className='mb-3 flex items-center justify-between rounded-md bg-lightsuccess/40 px-3 py-2 dark:bg-lightsuccess/10'>
-              <span className='text-sm text-darklink dark:text-bodytext'>Layaway Refund Total</span>
-              <span className='font-semibold text-success'>${money(totals.layawayTotal)}</span>
-            </div>
-            <div className='overflow-x-auto rounded-lg border border-ld'>
-              <Table>
-                <TableHeader>
-                  <TableRow className='bg-lightprimary/20 dark:bg-darkinfo/10'>
-                    <TableHead className='text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Method</TableHead>
-                    <TableHead className='text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Amount</TableHead>
-                    <TableHead className='text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {layawayRefunds.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={3} className='h-16 text-center text-sm text-darklink dark:text-bodytext'>
-                        No layaway refunds.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    layawayRefunds.map((r, i) => (
-                      <TableRow key={`${r.id}-${i}`} className='border-b border-ld transition-colors duration-200 hover:bg-lightprimary/30 last:border-b-0'>
-                        <TableCell>{r.paymentName || '-'}</TableCell>
-                        <TableCell className='text-right font-medium'>${money(r.tbip_PayAmt)}</TableCell>
-                        <TableCell>{formatShortDate(r.tbip_Date)}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </Card>
+            <Card className='p-4 md:p-5'>
+              <div className='mb-4 flex items-center gap-2'>
+                <Icon icon='solar:import-linear' width={20} height={20} className='text-primary' />
+                <h6 className='font-semibold text-ld dark:text-darklink'>Import to Invoice</h6>
+              </div>
+              <p className='mb-3 text-sm text-darklink dark:text-bodytext'>
+                Set the date and import this layaway to an invoice.
+              </p>
+              <Field label='Import Date'>
+                <Input
+                  type='date'
+                  value={toDateInput(importDate)}
+                  onChange={(e) => setImportDate(fromDateInput(e.target.value))}
+                />
+              </Field>
+              <Button
+                className='mt-3 w-full'
+                onClick={handleImportToInvoice}
+                disabled={importing}
+              >
+                {importing ? (
+                  <>
+                    <Icon icon='svg-spinners:ring-resize' width={18} height={18} />
+                    Importing...
+                  </>
+                ) : (
+                  <>
+                    <Icon icon='solar:import-linear' width={18} height={18} />
+                    Import to Invoice
+                  </>
+                )}
+              </Button>
+            </Card>
           )}
 
           {/* ---- Settlement summary + actions ---- */}
@@ -1065,12 +1051,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
                 <span className='text-darklink dark:text-bodytext'>Total Paid</span>
                 <span className='font-semibold text-success'>${money(totals.totalPaid)}</span>
               </div>
-              {isEdit && (
-              <div className='flex items-center justify-between text-sm'>
-                <span className='text-darklink dark:text-bodytext'>Layaway Refund</span>
-                <span className='font-semibold text-success'>${money(totals.layawayTotal)}</span>
-              </div>
-              )}
               <div className='flex items-center justify-between rounded-md bg-primary/10 px-3 py-2'>
                 <span className='text-sm font-medium text-primary'>Balance</span>
                 <span className='text-sm font-bold text-primary'>
@@ -1088,7 +1068,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
                 ) : (
                   <>
                     <Icon icon='solar:diskette-linear' width={18} height={18} />
-                    {isEdit ? 'Update Invoice' : 'Save Invoice'}
+                    {isEdit ? 'Update Layaway' : 'Save Layaway'}
                   </>
                 )}
               </Button>
@@ -1109,7 +1089,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
             <SheetDescription>Select an item from inventory, then set quantity and tax.</SheetDescription>
           </SheetHeader>
           <div className='space-y-4 px-4 pb-8'>
-            {/* Success flash banner — auto-dismissed after each add */}
             {itemFlash && (
               <div
                 key={itemFlash.key}
@@ -1196,7 +1175,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
               </Button>
               <Button onClick={commitItem}>
                 <Icon icon='solar:check-circle-linear' width={18} height={18} />
-                {editingItemIndex !== null ? 'Update Item' : 'Add to Invoice'}
+                {editingItemIndex !== null ? 'Update Item' : 'Add to Layaway'}
               </Button>
             </div>
           </div>
@@ -1208,7 +1187,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
         <SheetContent side='right' className='w-full overflow-y-auto sm:max-w-md'>
           <SheetHeader className='px-4 pt-4'>
             <SheetTitle>{editingPaymentIndex !== null ? 'Edit Payment' : 'Add Payment'}</SheetTitle>
-            <SheetDescription>Record a payment against this invoice.</SheetDescription>
+            <SheetDescription>Record a payment against this layaway.</SheetDescription>
           </SheetHeader>
           <div className='space-y-4 px-4 pb-8'>
             <Field label='Payment Method' required>
@@ -1244,8 +1223,6 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
           </div>
         </SheetContent>
       </Sheet>
-
-      {/* Layaway Refund is view-only — the Add/Edit Sheet has been removed */}
     </div>
   )
 }
@@ -1279,9 +1256,4 @@ function formatShortDate(iso?: string): string {
   if (Number.isNaN(d.getTime())) return iso
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`
-}
-
-// Helper to gate the edit loading spinner until hydration completes.
-function hydrdratedReady(hydrated: boolean): boolean {
-  return hydrated
 }

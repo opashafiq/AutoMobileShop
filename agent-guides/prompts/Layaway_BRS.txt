@@ -795,8 +795,12 @@ Layaway Master List Grid and CRUD:
    a) There will be no section named : Payment Refund from Layaway
    b) All the labels will be renamed to Layaway from Invoice to match the form accordingly. 
       Please do justify renaming before doing and apply your own intelligence while renaming so that it seems meaningful.
-   
-   
+   c) There will be two extra items in the form:
+      Import Date -> Date Selection field, current date by default   
+      Import to Invoice -> Button. 
+	     On clicking it will call the Post Api: https://localhost:7184/api/LayawayMaster/importtoinvoice/{id} (Here id is the layawayMasterDto id)
+		 The Api will move the record from the LayawayMaster to InvoiceMaster.
+		 On Success Response, it will route to InvoiceMaster datatable page and refresh data.
    
    
    

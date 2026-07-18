@@ -20,11 +20,11 @@ import { toast, ToastContainer } from 'react-toastify'
 
 import { getApiUrl, getFetcher, deleteFetcher } from '@/app/api/globalFetcher'
 import {
-  type InvoiceListResponse,
-  type InvoiceListResponseItem,
-  type InvoiceMasterDto,
-  type InvoiceDetailsDto,
-} from '@/app/(DashboardLayout)/types/apps/invoiceMaster'
+  type LayawayListResponse,
+  type LayawayListResponseItem,
+  type LayawayMasterDto,
+  type LayawayDetailsDto,
+} from '@/app/(DashboardLayout)/types/apps/layawayMaster'
 
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -89,7 +89,7 @@ const getBalanceClass = (total: number, paid: number): string => {
   return 'font-medium text-error'
 }
 
-// Map a column id to the nested path on InvoiceListResponseItem for filter data extraction.
+// Map a column id to the nested path on LayawayListResponseItem for filter data extraction.
 const MASTER_ACCESSORS: Record<string, string> = {
   transactionId: 'tbim_InvoiceIdRad',
   customerName: 'tbim_Name',
@@ -103,9 +103,9 @@ const MASTER_ACCESSORS: Record<string, string> = {
 
 const FILTERABLE_COLUMNS = ['customerName', 'phone', 'paymentType', 'paidAmount', 'refundAmount', 'totalAmount']
 
-const columnHelper = createColumnHelper<InvoiceListResponseItem>()
+const columnHelper = createColumnHelper<LayawayListResponseItem>()
 
-export default function InvoiceDatatable() {
+export default function LayawayDatatable() {
   const router = useRouter()
   const toastShown = useRef(false)
 
@@ -124,10 +124,10 @@ export default function InvoiceDatatable() {
   const [filterParams, setFilterParams] = useState('')
 
   const queryString = `pageNumber=${pageNumber}&pageSize=${pageSize}${filterParams ? `&${filterParams}` : ''}`
-  const API_URL = getApiUrl(`/api/InvoiceMaster?${queryString}`)
-  const { data, isLoading, error, mutate } = useSWR<InvoiceListResponse>(API_URL, getFetcher)
+  const API_URL = getApiUrl(`/api/LayawayMaster?${queryString}`)
+  const { data, isLoading, error, mutate } = useSWR<LayawayListResponse>(API_URL, getFetcher)
 
-  const [tableData, setTableData] = useState<InvoiceListResponseItem[]>([])
+  const [tableData, setTableData] = useState<LayawayListResponseItem[]>([])
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
   const [rowSelection, setRowSelection] = useState({})
@@ -148,7 +148,7 @@ export default function InvoiceDatatable() {
   const [feedback, setFeedback] = useState<string | null>(null)
 
   // Delete state
-  const [deleteTarget, setDeleteTarget] = useState<InvoiceListResponseItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<LayawayListResponseItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
@@ -188,23 +188,23 @@ export default function InvoiceDatatable() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      const id = deleteTarget.invoiceMasterDto.id
-      await deleteFetcher(`${getApiUrl('/api/InvoiceMaster')}/${id}`)
+      const id = deleteTarget.layawayMasterDto.id
+      await deleteFetcher(`${getApiUrl('/api/LayawayMaster')}/${id}`)
       // If this was the last row on the current page, step back one page so
       // we don't end up fetching an empty page.
       if (tableData.length === 1 && pageNumber > 1) setPageNumber((p) => p - 1)
       else mutate()
-      setFeedback('Invoice deleted')
+      setFeedback('Layaway deleted')
       setDeleteTarget(null)
     } catch {
-      setFeedback('Failed to delete invoice')
+      setFeedback('Failed to delete layaway')
     } finally {
       setIsDeleting(false)
     }
   }
 
   // ---- columns ----
-  const allColumns = useMemo<ColumnDef<InvoiceListResponseItem>[]>(() => {
+  const allColumns = useMemo<ColumnDef<LayawayListResponseItem>[]>(() => {
     return [
       columnHelper.display({
         id: 'select',
@@ -243,36 +243,36 @@ export default function InvoiceDatatable() {
         id: 'transactionId',
         header: 'Transaction ID',
         cell: ({ row }) => (
-          <span className='font-semibold text-primary'>{row.original.invoiceMasterDto.tbim_InvoiceIdRad || '-'}</span>
+          <span className='font-semibold text-primary'>{row.original.layawayMasterDto.tbim_InvoiceIdRad || '-'}</span>
         ),
       }),
       columnHelper.display({
         id: 'customerName',
         header: 'Customer Name',
-        cell: ({ row }) => <p className='text-sm'>{row.original.invoiceMasterDto.tbim_Name || '-'}</p>,
+        cell: ({ row }) => <p className='text-sm'>{row.original.layawayMasterDto.tbim_Name || '-'}</p>,
       }),
       columnHelper.display({
         id: 'invoiceDate',
         header: 'Date',
-        cell: ({ row }) => <p className='text-sm'>{formatDate(row.original.invoiceMasterDto.tbim_InvDate)}</p>,
+        cell: ({ row }) => <p className='text-sm'>{formatDate(row.original.layawayMasterDto.tbim_InvDate)}</p>,
       }),
       columnHelper.display({
         id: 'totalAmount',
         header: 'Total Amount',
-        cell: ({ row }) => <p className='text-sm font-semibold'>${formatMoney(row.original.invoiceMasterDto.tbim_Total)}</p>,
+        cell: ({ row }) => <p className='text-sm font-semibold'>${formatMoney(row.original.layawayMasterDto.tbim_Total)}</p>,
       }),
       columnHelper.display({
         id: 'phone',
         header: 'Phone No',
-        cell: ({ row }) => <p className='text-sm'>{row.original.invoiceMasterDto.tbim_Phone || '-'}</p>,
+        cell: ({ row }) => <p className='text-sm'>{row.original.layawayMasterDto.tbim_Phone || '-'}</p>,
       }),
       columnHelper.display({
         id: 'paymentType',
         header: 'Payment Type',
         cell: ({ row }) => (
           <p className='text-sm'>
-            {row.original.invoiceMasterDto.paymentMethodName ||
-              PAY_LABEL[row.original.invoiceMasterDto.tbim_PayInfo] ||
+            {row.original.layawayMasterDto.paymentMethodName ||
+              PAY_LABEL[row.original.layawayMasterDto.tbim_PayInfo] ||
               '-'}
           </p>
         ),
@@ -280,18 +280,18 @@ export default function InvoiceDatatable() {
       columnHelper.display({
         id: 'paidAmount',
         header: 'Paid Amount',
-        cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.invoiceMasterDto.tbim_PaidAmt)}</p>,
+        cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.layawayMasterDto.tbim_PaidAmt)}</p>,
       }),
       columnHelper.display({
         id: 'refundAmount',
         header: 'Refund Amount',
-        cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.invoiceMasterDto.refundAmount)}</p>,
+        cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.layawayMasterDto.refundAmount)}</p>,
       }),
       columnHelper.display({
         id: 'actions',
         header: 'Actions',
         cell: ({ row }) => {
-          const invId = row.original.invoiceMasterDto.id
+          const invId = row.original.layawayMasterDto.id
           return (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -301,14 +301,14 @@ export default function InvoiceDatatable() {
               </DropdownMenuTrigger>
               <DropdownMenuContent className='shadow dark:shadow-white/20'>
                 <DropdownMenuCheckboxItem
-                  onClick={() => router.push(`/react-tables/transaction/invoice/${invId}/edit`)}
+                  onClick={() => router.push(`/react-tables/transaction/layaway/${invId}/edit`)}
                   className='cursor-pointer'
                 >
                   <Icon icon='solar:pen-2-linear' width={20} height={20} className='me-2' />
                   Edit
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
-                  onClick={() => router.push(`/react-tables/transaction/invoice/create?reorder=${invId}`)}
+                  onClick={() => router.push(`/react-tables/transaction/layaway/create?reorder=${invId}`)}
                   className='cursor-pointer'
                 >
                   <Icon icon='solar:refresh-circle-linear' width={20} height={20} className='me-2' />
@@ -328,7 +328,7 @@ export default function InvoiceDatatable() {
         },
         enableSorting: false,
       }),
-    ] as ColumnDef<InvoiceListResponseItem>[]
+    ] as ColumnDef<LayawayListResponseItem>[]
   }, [router])
 
   // Filter columns based on visibility
@@ -379,7 +379,7 @@ export default function InvoiceDatatable() {
       const accessor = MASTER_ACCESSORS[colId]
       if (accessor) {
         map[colId] = tableData.map((row) => {
-          const v = (row.invoiceMasterDto as any)[accessor]
+          const v = (row.layawayMasterDto as any)[accessor]
           return v as string | number | undefined
         })
       }
@@ -392,16 +392,15 @@ export default function InvoiceDatatable() {
     () => applyColumnFilters(
       tableData as unknown as Record<string, unknown>[],
       columnFilters,
-    ) as unknown as InvoiceListResponseItem[],
+    ) as unknown as LayawayListResponseItem[],
     [tableData, columnFilters],
   )
 
   // Build a compact list of page numbers (with ellipses) for the pager.
-  // e.g. 1 … 4 [5] 6 … 14
   const pageNumbers = useMemo<(number | '…')[]>(() => {
     if (totalPages <= 1) return totalPages === 1 ? [1] : []
     const pages: (number | '…')[] = []
-    const windowSize = 1 // number of neighbours on each side of the current page
+    const windowSize = 1
     const start = Math.max(1, pageNumber - windowSize)
     const end = Math.min(totalPages, pageNumber + windowSize)
     if (start > 1) {
@@ -434,17 +433,16 @@ export default function InvoiceDatatable() {
 
   // ---- bulk delete (defined after `table` so it can reference it) ----
   const handleBulkDelete = useCallback(() => {
-    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.invoiceMasterDto.id)
+    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.layawayMasterDto.id)
     if (selectedIds.length === 0) return
     selectedIds.forEach((id) => {
-      deleteFetcher(`${getApiUrl('/api/InvoiceMaster')}/${id}`).catch(() => {})
+      deleteFetcher(`${getApiUrl('/api/LayawayMaster')}/${id}`).catch(() => {})
     })
     // Re-fetch the current page from the server so totals/counts stay in sync.
-    // If the whole page was selected, step back a page so we don't fetch an empty one.
     if (selectedIds.length >= tableData.length && pageNumber > 1) setPageNumber((p) => p - 1)
     else mutate()
     table.resetRowSelection()
-    setFeedback(`Deleted ${selectedIds.length} invoice(s)`)
+    setFeedback(`Deleted ${selectedIds.length} layaway(s)`)
   }, [table, tableData, pageNumber, mutate])
 
   // ---- CSV export ----
@@ -464,7 +462,7 @@ export default function InvoiceDatatable() {
   const handleExportCSV = useCallback(() => {
     const rows = filteredData.map((row) =>
       visibleExportKeys.map((key) => {
-        const m = row.invoiceMasterDto
+        const m = row.layawayMasterDto
         switch (key) {
           case 'transactionId': return m.tbim_InvoiceIdRad
           case 'customerName': return m.tbim_Name
@@ -485,7 +483,7 @@ export default function InvoiceDatatable() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'invoices.csv'
+    a.href = url; a.download = 'layaways.csv'
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }, [filteredData, visibleExportKeys, exportHeaders])
@@ -496,7 +494,7 @@ export default function InvoiceDatatable() {
         {/* ---- Toolbar ---- */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            Manage Invoices
+            Manage Layaways
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {!showSearch ? (
@@ -510,7 +508,7 @@ export default function InvoiceDatatable() {
                 value={globalFilter ?? ''}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 onBlur={() => { if (!globalFilter) setShowSearch(false) }}
-                aria-label='Search invoices'
+                aria-label='Search layaways'
               />
             )}
             <DropdownMenu>
@@ -565,8 +563,8 @@ export default function InvoiceDatatable() {
                 Clear Filters
               </Button>
             )}
-            <Button variant='lightprimary' shape='pill' onClick={() => router.push('/react-tables/transaction/invoice/create')} aria-label='Create Invoice'>
-              Create Invoice
+            <Button variant='lightprimary' shape='pill' onClick={() => router.push('/react-tables/transaction/layaway/create')} aria-label='Create Layaway'>
+              Create Layaway
             </Button>
           </div>
         </div>
@@ -668,7 +666,7 @@ export default function InvoiceDatatable() {
         {/* ---- Error banner ---- */}
         {error && (
           <div className='mb-4 rounded-lg border border-error/30 bg-error/5 p-4 text-sm text-error'>
-            Failed to load invoices. Please ensure the backend API is reachable.
+            Failed to load layaways. Please ensure the backend API is reachable.
           </div>
         )}
 
@@ -719,7 +717,7 @@ export default function InvoiceDatatable() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={visibleColumns.length} className='text-center py-8 text-sm text-darklink dark:text-bodytext'>
-                        {isLoading ? 'Loading invoices...' : 'No invoices found.'}
+                        {isLoading ? 'Loading layaways...' : 'No layaways found.'}
                       </td>
                     </tr>
                   ) : (
@@ -733,7 +731,7 @@ export default function InvoiceDatatable() {
           </div>
         </div>
 
-        {/* ---- Pagination (server-side: pageNumber / pageSize / totalCount / totalPages) ---- */}
+        {/* ---- Pagination ---- */}
         {totalCount > 0 ? (
           <div className='flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 gap-3'>
             <div className='flex items-center gap-2'>
@@ -800,10 +798,10 @@ export default function InvoiceDatatable() {
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <DialogContent className='max-w-sm'>
           <DialogHeader>
-            <DialogTitle>Delete Invoice</DialogTitle>
+            <DialogTitle>Delete Layaway</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete invoice{' '}
-              <span className='font-semibold text-primary'>{deleteTarget?.invoiceMasterDto.tbim_InvoiceIdRad}</span>
+              Are you sure you want to delete layaway{' '}
+              <span className='font-semibold text-primary'>{deleteTarget?.layawayMasterDto.tbim_InvoiceIdRad}</span>
               ? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
@@ -821,13 +819,13 @@ export default function InvoiceDatatable() {
   )
 }
 
-// ---- Expanded row detail (kept in its own component for readability) ----
+// ---- Expanded row detail ----
 function FragmentRow({ row, index }: { row: any; index: number }) {
-  const master: InvoiceMasterDto = row.original.invoiceMasterDto
-  const details: InvoiceDetailsDto[] = row.original.invoiceDetailsDto || []
+  const master: LayawayMasterDto = row.original.layawayMasterDto
+  const details: LayawayDetailsDto[] = row.original.layawayDetailsDto || []
   const hasRefund = (Number(master.refundAmount) || 0) > 0
 
-  const buildDescription = (d: InvoiceDetailsDto): string =>
+  const buildDescription = (d: LayawayDetailsDto): string =>
     [d.tbid_DepartmentName, d.tbid_Size, d.tbid_Brand, d.tbid_Series, d.tbid_Bolt, d.tbid_HoleS, d.tbid_Zone]
       .filter((v) => v !== null && v !== undefined && String(v).trim() !== '')
       .join(', ')

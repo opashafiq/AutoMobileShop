@@ -12,11 +12,16 @@ const BCrumb = [
   { to: '', title: 'Create' },
 ]
 
-export default function CreateInvoicePage() {
+interface CreatePageProps {
+  searchParams: Promise<{ reorder?: string }>
+}
+
+export default async function CreateInvoicePage({ searchParams }: CreatePageProps) {
+  const { reorder } = await searchParams
   return (
     <>
-      <BreadcrumbComp title='Create Invoice' items={BCrumb} />
-      <InvoiceForm mode='create' />
+      <BreadcrumbComp title={reorder ? 'Reorder Invoice' : 'Create Invoice'} items={BCrumb} />
+      <InvoiceForm mode='create' reorderId={reorder} />
     </>
   )
 }

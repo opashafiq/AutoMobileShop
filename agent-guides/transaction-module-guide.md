@@ -93,7 +93,14 @@ Define all DTOs matching the backend API response shapes:
 - Per-column filters use the shared `ColumnFilterInput` popover (`@/app/components/react-tables/shared/ColumnFilterInput`) + `applyColumnFilters` from `columnFilterUtils` — declare a `FILTERABLE_COLUMNS` allowlist and a `MASTER_ACCESSORS` map (column id → nested field on the row DTO) so the filter util can extract sample data
 - Columns: Transaction ID, Customer Name, Date, Total, Phone, Payment Type, Paid Amount, Refund Amount
 - Row-selection checkbox column (bulk delete)
-- Actions column: a `DropdownMenu` (dots) with Edit (navigates to edit page) + Delete (confirm dialog + API call)
+- Actions column: a `DropdownMenu` (dots) with **Edit** (navigates to edit page), **Reorder** (navigates to create page with `?reorder=<id>`), and **Delete** (confirm dialog + API call)
+- The **Reorder** action navigates to `/react-tables/transaction/invoice/create?reorder=<id>`. The create form detects the `reorderId` prop (read from `searchParams.reorder`), fetches the source invoice's **master data only** (ignores `invoiceDetailsDto` and `invoicePaymentsDto`), then pre-fills all customer/vehicle/tax fields while resetting:
+  - `id` → 0 (new record)
+  - `tbim_InvoiceIdRad` → 0 (server-generated)
+  - `tbim_InvDate` → current date/time
+  - All financial fields (`tbim_SubTotal`, `tbim_SaleTax`, `tbim_DisAmt`, `tbim_Total`, `tbim_PaidAmt`, `tbim_AdjAmt`, etc.) → 0 (they will be recomputed as new items/payments are entered)
+  - `layawayRefund` → empty array
+  - Details and payments arrays remain empty — the user enters them manually from scratch
 - Expandable rows for invoice details (follows `OrderDataTable.tsx` pattern); the expanded detail is a plain `<tr>` rendered after the `AnimatedTableRow`
 - Standard pagination with a page-size `Select` ([3,10,20,30,40,50]), `start-end of total` summary, and `solar:arrow-left/right-line-duotone` nav icons
 - **API-side filter bar** (toggleable): A hidden-until-clicked filter panel invoked by a pill filter button in the toolbar (uses `solar:filter-linear` / `solar:close-circle-outline` icons for open/close state). When visible, it displays:

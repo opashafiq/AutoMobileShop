@@ -10,3 +10,6 @@ Page redirects to dashboard → UserProvider rehydrates from localStorage → us
 Invoice create/edit → useUser() returns locationId → on save, tbim_LocationDetailsId = locationId
 Logout → clearToken() → user object cleared → useUser() returns { locationId: 0 }
 Browser/tab closed → sessionStorage would be lost but localStorage persists; since the token also persists, the user stays logged in and UserProvider rehydrates on next load. To fully clear on browser close you'd need sessionStorage, but then rehydration on a reopened tab would fail — localStorage was chosen to match the token's existing persistence behaviour (the token uses localStorage too).
+
+
+agent-guides/layaway-module-guide.md — has the full file map, endpoint table, type-diff notes vs Invoice, a "Modification Cheatsheet" mapping each common change to the exact file/anchor, and build verification steps. Next time you want to tweak the LayawayMaster page, start there.

@@ -189,6 +189,12 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/react-tables/transaction/invoice",
       },
+      {
+        name: "Layaway",
+        icon: "solar:hand-money-linear",
+        id: uniqueId(),
+        url: "/react-tables/transaction/layaway",
+      },
     ],
   },
   {
