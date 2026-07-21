@@ -1,0 +1,1050 @@
+Related API's:
+1) Get the list of invoiceRefundMasterDto with all the details and payments.
+   https://localhost:44352/api/InvoiceRefundMaster?pageNumber=1&pageSize=2
+   
+   Optional query parameters:
+   refundTransactionId long
+   invoiceTransactionId long
+   customerName string
+   phoneNo string
+   startDate string($date-time)
+   endDate string($date-time)
+   
+   Response will be:
+   
+   {
+  "items": [
+    {
+      "invoiceRefundMasterDto": {
+        "id": 22,
+        "tbirm_InvoiceRefundIdRad": 201237409712,
+        "tbirm_InvRefundDate": "2026-04-13T00:00:00",
+        "tbirm_RefundType": "P",
+        "tbirm_InvoiceId": 54037,
+        "tbirm_SubTotal": 190,
+        "tbirm_SaleTax": 15.68,
+        "tbirm_Labour": 0,
+        "tbirm_DisPer": 0,
+        "tbirm_DisAmt": 0,
+        "tbirm_Total": 205.68,
+        "tbirm_RefundAmt": 205.68,
+        "tbirm_AdjAmt": 0,
+        "tbirm_Note": "AAA",
+        "tbirm_Delinfo": "A",
+        "tbirm_Item_Delete_after_Invoice_Refund_Create": false,
+        "userName": "adminuser",
+        "setDate": "2026-04-13T20:21:00",
+		"originalInvoiceName": "",
+		"originalInvoiceDate": "2026-07-20T04:47:22.270Z",
+		"tbim_InvoiceIdRad": 3454664,
+		"tbim_Phone": ""
+      },
+      "invoiceRefundDetailsDto": [
+        {
+          "id": 12,
+          "tbird_InvoiceRefundId": 22,
+          "tbird_ItemId": 11980,
+          "tbird_ItemCategory": 11,
+          "tbird_DepartmentName": "New Tires",
+          "tbird_Size": "295-35-24",
+          "tbird_Brand": "LANDSAIL LS588 SUV BLK 110V",
+          "tbird_Series": null,
+          "tbird_Bolt": null,
+          "tbird_HoleS": null,
+          "tbird_Zone": "HH",
+          "tbird_DistributorId": 124,
+          "tbird_DistributorName": "HESSELBEIN TIRE",
+          "tbird_Qty": 1,
+          "tbird_Taxable": true,
+          "tbird_UnitPrice": 190,
+          "tbird_LineTotal": 190,
+          "tbird_TaxAmt": 15.675,
+          "itemDepartmentName": "New Tires",
+          "itemDistributorName": "HESSELBEIN TIRE",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "LANDSAIL LS588 SUV BLK 110V 295-35-24"
+        }
+      ],
+      "invoiceRefundPaymentsDto": [
+        {
+          "id": 20,
+          "tbirp_InvoiceRefundId": 22,
+          "tbirp_RefundMethodId": 6,
+          "tbirp_RefundAmt": 205.68,
+          "tbirp_Date": "2026-04-13T00:00:00",
+          "refundMethodName": "CHECK Elect   Reg"
+        }
+      ]
+    },
+    {
+      "invoiceRefundMasterDto": {
+        "id": 23,
+        "tbirm_InvoiceRefundIdRad": 202236557756,
+        "tbirm_InvRefundDate": "2026-04-13T00:00:00",
+        "tbirm_RefundType": "P",
+        "tbirm_InvoiceId": 54117,
+        "tbirm_SubTotal": 0,
+        "tbirm_SaleTax": 0,
+        "tbirm_Labour": 0,
+        "tbirm_DisPer": 0,
+        "tbirm_DisAmt": 0,
+        "tbirm_Total": 0,
+        "tbirm_RefundAmt": 100,
+        "tbirm_AdjAmt": 0,
+        "tbirm_Note": null,
+        "tbirm_Delinfo": "A",
+        "tbirm_Item_Delete_after_Invoice_Refund_Create": false,
+        "userName": "adminuser",
+        "setDate": "2026-04-13T20:23:00",
+		"originalInvoiceName": "",
+		"originalInvoiceDate": "2026-07-20T04:47:22.270Z",
+		"tbim_InvoiceIdRad": 3454664,
+		"tbim_Phone": ""
+      },
+      "invoiceRefundDetailsDto": [],
+      "invoiceRefundPaymentsDto": [
+        {
+          "id": 21,
+          "tbirp_InvoiceRefundId": 23,
+          "tbirp_RefundMethodId": 9,
+          "tbirp_RefundAmt": 100,
+          "tbirp_Date": "2026-04-13T00:00:00",
+          "refundMethodName": "Credit Card Amex"
+        }
+      ]
+    }
+  ],
+  "totalCount": 23,
+  "pageNumber": 1,
+  "totalPages": 12
+}
+
+2) Get a specific InvoiceRefund with details:
+  https://localhost:44352/api/InvoiceRefundMaster/22
+   
+   Response will be:
+   
+   {
+  "invoiceRefundMasterDto": {
+    "id": 22,
+    "tbirm_InvoiceRefundIdRad": 201237409712,
+    "tbirm_InvRefundDate": "2026-04-13T00:00:00",
+    "tbirm_RefundType": "P",
+    "tbirm_InvoiceId": 54037,
+    "tbirm_SubTotal": 190,
+    "tbirm_SaleTax": 15.68,
+    "tbirm_Labour": 0,
+    "tbirm_DisPer": 0,
+    "tbirm_DisAmt": 0,
+    "tbirm_Total": 205.68,
+    "tbirm_RefundAmt": 205.68,
+    "tbirm_AdjAmt": 0,
+    "tbirm_Note": "AAA",
+    "tbirm_Delinfo": "A",
+    "tbirm_Item_Delete_after_Invoice_Refund_Create": false,
+    "userName": "adminuser",
+    "setDate": "2026-04-13T20:21:00",
+    "originalInvoiceName": "",
+    "originalInvoiceDate": "2026-07-20T04:47:22.270Z",
+    "tbim_InvoiceIdRad": 3454664,
+    "tbim_Phone": ""
+  },
+  "invoiceRefundDetailsDto": [
+    {
+      "id": 12,
+      "tbird_InvoiceRefundId": 22,
+      "tbird_ItemId": 11980,
+      "tbird_ItemCategory": 11,
+      "tbird_DepartmentName": "New Tires",
+      "tbird_Size": "295-35-24",
+      "tbird_Brand": "LANDSAIL LS588 SUV BLK 110V",
+      "tbird_Series": null,
+      "tbird_Bolt": null,
+      "tbird_HoleS": null,
+      "tbird_Zone": "HH",
+      "tbird_DistributorId": 124,
+      "tbird_DistributorName": "HESSELBEIN TIRE",
+      "tbird_Qty": 1,
+      "tbird_Taxable": true,
+      "tbird_UnitPrice": 190,
+      "tbird_LineTotal": 190,
+      "tbird_TaxAmt": 15.675,
+      "itemDepartmentName": "New Tires",
+      "itemDistributorName": "HESSELBEIN TIRE",
+      "itemLocationName": "Apollo Tire & Wheel",
+      "itemDisplay": "LANDSAIL LS588 SUV BLK 110V 295-35-24"
+    }
+  ],
+  "invoiceRefundPaymentsDto": [
+    {
+      "id": 20,
+      "tbirp_InvoiceRefundId": 22,
+      "tbirp_RefundMethodId": 6,
+      "tbirp_RefundAmt": 205.68,
+      "tbirp_Date": "2026-04-13T00:00:00",
+      "refundMethodName": "CHECK Elect   Reg"
+    }
+  ]
+}
+
+
+3) Create a new Refund:
+   https://localhost:7184/api/InvoiceRefundMaster/CreateRefund
+Input will be:
+ {
+  "invoiceRefundMasterDto": {
+    "id": 0,
+    "tbirm_InvoiceRefundIdRad": 0,
+    "tbirm_InvRefundDate": "2026-07-20T04:47:22.266Z",
+    "tbirm_RefundType": "string",
+    "tbirm_InvoiceId": 0,
+    "tbirm_SubTotal": 0,
+    "tbirm_SaleTax": 0,
+    "tbirm_Labour": 0,
+    "tbirm_DisPer": 0,
+    "tbirm_DisAmt": 0,
+    "tbirm_Total": 0,
+    "tbirm_RefundAmt": 0,
+    "tbirm_AdjAmt": 0,
+    "tbirm_Note": "string",
+    "tbirm_Delinfo": "string",
+    "tbirm_Item_Delete_after_Invoice_Refund_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-20T04:47:22.266Z",
+    "originalInvoiceName": "string",
+    "originalInvoiceDate": "2026-07-20T04:47:22.266Z"
+    "tbim_InvoiceIdRad": 1250045,
+    "tbim_Phone": ""	
+  },
+  "invoiceRefundDetailsDto": [
+    {
+      "id": 0,
+      "tbird_InvoiceRefundId": 0,
+      "tbird_ItemId": 0,
+      "tbird_ItemCategory": 0,
+      "tbird_DepartmentName": "string",
+      "tbird_Size": "string",
+      "tbird_Brand": "string",
+      "tbird_Series": "string",
+      "tbird_Bolt": "string",
+      "tbird_HoleS": "string",
+      "tbird_Zone": "string",
+      "tbird_DistributorId": 0,
+      "tbird_DistributorName": "string",
+      "tbird_Qty": 0,
+      "tbird_Taxable": true,
+      "tbird_UnitPrice": 0,
+      "tbird_LineTotal": 0,
+      "tbird_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "invoiceRefundPaymentsDto": [
+    {
+      "id": 0,
+      "tbirp_InvoiceRefundId": 0,
+      "tbirp_RefundMethodId": 0,
+      "tbirp_RefundAmt": 0,
+      "tbirp_Date": "2026-07-20T04:47:22.266Z",
+      "refundMethodName": "string"
+    }
+  ]
+}
+
+And response will be:
+{
+  "invoiceRefundMasterDto": {
+    "id": 0,
+    "tbirm_InvoiceRefundIdRad": 0,
+    "tbirm_InvRefundDate": "2026-07-20T04:47:22.270Z",
+    "tbirm_RefundType": "string",
+    "tbirm_InvoiceId": 0,
+    "tbirm_SubTotal": 0,
+    "tbirm_SaleTax": 0,
+    "tbirm_Labour": 0,
+    "tbirm_DisPer": 0,
+    "tbirm_DisAmt": 0,
+    "tbirm_Total": 0,
+    "tbirm_RefundAmt": 0,
+    "tbirm_AdjAmt": 0,
+    "tbirm_Note": "string",
+    "tbirm_Delinfo": "string",
+    "tbirm_Item_Delete_after_Invoice_Refund_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-20T04:47:22.270Z",
+    "originalInvoiceName": "",
+    "originalInvoiceDate": "2026-07-20T04:47:22.270Z",
+    "tbim_InvoiceIdRad": 3454664,
+    "tbim_Phone": ""
+  },
+  "invoiceRefundDetailsDto": [
+    {
+      "id": 0,
+      "tbird_InvoiceRefundId": 0,
+      "tbird_ItemId": 0,
+      "tbird_ItemCategory": 0,
+      "tbird_DepartmentName": "string",
+      "tbird_Size": "string",
+      "tbird_Brand": "string",
+      "tbird_Series": "string",
+      "tbird_Bolt": "string",
+      "tbird_HoleS": "string",
+      "tbird_Zone": "string",
+      "tbird_DistributorId": 0,
+      "tbird_DistributorName": "string",
+      "tbird_Qty": 0,
+      "tbird_Taxable": true,
+      "tbird_UnitPrice": 0,
+      "tbird_LineTotal": 0,
+      "tbird_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "invoiceRefundPaymentsDto": [
+    {
+      "id": 0,
+      "tbirp_InvoiceRefundId": 0,
+      "tbirp_RefundMethodId": 0,
+      "tbirp_RefundAmt": 0,
+      "tbirp_Date": "2026-07-20T04:47:22.270Z",
+      "refundMethodName": "string"
+    }
+  ]
+}
+
+4) Edit an existing Refund and related details,payments:
+   https://localhost:7184/api/InvoiceRefundMaster/EditLayaway?id=54120
+   Input will be:
+   {
+  "invoiceRefundMasterDto": {
+    "id": 0,
+    "tbirm_InvoiceRefundIdRad": 0,
+    "tbirm_InvRefundDate": "2026-07-20T04:51:21.866Z",
+    "tbirm_RefundType": "string",
+    "tbirm_InvoiceId": 0,
+    "tbirm_SubTotal": 0,
+    "tbirm_SaleTax": 0,
+    "tbirm_Labour": 0,
+    "tbirm_DisPer": 0,
+    "tbirm_DisAmt": 0,
+    "tbirm_Total": 0,
+    "tbirm_RefundAmt": 0,
+    "tbirm_AdjAmt": 0,
+    "tbirm_Note": "string",
+    "tbirm_Delinfo": "string",
+    "tbirm_Item_Delete_after_Invoice_Refund_Create": true,
+    "userName": "string",
+    "setDate": "2026-07-20T04:51:21.866Z",
+    "originalInvoiceName": "",
+    "originalInvoiceDate": "2026-07-20T04:47:22.270Z",
+    "tbim_InvoiceIdRad": 3454664,
+    "tbim_Phone": ""
+  },
+  "invoiceRefundDetailsDto": [
+    {
+      "id": 0,
+      "tbird_InvoiceRefundId": 0,
+      "tbird_ItemId": 0,
+      "tbird_ItemCategory": 0,
+      "tbird_DepartmentName": "string",
+      "tbird_Size": "string",
+      "tbird_Brand": "string",
+      "tbird_Series": "string",
+      "tbird_Bolt": "string",
+      "tbird_HoleS": "string",
+      "tbird_Zone": "string",
+      "tbird_DistributorId": 0,
+      "tbird_DistributorName": "string",
+      "tbird_Qty": 0,
+      "tbird_Taxable": true,
+      "tbird_UnitPrice": 0,
+      "tbird_LineTotal": 0,
+      "tbird_TaxAmt": 0,
+      "itemDepartmentName": "string",
+      "itemDistributorName": "string",
+      "itemLocationName": "string",
+      "itemDisplay": "string"
+    }
+  ],
+  "invoiceRefundPaymentsDto": [
+    {
+      "id": 0,
+      "tbirp_InvoiceRefundId": 0,
+      "tbirp_RefundMethodId": 0,
+      "tbirp_RefundAmt": 0,
+      "tbirp_Date": "2026-07-20T04:51:21.866Z",
+      "refundMethodName": "string"
+    }
+  ]
+}
+And Response will be:
+{
+  "message": "Refund adjusted successfully",
+  "RefundId": 54120
+}
+
+5) Delete an InvoiceRefund:
+   https://localhost:7184/api/InvoiceRefundMaster/250005
+   
+   
+6) Get Refund Method Names:
+https://localhost:44352/api/RefundMethodNames
+
+Response:
+[
+  {
+    "id": 1,
+    "tbrmn_RefundMethodName": "Check",
+    "tbrmn_IsActive": true,
+    "userName": "amira",
+    "setDate": "2019-03-17T11:27:00"
+  },
+  {
+    "id": 2,
+    "tbrmn_RefundMethodName": "Cash",
+    "tbrmn_IsActive": true,
+    "userName": "amira",
+    "setDate": "2019-03-17T11:27:00"
+  },
+  ]
+
+7) Getting Refund Method by ID:
+https://localhost:7184/api/RefundMethodNames/1
+Response:
+{
+  "id": 1,
+  "tbrmn_RefundMethodName": "Check",
+  "tbrmn_IsActive": true,
+  "userName": "amira",
+  "setDate": "2019-03-17T11:27:00"
+}
+
+8) List of categories:
+    https://localhost:7184/api/Departments 
+	
+	[
+	  {
+		"id": 1,
+		"tbid_DepartmentName": "Accessories",
+		"tbid_IsActive": true,
+		"userName": "adminuser",
+		"setDate": "2015-02-16T23:56:00"
+	  },
+	  {
+		"id": 2,
+		"tbid_DepartmentName": "Adapters",
+		"tbid_IsActive": true,
+		"userName": "amir",
+		"setDate": "2015-02-16T23:56:00"
+	  }
+   ]
+
+
+9) Get list of InvoiceMaster :
+   https://localhost:44352/api/InvoiceMaster?pageNumber=1&pageSize=2
+   
+   Response:
+{
+  "items": [
+    {
+      "invoiceMasterDto": {
+        "id": 54130,
+        "tbim_InvoiceIdRad": 15512162648,
+        "tbim_Phone": "01111",
+        "tbim_InvDate": "2026-07-15T09:48:00",
+        "tbim_Name": "Shafiqul Hayat",
+        "tbim_TaxId": 21,
+        "tbim_VehicleMake": "Toy",
+        "tbim_Model": "2011",
+        "tbim_Year": "2012",
+        "tbim_Odometer": "100",
+        "tbim_TreadDepth": "100",
+        "tbim_License": "55226",
+        "tbim_SubTotal": 625,
+        "tbim_SaleTax": 8.25,
+        "tbim_Labour": 0,
+        "tbim_DisPer": 0,
+        "tbim_DisAmt": 0,
+        "tbim_Total": 633.25,
+        "tbim_PaidAmt": 633.25,
+        "tbim_AdjAmt": 0,
+        "tbim_AdjTotal": 633.25,
+        "tbim_PayInfo": "F",
+        "tbim_Note": "trest",
+        "tbim_Delinfo": "A",
+        "tbim_CompanyName": "",
+        "tbim_CompanyAddress": "",
+        "tbim_Item_Delete_after_Invoice_Create": true,
+        "tbim_LaywayNo": 0,
+        "tbim_LaywayDate": "2026-07-13T15:49:00",
+        "userName": "Admin1",
+        "setDate": "2026-07-13T15:51:00",
+        "tbim_Left_Front": false,
+        "tbim_Right_Front": true,
+        "tbim_Left_Rear": true,
+        "tbim_Right_Rear": false,
+        "tbim_EmailAddress": "a@c.com",
+        "tbim_IDNo": "12555",
+        "tbim_RefundType": "N",
+        "tbim_LocationDetailsId": 1,
+        "layawayRefund": [],
+        "refundAmount": 0,
+        "locationName": "Apollo Tire & Wheel",
+        "taxCompanyName": "SEABROOK AUTOMOTIVE CENTER",
+        "taxIdentificationNumber": "3-20513-9740-7",
+        "taxAddress": " 3720 NASA PKWY SEABROOK TX 77586",
+        "taxPhone": "281-326-5577",
+        "paymentMethodName": "Cash"
+      },
+      "invoiceDetailsDto": [
+        {
+          "id": 100774,
+          "tbid_InvoiceId": 54130,
+          "tbid_ItemId": 2022,
+          "tbid_ItemCategory": 19,
+          "tbid_DepartmentName": "Used Wheels",
+          "tbid_Size": "15",
+          "tbid_Brand": "NISSAN MAXIMA sil2",
+          "tbid_Series": "",
+          "tbid_Bolt": "5-4½",
+          "tbid_HoleS": "SILVER",
+          "tbid_Zone": "",
+          "tbid_DistributorId": 90,
+          "tbid_DistributorName": "SILVER",
+          "tbid_Qty": 1,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 75,
+          "tbid_LineTotal": 75,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Used Wheels",
+          "itemDistributorName": "SILVER",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "NISSAN MAXIMA sil2 15"
+        },
+        {
+          "id": 100775,
+          "tbid_InvoiceId": 54130,
+          "tbid_ItemId": 2105,
+          "tbid_ItemCategory": 19,
+          "tbid_DepartmentName": "Used Wheels",
+          "tbid_Size": "17X8",
+          "tbid_Brand": "Ram 1500 alloy",
+          "tbid_Series": null,
+          "tbid_Bolt": "5-139.70",
+          "tbid_HoleS": null,
+          "tbid_Zone": null,
+          "tbid_DistributorId": 117,
+          "tbid_DistributorName": "APO",
+          "tbid_Qty": 1,
+          "tbid_Taxable": true,
+          "tbid_UnitPrice": 100,
+          "tbid_LineTotal": 100,
+          "tbid_TaxAmt": 8.25,
+          "itemDepartmentName": "Used Wheels",
+          "itemDistributorName": "APO",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "Ram 1500 alloy 17X8"
+        },
+        {
+          "id": 100776,
+          "tbid_InvoiceId": 54130,
+          "tbid_ItemId": 5409,
+          "tbid_ItemCategory": 8,
+          "tbid_DepartmentName": "Gorilla Locks",
+          "tbid_Size": "1/2 B. CLOSED 5 LOCK ",
+          "tbid_Brand": "GORILLA",
+          "tbid_Series": null,
+          "tbid_Bolt": null,
+          "tbid_HoleS": null,
+          "tbid_Zone": "71681NBC5",
+          "tbid_DistributorId": 110,
+          "tbid_DistributorName": "WHEEL PROS",
+          "tbid_Qty": 10,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 45,
+          "tbid_LineTotal": 450,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Gorilla Locks",
+          "itemDistributorName": "WHEEL PROS",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "GORILLA 1/2 B. CLOSED 5 LOCK"
+        }
+      ],
+      "invoicePaymentsDto": [
+        {
+          "id": 57684,
+          "tbip_InvoiceId": 54130,
+          "tbip_PaymentId": 2,
+          "tbip_PayAmt": 633.25,
+          "tbip_Date": "2026-07-13T15:50:00",
+          "tbip_PaymentType": "F",
+          "tbip_LayawayId": 0,
+          "tdip_fromlayaway": "N",
+          "tbip_LayawayDate": "2026-07-13T15:50:00",
+          "paymentName": "Cash"
+        }
+      ]
+    },
+    {
+      "invoiceMasterDto": {
+        "id": 54132,
+        "tbim_InvoiceIdRad": 123626393252,
+        "tbim_Phone": "01301680968",
+        "tbim_InvDate": "2026-07-14T12:34:00",
+        "tbim_Name": "Shafiqul HayatsT",
+        "tbim_TaxId": 21,
+        "tbim_VehicleMake": "2012",
+        "tbim_Model": "2012",
+        "tbim_Year": "2012",
+        "tbim_Odometer": "2012",
+        "tbim_TreadDepth": "2012",
+        "tbim_License": "2012",
+        "tbim_SubTotal": 175,
+        "tbim_SaleTax": 0,
+        "tbim_Labour": 10,
+        "tbim_DisPer": 5,
+        "tbim_DisAmt": 8.75,
+        "tbim_Total": 176.25,
+        "tbim_PaidAmt": 176.25,
+        "tbim_AdjAmt": 0,
+        "tbim_AdjTotal": 176.25,
+        "tbim_PayInfo": "F",
+        "tbim_Note": "Test Invoice",
+        "tbim_Delinfo": "A",
+        "tbim_CompanyName": "",
+        "tbim_CompanyAddress": "",
+        "tbim_Item_Delete_after_Invoice_Create": true,
+        "tbim_LaywayNo": 0,
+        "tbim_LaywayDate": "2026-07-14T12:34:00",
+        "userName": "Admin1",
+        "setDate": "2026-07-14T14:02:00",
+        "tbim_Left_Front": true,
+        "tbim_Right_Front": true,
+        "tbim_Left_Rear": false,
+        "tbim_Right_Rear": true,
+        "tbim_EmailAddress": "opashafiq@gmail.com",
+        "tbim_IDNo": "2500",
+        "tbim_RefundType": "N",
+        "tbim_LocationDetailsId": 1,
+        "layawayRefund": [],
+        "refundAmount": 0,
+        "locationName": "Apollo Tire & Wheel",
+        "taxCompanyName": "SEABROOK AUTOMOTIVE CENTER",
+        "taxIdentificationNumber": "3-20513-9740-7",
+        "taxAddress": " 3720 NASA PKWY SEABROOK TX 77586",
+        "taxPhone": "281-326-5577",
+        "paymentMethodName": "Cash"
+      },
+      "invoiceDetailsDto": [
+        {
+          "id": 100781,
+          "tbid_InvoiceId": 54132,
+          "tbid_ItemId": 3038,
+          "tbid_ItemCategory": 2,
+          "tbid_DepartmentName": "Adapters",
+          "tbid_Size": "5-4½/5-4.75to5-4.75",
+          "tbid_Brand": "BILLET",
+          "tbid_Series": "1.25\"",
+          "tbid_Bolt": null,
+          "tbid_HoleS": null,
+          "tbid_Zone": null,
+          "tbid_DistributorId": 144,
+          "tbid_DistributorName": "FTW",
+          "tbid_Qty": 1,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 75,
+          "tbid_LineTotal": 75,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Adapters",
+          "itemDistributorName": "FTW",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "BILLET 5-4½/5-4.75to5-4.75"
+        },
+        {
+          "id": 100782,
+          "tbid_InvoiceId": 54132,
+          "tbid_ItemId": 3052,
+          "tbid_ItemCategory": 2,
+          "tbid_DepartmentName": "Adapters",
+          "tbid_Size": "6-5½",
+          "tbid_Brand": "LEFT",
+          "tbid_Series": "K/O ADAPTOR",
+          "tbid_Bolt": "",
+          "tbid_HoleS": "",
+          "tbid_Zone": "",
+          "tbid_DistributorId": 69,
+          "tbid_DistributorName": "ModificationTest",
+          "tbid_Qty": 1,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 50,
+          "tbid_LineTotal": 50,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Adapters",
+          "itemDistributorName": "ModificationTest",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "LEFT 6-5½"
+        },
+        {
+          "id": 100783,
+          "tbid_InvoiceId": 54132,
+          "tbid_ItemId": 3053,
+          "tbid_ItemCategory": 2,
+          "tbid_DepartmentName": "Adapters",
+          "tbid_Size": "6-5½",
+          "tbid_Brand": "RIGHT",
+          "tbid_Series": "K/O ADAPTOR",
+          "tbid_Bolt": "",
+          "tbid_HoleS": "",
+          "tbid_Zone": "",
+          "tbid_DistributorId": 69,
+          "tbid_DistributorName": "ModificationTest",
+          "tbid_Qty": 1,
+          "tbid_Taxable": false,
+          "tbid_UnitPrice": 50,
+          "tbid_LineTotal": 50,
+          "tbid_TaxAmt": 0,
+          "itemDepartmentName": "Adapters",
+          "itemDistributorName": "ModificationTest",
+          "itemLocationName": "Apollo Tire & Wheel",
+          "itemDisplay": "RIGHT 6-5½"
+        }
+      ],
+      "invoicePaymentsDto": [
+        {
+          "id": 57686,
+          "tbip_InvoiceId": 54132,
+          "tbip_PaymentId": 2,
+          "tbip_PayAmt": 176.25,
+          "tbip_Date": "2026-07-14T12:36:00",
+          "tbip_PaymentType": "F",
+          "tbip_LayawayId": 0,
+          "tdip_fromlayaway": "N",
+          "tbip_LayawayDate": "2026-07-14T12:36:00",
+          "paymentName": "Cash"
+        }
+      ]
+    }
+  ],
+  "totalCount": 53801,
+  "pageNumber": 1,
+  "totalPages": 26901
+}
+
+10) Get an InvoiceMaster by Id:
+    https://localhost:44352/api/InvoiceMaster/54130
+    Response:
+{
+  "invoiceMasterDto": {
+    "id": 54130,
+    "tbim_InvoiceIdRad": 15512162648,
+    "tbim_Phone": "01111",
+    "tbim_InvDate": "2026-07-15T09:48:00",
+    "tbim_Name": "Shafiqul Hayat",
+    "tbim_TaxId": 21,
+    "tbim_VehicleMake": "Toy",
+    "tbim_Model": "2011",
+    "tbim_Year": "2012",
+    "tbim_Odometer": "100",
+    "tbim_TreadDepth": "100",
+    "tbim_License": "55226",
+    "tbim_SubTotal": 625,
+    "tbim_SaleTax": 8.25,
+    "tbim_Labour": 0,
+    "tbim_DisPer": 0,
+    "tbim_DisAmt": 0,
+    "tbim_Total": 633.25,
+    "tbim_PaidAmt": 633.25,
+    "tbim_AdjAmt": 0,
+    "tbim_AdjTotal": 633.25,
+    "tbim_PayInfo": "F",
+    "tbim_Note": "trest",
+    "tbim_Delinfo": "A",
+    "tbim_CompanyName": "",
+    "tbim_CompanyAddress": "",
+    "tbim_Item_Delete_after_Invoice_Create": true,
+    "tbim_LaywayNo": 0,
+    "tbim_LaywayDate": "2026-07-13T15:49:00",
+    "userName": "Admin1",
+    "setDate": "2026-07-13T15:51:00",
+    "tbim_Left_Front": false,
+    "tbim_Right_Front": true,
+    "tbim_Left_Rear": true,
+    "tbim_Right_Rear": false,
+    "tbim_EmailAddress": "a@c.com",
+    "tbim_IDNo": "12555",
+    "tbim_RefundType": "N",
+    "tbim_LocationDetailsId": 1,
+    "layawayRefund": [],
+    "refundAmount": 0,
+    "locationName": "Apollo Tire & Wheel",
+    "taxCompanyName": "SEABROOK AUTOMOTIVE CENTER",
+    "taxIdentificationNumber": "3-20513-9740-7",
+    "taxAddress": " 3720 NASA PKWY SEABROOK TX 77586",
+    "taxPhone": "281-326-5577",
+    "paymentMethodName": "Cash"
+  },
+  "invoiceDetailsDto": [
+    {
+      "id": 100774,
+      "tbid_InvoiceId": 54130,
+      "tbid_ItemId": 2022,
+      "tbid_ItemCategory": 19,
+      "tbid_DepartmentName": "Used Wheels",
+      "tbid_Size": "15",
+      "tbid_Brand": "NISSAN MAXIMA sil2",
+      "tbid_Series": "",
+      "tbid_Bolt": "5-4½",
+      "tbid_HoleS": "SILVER",
+      "tbid_Zone": "",
+      "tbid_DistributorId": 90,
+      "tbid_DistributorName": "SILVER",
+      "tbid_Qty": 1,
+      "tbid_Taxable": false,
+      "tbid_UnitPrice": 75,
+      "tbid_LineTotal": 75,
+      "tbid_TaxAmt": 0,
+      "itemDepartmentName": "Used Wheels",
+      "itemDistributorName": "SILVER",
+      "itemLocationName": "Apollo Tire & Wheel",
+      "itemDisplay": "NISSAN MAXIMA sil2 15"
+    },
+    {
+      "id": 100775,
+      "tbid_InvoiceId": 54130,
+      "tbid_ItemId": 2105,
+      "tbid_ItemCategory": 19,
+      "tbid_DepartmentName": "Used Wheels",
+      "tbid_Size": "17X8",
+      "tbid_Brand": "Ram 1500 alloy",
+      "tbid_Series": null,
+      "tbid_Bolt": "5-139.70",
+      "tbid_HoleS": null,
+      "tbid_Zone": null,
+      "tbid_DistributorId": 117,
+      "tbid_DistributorName": "APO",
+      "tbid_Qty": 1,
+      "tbid_Taxable": true,
+      "tbid_UnitPrice": 100,
+      "tbid_LineTotal": 100,
+      "tbid_TaxAmt": 8.25,
+      "itemDepartmentName": "Used Wheels",
+      "itemDistributorName": "APO",
+      "itemLocationName": "Apollo Tire & Wheel",
+      "itemDisplay": "Ram 1500 alloy 17X8"
+    },
+    {
+      "id": 100776,
+      "tbid_InvoiceId": 54130,
+      "tbid_ItemId": 5409,
+      "tbid_ItemCategory": 8,
+      "tbid_DepartmentName": "Gorilla Locks",
+      "tbid_Size": "1/2 B. CLOSED 5 LOCK ",
+      "tbid_Brand": "GORILLA",
+      "tbid_Series": null,
+      "tbid_Bolt": null,
+      "tbid_HoleS": null,
+      "tbid_Zone": "71681NBC5",
+      "tbid_DistributorId": 110,
+      "tbid_DistributorName": "WHEEL PROS",
+      "tbid_Qty": 10,
+      "tbid_Taxable": false,
+      "tbid_UnitPrice": 45,
+      "tbid_LineTotal": 450,
+      "tbid_TaxAmt": 0,
+      "itemDepartmentName": "Gorilla Locks",
+      "itemDistributorName": "WHEEL PROS",
+      "itemLocationName": "Apollo Tire & Wheel",
+      "itemDisplay": "GORILLA 1/2 B. CLOSED 5 LOCK"
+    }
+  ],
+  "invoicePaymentsDto": [
+    {
+      "id": 57684,
+      "tbip_InvoiceId": 54130,
+      "tbip_PaymentId": 2,
+      "tbip_PayAmt": 633.25,
+      "tbip_Date": "2026-07-13T15:50:00",
+      "tbip_PaymentType": "F",
+      "tbip_LayawayId": 0,
+      "tdip_fromlayaway": "N",
+      "tbip_LayawayDate": "2026-07-13T15:50:00",
+      "paymentName": "Cash"
+    }
+  ]
+}    
+
+
+
+
+
+===================================================
+Mapping InvoiceMasterDto to InvoiceRefundMasterDto
+===================================================
+InvoiceRefundMasterDto.Id = Identity field. Will be generated from DB.
+InvoiceRefundMasterDto.tbirm_InvoiceRefundIdRad = Will be generated and saved by server.
+InvoiceRefundMasterDto.tbirm_InvRefundDate = will be taken from Refund Date datepicker in the form.
+InvoiceRefundMasterDto.tbirm_RefundType = "F" for Full payment, "P" for partial payment.
+InvoiceRefundMasterDto.tbirm_InvoiceId = InvoiceMasterDto.Id
+InvoiceRefundMasterDto.tbirm_SubTotal = InvoiceMasterDto.tbim_SubTotal
+InvoiceRefundMasterDto.tbirm_SaleTax =  InvoiceMasterDto.tbim_SaleTax
+InvoiceRefundMasterDto.tbirm_Labour =  InvoiceMasterDto.tbim_Labour
+InvoiceRefundMasterDto.tbirm_DisPer =  InvoiceMasterDto.tbim_DisPer
+InvoiceRefundMasterDto.tbirm_DisAmt =  InvoiceMasterDto.tbim_DisAmt
+InvoiceRefundMasterDto.tbirm_Total =  InvoiceMasterDto.tbim_Total
+InvoiceRefundMasterDto.tbirm_RefundAmt = Total Refund Amount from Refund table
+InvoiceRefundMasterDto.tbirm_AdjAmt =  InvoiceMasterDto.tbim_AdjAmt
+InvoiceRefundMasterDto.tbirm_Note =  InvoiceMasterDto.tbim_Note
+InvoiceRefundMasterDto.tbirm_Delinfo =  InvoiceMasterDto.tbim_Delinfo
+InvoiceRefundMasterDto.tbirm_Item_Delete_after_Invoice_Refund_Create =  InvoiceMasterDto.tbim_Item_Delete_after_Invoice_Create
+InvoiceRefundMasterDto.UserName = Application User Names
+InvoiceRefundMasterDto.SetDate =  InvoiceMasterDto.CurrentDate
+InvoiceRefundMasterDto.OriginalInvoiceName =  InvoiceMasterDto.tbim_Name
+InvoiceRefundMasterDto.OriginalInvoiceDate =  InvoiceMasterDto.tbim_InvDate
+
+===================================================
+Mapping InvoiceDetailsDto to InvoiceRefundDetailsDto
+===================================================
+InvoiceRefundDetailsDto.Id = Identity field. Will be generated from DB.
+InvoiceRefundDetailsDto.tbird_InvoiceRefundId =  Id of the InvoiceRefundMaster. Will be inserted automatically during the first creation.
+InvoiceRefundDetailsDto.tbird_ItemId = InvoiceDetailsDto.tbid_ItemId
+InvoiceRefundDetailsDto.tbird_ItemCategory = InvoiceDetailsDto.tbid_ItemCategory
+InvoiceRefundDetailsDto.tbird_DepartmentName = InvoiceDetailsDto.tbid_DepartmentName
+InvoiceRefundDetailsDto.tbird_Size = InvoiceDetailsDto.tbid_Size
+InvoiceRefundDetailsDto.tbird_Brand = InvoiceDetailsDto.tbid_Brand
+InvoiceRefundDetailsDto.tbird_Series = InvoiceDetailsDto.tbid_Series
+InvoiceRefundDetailsDto.tbird_Bolt = InvoiceDetailsDto.tbid_Bolt
+InvoiceRefundDetailsDto.tbird_HoleS = InvoiceDetailsDto.tbid_HoleS
+InvoiceRefundDetailsDto.tbird_Zone = InvoiceDetailsDto.tbid_Zone
+InvoiceRefundDetailsDto.tbird_DistributorId = InvoiceDetailsDto.tbid_DistributorId
+InvoiceRefundDetailsDto.tbird_DistributorName = InvoiceDetailsDto.tbid_DistributorName
+InvoiceRefundDetailsDto.tbird_Qty = InvoiceDetailsDto.tbid_Qty
+InvoiceRefundDetailsDto.tbird_Taxable = InvoiceDetailsDto.tbid_Taxable
+InvoiceRefundDetailsDto.tbird_UnitPrice = InvoiceDetailsDto.tbid_UnitPrice
+InvoiceRefundDetailsDto.tbird_LineTotal = InvoiceDetailsDto.tbid_LineTotal
+InvoiceRefundDetailsDto.tbird_TaxAmt = InvoiceDetailsDto.tbid_TaxAmt
+InvoiceRefundDetailsDto.ItemDepartmentName = InvoiceDetailsDto.ItemDepartmentName
+InvoiceRefundDetailsDto.ItemDistributorName = InvoiceDetailsDto.ItemDistributorName
+InvoiceRefundDetailsDto.ItemLocationName = InvoiceDetailsDto.ItemLocationName
+InvoiceRefundDetailsDto.ItemDisplay = InvoiceDetailsDto.ItemDisplay
+
+
+======================================================
+Existing Functionality Of InvoiceRefundMasterDto
+======================================================
+1) Store all the columns from the  rest API: https://localhost:44352/api/InvoiceRefundMaster?pageNumber=1&pageSize=1.
+2) Showing following columns in the datatable from InvoiceRefundMasterDto:
+   ----------------------------------
+   HeaderName | ColumnName | Remarks
+   ----------------------------------
+   Transaction Id | tbirm_InvoiceRefundIdRad | This will be generated from server side
+   Customer Name | OriginalInvoiceName |
+   Date | tbirm_InvRefundDate | Show in dd/mm/yyyy
+   Total Amount | tbirm_Total |
+   Phone No | tbim_Phone |
+   Refund Amount | tbirm_RefundAmt
+
+
+3) Datatable has search inputs for:
+   Lebel | Query Field
+   Transaction No | refundTransactionId
+   Invoice No | invoiceTransactionId
+   Customer Name | customerName
+   Phone No | phoneNo
+   From Date | startDate (Date Picker)
+   To Date | endDate (Date Picker)
+   
+4) There is a button named "New Invoice" that redirects to another form that contains Invoice Master datatable with following columns:
+   ----------------------------------
+   HeaderName | ColumnName | Remarks
+   ----------------------------------
+   Transaction Id | tbim_InvoiceIdRad | This will be generated from server side
+   Customer Name | tbim_Name |
+   Date | tbim_InvDate | Show in dd/mm/yyyy
+   Total Amount | tbim_Total |
+   Phone No | tbim_Phone |
+   Payment Type | paymentMethodName
+   Paid Amount | tbim_PaidAmt
+   Refund Amount | RefundAmount
+   Refund Type | tbim_RefundType
+   
+   Datatable has search inputs for query parameters:
+   Lebel | Query Field
+   Invoice No | invoiceTransactionId
+   Customer Name | customerName
+   Phone No | phoneNo
+   From Date | startDate (Date Picker)
+   To Date | endDate (Date Picker)  
+   Payment Slot | A combo box having Key value Full->F,Partial->P,Pending->N and field name is paymentSlot
+   
+   In the action column of the datatable there are two button named: Item Refund and Payment Refund.
+   On clicking Item Refund opens another window having the 
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+
+
+   
+   
+   
+   
+   
+   
+   
+   
+
+
+
+
+
+
+
+
+
+
