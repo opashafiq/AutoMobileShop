@@ -1,6 +1,6 @@
 Related API's:
 1) Get the list of invoiceRefundMasterDto with all the details and payments.
-   https://localhost:44352/api/InvoiceRefundMaster?pageNumber=1&pageSize=2
+   https://localhost:7184/api/InvoiceRefundMaster?pageNumber=1&pageSize=2
    
    Optional query parameters:
    refundTransactionId long
@@ -120,7 +120,7 @@ Related API's:
 }
 
 2) Get a specific InvoiceRefund with details:
-  https://localhost:44352/api/InvoiceRefundMaster/22
+  https://localhost:7184/api/InvoiceRefundMaster/22
    
    Response will be:
    
@@ -319,7 +319,7 @@ And response will be:
 }
 
 4) Edit an existing Refund and related details,payments:
-   https://localhost:7184/api/InvoiceRefundMaster/EditLayaway?id=54120
+   https://localhost:7184/api/InvoiceRefundMaster/EditRefund?id=54120
    Input will be:
    {
   "invoiceRefundMasterDto": {
@@ -394,7 +394,7 @@ And Response will be:
    
    
 6) Get Refund Method Names:
-https://localhost:44352/api/RefundMethodNames
+https://localhost:7184/api/RefundMethodNames
 
 Response:
 [
@@ -447,7 +447,7 @@ Response:
 
 
 9) Get list of InvoiceMaster :
-   https://localhost:44352/api/InvoiceMaster?pageNumber=1&pageSize=2
+   https://localhost:7184/api/InvoiceMaster?pageNumber=1&pageSize=2
    
    Response:
 {
@@ -737,7 +737,7 @@ Response:
 }
 
 10) Get an InvoiceMaster by Id:
-    https://localhost:44352/api/InvoiceMaster/54130
+    https://localhost:7184/api/InvoiceMaster/54130
     Response:
 {
   "invoiceMasterDto": {
@@ -883,61 +883,12 @@ Response:
 
 
 
-===================================================
-Mapping InvoiceMasterDto to InvoiceRefundMasterDto
-===================================================
-InvoiceRefundMasterDto.Id = Identity field. Will be generated from DB.
-InvoiceRefundMasterDto.tbirm_InvoiceRefundIdRad = Will be generated and saved by server.
-InvoiceRefundMasterDto.tbirm_InvRefundDate = will be taken from Refund Date datepicker in the form.
-InvoiceRefundMasterDto.tbirm_RefundType = "F" for Full payment, "P" for partial payment.
-InvoiceRefundMasterDto.tbirm_InvoiceId = InvoiceMasterDto.Id
-InvoiceRefundMasterDto.tbirm_SubTotal = InvoiceMasterDto.tbim_SubTotal
-InvoiceRefundMasterDto.tbirm_SaleTax =  InvoiceMasterDto.tbim_SaleTax
-InvoiceRefundMasterDto.tbirm_Labour =  InvoiceMasterDto.tbim_Labour
-InvoiceRefundMasterDto.tbirm_DisPer =  InvoiceMasterDto.tbim_DisPer
-InvoiceRefundMasterDto.tbirm_DisAmt =  InvoiceMasterDto.tbim_DisAmt
-InvoiceRefundMasterDto.tbirm_Total =  InvoiceMasterDto.tbim_Total
-InvoiceRefundMasterDto.tbirm_RefundAmt = Total Refund Amount from Refund table
-InvoiceRefundMasterDto.tbirm_AdjAmt =  InvoiceMasterDto.tbim_AdjAmt
-InvoiceRefundMasterDto.tbirm_Note =  InvoiceMasterDto.tbim_Note
-InvoiceRefundMasterDto.tbirm_Delinfo =  InvoiceMasterDto.tbim_Delinfo
-InvoiceRefundMasterDto.tbirm_Item_Delete_after_Invoice_Refund_Create =  InvoiceMasterDto.tbim_Item_Delete_after_Invoice_Create
-InvoiceRefundMasterDto.UserName = Application User Names
-InvoiceRefundMasterDto.SetDate =  InvoiceMasterDto.CurrentDate
-InvoiceRefundMasterDto.OriginalInvoiceName =  InvoiceMasterDto.tbim_Name
-InvoiceRefundMasterDto.OriginalInvoiceDate =  InvoiceMasterDto.tbim_InvDate
-
-===================================================
-Mapping InvoiceDetailsDto to InvoiceRefundDetailsDto
-===================================================
-InvoiceRefundDetailsDto.Id = Identity field. Will be generated from DB.
-InvoiceRefundDetailsDto.tbird_InvoiceRefundId =  Id of the InvoiceRefundMaster. Will be inserted automatically during the first creation.
-InvoiceRefundDetailsDto.tbird_ItemId = InvoiceDetailsDto.tbid_ItemId
-InvoiceRefundDetailsDto.tbird_ItemCategory = InvoiceDetailsDto.tbid_ItemCategory
-InvoiceRefundDetailsDto.tbird_DepartmentName = InvoiceDetailsDto.tbid_DepartmentName
-InvoiceRefundDetailsDto.tbird_Size = InvoiceDetailsDto.tbid_Size
-InvoiceRefundDetailsDto.tbird_Brand = InvoiceDetailsDto.tbid_Brand
-InvoiceRefundDetailsDto.tbird_Series = InvoiceDetailsDto.tbid_Series
-InvoiceRefundDetailsDto.tbird_Bolt = InvoiceDetailsDto.tbid_Bolt
-InvoiceRefundDetailsDto.tbird_HoleS = InvoiceDetailsDto.tbid_HoleS
-InvoiceRefundDetailsDto.tbird_Zone = InvoiceDetailsDto.tbid_Zone
-InvoiceRefundDetailsDto.tbird_DistributorId = InvoiceDetailsDto.tbid_DistributorId
-InvoiceRefundDetailsDto.tbird_DistributorName = InvoiceDetailsDto.tbid_DistributorName
-InvoiceRefundDetailsDto.tbird_Qty = InvoiceDetailsDto.tbid_Qty
-InvoiceRefundDetailsDto.tbird_Taxable = InvoiceDetailsDto.tbid_Taxable
-InvoiceRefundDetailsDto.tbird_UnitPrice = InvoiceDetailsDto.tbid_UnitPrice
-InvoiceRefundDetailsDto.tbird_LineTotal = InvoiceDetailsDto.tbid_LineTotal
-InvoiceRefundDetailsDto.tbird_TaxAmt = InvoiceDetailsDto.tbid_TaxAmt
-InvoiceRefundDetailsDto.ItemDepartmentName = InvoiceDetailsDto.ItemDepartmentName
-InvoiceRefundDetailsDto.ItemDistributorName = InvoiceDetailsDto.ItemDistributorName
-InvoiceRefundDetailsDto.ItemLocationName = InvoiceDetailsDto.ItemLocationName
-InvoiceRefundDetailsDto.ItemDisplay = InvoiceDetailsDto.ItemDisplay
 
 
 ======================================================
 Existing Functionality Of InvoiceRefundMasterDto
 ======================================================
-1) Store all the columns from the  rest API: https://localhost:44352/api/InvoiceRefundMaster?pageNumber=1&pageSize=1.
+1) Store all the columns from the  rest API: https://localhost:7184/api/InvoiceRefundMaster?pageNumber=1&pageSize=1.
 2) Showing following columns in the datatable from InvoiceRefundMasterDto:
    ----------------------------------
    HeaderName | ColumnName | Remarks
@@ -983,12 +934,89 @@ Existing Functionality Of InvoiceRefundMasterDto
    Payment Slot | A combo box having Key value Full->F,Partial->P,Pending->N and field name is paymentSlot
    
    In the action column of the datatable there are two button named: Item Refund and Payment Refund.
-   On clicking Item Refund opens another window having the 
-      
+   On clicking Item Refund:
+   a) On clicking Item Refund opens another window having the basic information from the related InvoiceMasterDto in Readonly mode.
+      Below the InvoiceMasterDto section it shows the datatable of InvoiceDetailsDto with edit enabled.
+	  Below the InvoiceDetailsDto section, it shows datatable for InvoiceRefundPaymentsDto and allows Add/Edit in that datatable.Add/Edit in this datatable opens the refund payment window through user can insert amount and Payment Method. Payment Method is a dropdown box that shows the refund payment method using https://localhost:7184/api/RefundMethodNames where Key=id and Value=tbrmn_RefundMethodName.
+      Beside InvoiceRefundPaymentsDto 
+	    -> It will show two options : Partial Refund (sets tbirm_RefundType to P) and Full Refund (sets tbirm_RefundType to F). Below this it shows a textarea named notes to set tbim_Note.
+		-> Beside refund option, it will show all the value fields from InvoiceMasterDto like Adjusted Amoun,Subtotal,Sale Tax,Labour,discount,Total and these values changes with the entry in the InvoiceRefundPaymentsDto.
+	  
+	  
+   b) Clicking save button maps the InvoiceMasterDto to InvoiceRefundMasterDto And InvoiceDetailsDto to InvoiceRefundDetailsDto as follows:
+		===================================================
+		Mapping InvoiceMasterDto to InvoiceRefundMasterDto
+		===================================================
+		InvoiceRefundMasterDto.Id = Identity field. Will be generated from DB.
+		InvoiceRefundMasterDto.tbirm_InvoiceRefundIdRad = Will be generated and saved by server.
+		InvoiceRefundMasterDto.tbirm_InvRefundDate = will be taken from Refund Date datepicker in the form.
+		InvoiceRefundMasterDto.tbirm_RefundType = "F" for Full payment, "P" for partial payment.
+		InvoiceRefundMasterDto.tbirm_InvoiceId = InvoiceMasterDto.Id
+		InvoiceRefundMasterDto.tbirm_SubTotal = InvoiceMasterDto.tbim_SubTotal
+		InvoiceRefundMasterDto.tbirm_SaleTax =  InvoiceMasterDto.tbim_SaleTax
+		InvoiceRefundMasterDto.tbirm_Labour =  InvoiceMasterDto.tbim_Labour
+		InvoiceRefundMasterDto.tbirm_DisPer =  InvoiceMasterDto.tbim_DisPer
+		InvoiceRefundMasterDto.tbirm_DisAmt =  InvoiceMasterDto.tbim_DisAmt
+		InvoiceRefundMasterDto.tbirm_Total =  InvoiceMasterDto.tbim_Total
+		InvoiceRefundMasterDto.tbirm_RefundAmt = Total Refund Amount from Refund table
+		InvoiceRefundMasterDto.tbirm_AdjAmt =  InvoiceMasterDto.tbim_AdjAmt
+		InvoiceRefundMasterDto.tbirm_Note =  InvoiceMasterDto.tbim_Note
+		InvoiceRefundMasterDto.tbirm_Delinfo =  InvoiceMasterDto.tbim_Delinfo
+		InvoiceRefundMasterDto.tbirm_Item_Delete_after_Invoice_Refund_Create =  InvoiceMasterDto.tbim_Item_Delete_after_Invoice_Create
+		InvoiceRefundMasterDto.UserName = Application User Names
+		InvoiceRefundMasterDto.SetDate =  InvoiceMasterDto.CurrentDate
+		InvoiceRefundMasterDto.OriginalInvoiceName =  InvoiceMasterDto.tbim_Name
+		InvoiceRefundMasterDto.OriginalInvoiceDate =  InvoiceMasterDto.tbim_InvDate
 
+		===================================================
+		Mapping InvoiceDetailsDto to InvoiceRefundDetailsDto
+		===================================================
+		InvoiceRefundDetailsDto.Id = Identity field. Will be generated from DB.
+		InvoiceRefundDetailsDto.tbird_InvoiceRefundId =  Id of the InvoiceRefundMaster. Will be inserted automatically during the first creation.
+		InvoiceRefundDetailsDto.tbird_ItemId = InvoiceDetailsDto.tbid_ItemId
+		InvoiceRefundDetailsDto.tbird_ItemCategory = InvoiceDetailsDto.tbid_ItemCategory
+		InvoiceRefundDetailsDto.tbird_DepartmentName = InvoiceDetailsDto.tbid_DepartmentName
+		InvoiceRefundDetailsDto.tbird_Size = InvoiceDetailsDto.tbid_Size
+		InvoiceRefundDetailsDto.tbird_Brand = InvoiceDetailsDto.tbid_Brand
+		InvoiceRefundDetailsDto.tbird_Series = InvoiceDetailsDto.tbid_Series
+		InvoiceRefundDetailsDto.tbird_Bolt = InvoiceDetailsDto.tbid_Bolt
+		InvoiceRefundDetailsDto.tbird_HoleS = InvoiceDetailsDto.tbid_HoleS
+		InvoiceRefundDetailsDto.tbird_Zone = InvoiceDetailsDto.tbid_Zone
+		InvoiceRefundDetailsDto.tbird_DistributorId = InvoiceDetailsDto.tbid_DistributorId
+		InvoiceRefundDetailsDto.tbird_DistributorName = InvoiceDetailsDto.tbid_DistributorName
+		InvoiceRefundDetailsDto.tbird_Qty = InvoiceDetailsDto.tbid_Qty
+		InvoiceRefundDetailsDto.tbird_Taxable = InvoiceDetailsDto.tbid_Taxable
+		InvoiceRefundDetailsDto.tbird_UnitPrice = InvoiceDetailsDto.tbid_UnitPrice
+		InvoiceRefundDetailsDto.tbird_LineTotal = InvoiceDetailsDto.tbid_LineTotal
+		InvoiceRefundDetailsDto.tbird_TaxAmt = InvoiceDetailsDto.tbid_TaxAmt
+		InvoiceRefundDetailsDto.ItemDepartmentName = InvoiceDetailsDto.ItemDepartmentName
+		InvoiceRefundDetailsDto.ItemDistributorName = InvoiceDetailsDto.ItemDistributorName
+		InvoiceRefundDetailsDto.ItemLocationName = InvoiceDetailsDto.ItemLocationName
+		InvoiceRefundDetailsDto.ItemDisplay = InvoiceDetailsDto.ItemDisplay
+			  
+        And Maps Refund Payment datatable to InvoiceRefundPaymentsDto
+		
+		and finaly calls the CreateRefund Api with those values.
+		
+		
+        On clicking Payment Refund:
+		Enerything will be like Item Refund Except, there will be no option for editing Items in the InvoiceDetails datatable.
+		No data will be saved in the InvoiceRefundDetailsDto.
+		
+5) Item Refund Calculation:
+   It will take the origianl price and tax from the InvoiceDetails.
+6) Payment Refund Calculation:
+   Refund Amount will be directly saved in the InvoiceRefundMaster.
+7) In the InvoiceRefundMaster datatable, there will be a edit button that will allow edit in the InvoiceRefundMaster and related InvoiceRefundDetails.
+8) In the InvoiceRefundMaster datatable, there will be a delete button to delete the record.
+		
+9) Create a link under "Transaction" named "Invoice Refund"
 
-
-
+You can find the InvoiceMaster design related information in :
+agent-guides/transaction-module-guide.md
+/react-tables/transaction/invoice - List page
+/react-tables/transaction/invoice/[id]/edit - Edit page
+/react-tables/transaction/invoice/create - Create page
 
 
 

@@ -195,6 +195,12 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/react-tables/transaction/layaway",
       },
+      {
+        name: "Invoice Refund",
+        icon: "solar:undo-left-round-square-linear",
+        id: uniqueId(),
+        url: "/react-tables/transaction/invoice-refund",
+      },
     ],
   },
   {
