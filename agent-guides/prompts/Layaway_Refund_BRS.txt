@@ -1,6 +1,6 @@
 Related API's:
 1) Get the list of layawayRefundMasterDto with all the details and payments.
-   https://localhost:7184/api/LayawayRefundMaster?pageNumber=1&pageSize=2
+   https://localhost:44352/api/LayawayRefundMaster?pageNumber=1&pageSize=2
    
    Optional query parameters:
    refundTransactionId long
@@ -159,7 +159,7 @@ Related API's:
 }
 
 2) Get a specific LayawayRefund with details:
-  https://localhost:7184/api/LayawayRefundMaster/12
+  https://localhost:44352/api/LayawayRefundMaster/12
    
    Response will be:
    
@@ -235,7 +235,7 @@ Related API's:
 
 
 3) Create a new LayawayRefund:
-   https://localhost:7184/api/LayawayRefundMaster/CreateLayawayRefund
+   https://localhost:44352/api/LayawayRefundMaster/CreateLayawayRefund
 Input will be:
  {
   "layawayRefundMasterDto": {
@@ -437,7 +437,7 @@ And response will be:
 }
 
 4) Edit an existing LayawayRefund and related details,payments:
-   https://localhost:7184/api/LayawayRefundMaster/EditLayawayRefund?id=54120
+   https://localhost:44352/api/LayawayRefundMaster/EditLayawayRefund?id=54120
    Input will be:
    {
   "layawayRefundMasterDto": {
@@ -544,11 +544,11 @@ And Response will be:
 }
 
 5) Delete an LayawayRefund:
-   https://localhost:7184/api/LayawayRefundMaster/250005
+   https://localhost:44352/api/LayawayRefundMaster/250005
    
    
 6) Get Refund Method Names:
-https://localhost:7184/api/RefundMethodNames
+https://localhost:44352/api/RefundMethodNames
 
 Response:
 [
@@ -569,7 +569,7 @@ Response:
   ]
 
 7) Getting Refund Method by ID:
-https://localhost:7184/api/RefundMethodNames/1
+https://localhost:44352/api/RefundMethodNames/1
 Response:
 {
   "id": 1,
@@ -580,7 +580,7 @@ Response:
 }
 
 8) List of categories:
-    https://localhost:7184/api/Departments 
+    https://localhost:44352/api/Departments 
 	
 	[
 	  {
@@ -601,7 +601,7 @@ Response:
 
 
 9) Get list of LayawayMaster :
-   https://localhost:7184/api/LayawayMaster?pageNumber=1&pageSize=10
+   https://localhost:44352/api/LayawayMaster?pageNumber=1&pageSize=10
    
    Response:
 {
@@ -783,7 +783,7 @@ Response:
 }
 
 10) Get an LayawayMaster by Id:
-    https://localhost:7184/api/LayawayMaster/3968
+    https://localhost:44352/api/LayawayMaster/3968
     Response:
 {
   "layawayMasterDto": {
@@ -880,7 +880,16 @@ Response:
 ======================================================
 Existing Functionality Of LayawayRefundMasterDto
 ======================================================
-1) Store all the columns from the  rest API: https://localhost:7184/api/LayawayRefundMaster?pageNumber=1&pageSize=1.
+1) Store all the columns from the  rest API: https://localhost:44352/api/LayawayRefundMaster?pageNumber=1&pageSize=1.
+2) Do exact the same you did for the InvoiceRefundMasterDto. Only differences are:
+   a) Use LayawayMaster instead of InvoiceMaster. User Reference:
+      \src\app\components\react-tables\transaction\invoice-refund-datatable\index.tsx
+	  \src\app\components\react-tables\transaction\invoice-refund-form\index.tsx
+	  \src\app\components\react-tables\transaction\invoice-refund-picker\index.tsx
+   b) 
+   
+
+
 2) Showing following columns in the datatable from LayawayRefundMasterDto:
    ----------------------------------
    HeaderName | ColumnName | Remarks
@@ -929,7 +938,7 @@ Existing Functionality Of LayawayRefundMasterDto
    On clicking Item Refund:
    a) On clicking Item Refund opens another window having the basic information from the related InvoiceMasterDto in Readonly mode.
       Below the InvoiceMasterDto section it shows the datatable of InvoiceDetailsDto with edit enabled.
-	  Below the InvoiceDetailsDto section, it shows datatable for InvoiceRefundPaymentsDto and allows Add/Edit in that datatable.Add/Edit in this datatable opens the refund payment window through user can insert amount and Payment Method. Payment Method is a dropdown box that shows the refund payment method using https://localhost:7184/api/RefundMethodNames where Key=id and Value=tbrmn_RefundMethodName.
+	  Below the InvoiceDetailsDto section, it shows datatable for InvoiceRefundPaymentsDto and allows Add/Edit in that datatable.Add/Edit in this datatable opens the refund payment window through user can insert amount and Payment Method. Payment Method is a dropdown box that shows the refund payment method using https://localhost:44352/api/RefundMethodNames where Key=id and Value=tbrmn_RefundMethodName.
       Beside InvoiceRefundPaymentsDto 
 	    -> It will show two options : Partial Refund (sets tbirm_RefundType to P) and Full Refund (sets tbirm_RefundType to F). Below this it shows a textarea named notes to set tbim_Note.
 		-> Beside refund option, it will show all the value fields from InvoiceMasterDto like Adjusted Amoun,Subtotal,Sale Tax,Labour,discount,Total and these values changes with the entry in the InvoiceRefundPaymentsDto.
@@ -939,77 +948,104 @@ Existing Functionality Of LayawayRefundMasterDto
 		===================================================
 		Mapping LayawayMasterDto to LayawayRefundMasterDto
 		===================================================
-		LayawayRefundMasterDto.Id = Identity field. Will be generated from DB.
-		LayawayRefundMasterDto.tbirm_InvoiceRefundIdRad = Will be generated and saved by server.
-		LayawayRefundMasterDto.tbirm_InvRefundDate = will be taken from Refund Date datepicker in the form.
+		LayawayRefundMasterDto.Id = Auto generated from DB
+		LayawayRefundMasterDto.tbirm_LayawayRefundIdRad = Will be generated and saved by server.
+		LayawayRefundMasterDto.tbirm_LayawayRefundDate = will be taken from Refund Date datepicker in the form.
 		LayawayRefundMasterDto.tbirm_RefundType = "F" for Full payment, "P" for partial payment.
-		LayawayRefundMasterDto.tbirm_InvoiceId = InvoiceMasterDto.Id
-		LayawayRefundMasterDto.tbirm_SubTotal = InvoiceMasterDto.tbim_SubTotal
-		LayawayRefundMasterDto.tbirm_SaleTax =  InvoiceMasterDto.tbim_SaleTax
-		LayawayRefundMasterDto.tbirm_Labour =  InvoiceMasterDto.tbim_Labour
-		LayawayRefundMasterDto.tbirm_DisPer =  InvoiceMasterDto.tbim_DisPer
-		LayawayRefundMasterDto.tbirm_DisAmt =  InvoiceMasterDto.tbim_DisAmt
-		LayawayRefundMasterDto.tbirm_Total =  InvoiceMasterDto.tbim_Total
-		LayawayRefundMasterDto.tbirm_RefundAmt = Total Refund Amount from Refund table
-		LayawayRefundMasterDto.tbirm_AdjAmt =  InvoiceMasterDto.tbim_AdjAmt
-		LayawayRefundMasterDto.tbirm_Note =  InvoiceMasterDto.tbim_Note
-		LayawayRefundMasterDto.tbirm_Delinfo =  InvoiceMasterDto.tbim_Delinfo
-		LayawayRefundMasterDto.tbirm_Item_Delete_after_Invoice_Refund_Create =  InvoiceMasterDto.tbim_Item_Delete_after_Invoice_Create
+		LayawayRefundMasterDto.tbirm_SubTotal = Will be Subtotal from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_SaleTax = Will be Tax from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_Labour = Will be Labour from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_DisPer = Will be Discount Percentage from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_DisAmt = Will be Discount Amount from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_Total = Will be Total from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_RefundAmt = Will be Refund Amount from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_AdjAmt = Will be Adjusted Amount from form if Full Payment,otherwise 0.00
+		LayawayRefundMasterDto.tbirm_Note = Will be taken from Note textarea
+		LayawayRefundMasterDto.tbirm_Delinfo = Null
+		LayawayRefundMasterDto.tbirm_Item_Delete_after_Layaway_Refund_Create = FALSE
 		LayawayRefundMasterDto.UserName = Application User Names
-		LayawayRefundMasterDto.SetDate =  InvoiceMasterDto.CurrentDate
-		LayawayRefundMasterDto.OriginalInvoiceName =  InvoiceMasterDto.tbim_Name
-		LayawayRefundMasterDto.OriginalInvoiceDate =  InvoiceMasterDto.tbim_InvDate
+		LayawayRefundMasterDto.SetDate = Current Date
+		LayawayRefundMasterDto.Layaway_tbim_InvoiceId = LayawayMasterDto.Id
+		LayawayRefundMasterDto.Layaway_tbim_InvoiceIdRad = LayawayMasterDto.tbim_InvoiceIdRad
+		LayawayRefundMasterDto.Layaway_tbim_Phone = LayawayMasterDto.tbim_Phone
+		LayawayRefundMasterDto.Layaway_tbim_InvDate = LayawayMasterDto.tbim_InvDate
+		LayawayRefundMasterDto.Layaway_tbim_Name = LayawayMasterDto.tbim_Name
+		LayawayRefundMasterDto.Layaway_tbim_TaxId = LayawayMasterDto.tbim_TaxId
+		LayawayRefundMasterDto.Layaway_tbim_VehicleMake = LayawayMasterDto.tbim_VehicleMake
+		LayawayRefundMasterDto.Layaway_tbim_Model = LayawayMasterDto.tbim_Model
+		LayawayRefundMasterDto.Layaway_tbim_Year = LayawayMasterDto.tbim_Year
+		LayawayRefundMasterDto.Layaway_tbim_Odometer = LayawayMasterDto.tbim_Odometer
+		LayawayRefundMasterDto.Layaway_tbim_TreadDepth = LayawayMasterDto.tbim_TreadDepth
+		LayawayRefundMasterDto.Layaway_tbim_License = LayawayMasterDto.tbim_License
+		LayawayRefundMasterDto.Layaway_tbim_SubTotal = Sub Total from Form
+		LayawayRefundMasterDto.Layaway_tbim_SaleTax = Sale Tax from Form
+		LayawayRefundMasterDto.Layaway_tbim_Labour = Labour  from Form
+		LayawayRefundMasterDto.Layaway_tbim_DisPer = Discount Percentage from Form
+		LayawayRefundMasterDto.Layaway_tbim_DisAmt = Discount amount from from Form
+		LayawayRefundMasterDto.Layaway_tbim_Total = Total amount from Form
+		LayawayRefundMasterDto.Layaway_tbim_PaidAmt = Paid Amount from Form
+		LayawayRefundMasterDto.Layaway_tbim_AdjAmt = Adjustment amount from Form
+		LayawayRefundMasterDto.Layaway_tbim_AdjTotal = Total adjusted from Form
+		LayawayRefundMasterDto.Layaway_tbim_PayInfo = LayawayMasterDto.tbim_PayInfo
+		LayawayRefundMasterDto.Layaway_tbim_Note = LayawayMasterDto.tbim_Note
+		LayawayRefundMasterDto.Layaway_tbim_Delinfo = LayawayMasterDto.tbim_Delinfo
+		LayawayRefundMasterDto.Layaway_tbim_CompanyName = LayawayMasterDto.tbim_CompanyName
+		LayawayRefundMasterDto.Layaway_tbim_CompanyAddress = LayawayMasterDto.tbim_CompanyAddress
+		LayawayRefundMasterDto.Layaway_tbim_Item_Delete_after_Layaway_Create = LayawayMasterDto.tbim_Item_Delete_after_Layaway_Create
+		LayawayRefundMasterDto.Layaway_tbim_Left_Front = LayawayMasterDto.tbim_Left_Front
+		LayawayRefundMasterDto.Layaway_tbim_Right_Front = LayawayMasterDto.tbim_Right_Front
+		LayawayRefundMasterDto.Layaway_tbim_Left_Rear =LayawayMasterDto. tbim_Left_Rear
+		LayawayRefundMasterDto.Layaway_tbim_Right_Rear = LayawayMasterDto.tbim_Right_Rear
+		LayawayRefundMasterDto.Layaway_tbim_EmailAddress = LayawayMasterDto.tbim_EmailAddress
+		LayawayRefundMasterDto.Layaway_tbim_IDNo = LayawayMasterDto.tbim_IDNo
+		LayawayRefundMasterDto.OriginalLayawayName = LayawayMasterDto.tbim_Name
+		LayawayRefundMasterDto.OriginalLayawayDate = LayawayMasterDto.tbim_InvDate
+		LayawayRefundMasterDto.tbim_InvoiceIdRad = LayawayMasterDto.tbim_InvoiceIdRad
+		LayawayRefundMasterDto.tbim_Phone = LayawayMasterDto.tbim_Phone
 
 		===================================================
 		Mapping LayawayDetailsDto to LayawayRefundDetailsDto
 		===================================================
 		LayawayRefundDetailsDto.Id = Identity field. Will be generated from DB.
-		LayawayRefundDetailsDto.tbird_InvoiceRefundId =  Id of the LayawayRefundMaster. Will be inserted automatically during the first creation.
-		LayawayRefundDetailsDto.tbird_ItemId = InvoiceDetailsDto.tbid_ItemId
-		LayawayRefundDetailsDto.tbird_ItemCategory = InvoiceDetailsDto.tbid_ItemCategory
-		LayawayRefundDetailsDto.tbird_DepartmentName = InvoiceDetailsDto.tbid_DepartmentName
-		LayawayRefundDetailsDto.tbird_Size = InvoiceDetailsDto.tbid_Size
-		LayawayRefundDetailsDto.tbird_Brand = InvoiceDetailsDto.tbid_Brand
-		LayawayRefundDetailsDto.tbird_Series = InvoiceDetailsDto.tbid_Series
-		LayawayRefundDetailsDto.tbird_Bolt = InvoiceDetailsDto.tbid_Bolt
-		LayawayRefundDetailsDto.tbird_HoleS = InvoiceDetailsDto.tbid_HoleS
-		LayawayRefundDetailsDto.tbird_Zone = InvoiceDetailsDto.tbid_Zone
-		LayawayRefundDetailsDto.tbird_DistributorId = InvoiceDetailsDto.tbid_DistributorId
-		LayawayRefundDetailsDto.tbird_DistributorName = InvoiceDetailsDto.tbid_DistributorName
-		LayawayRefundDetailsDto.tbird_Qty = InvoiceDetailsDto.tbid_Qty
-		LayawayRefundDetailsDto.tbird_Taxable = InvoiceDetailsDto.tbid_Taxable
-		LayawayRefundDetailsDto.tbird_UnitPrice = InvoiceDetailsDto.tbid_UnitPrice
-		LayawayRefundDetailsDto.tbird_LineTotal = InvoiceDetailsDto.tbid_LineTotal
-		LayawayRefundDetailsDto.tbird_TaxAmt = InvoiceDetailsDto.tbid_TaxAmt
-		LayawayRefundDetailsDto.ItemDepartmentName = InvoiceDetailsDto.ItemDepartmentName
-		LayawayRefundDetailsDto.ItemDistributorName = InvoiceDetailsDto.ItemDistributorName
-		LayawayRefundDetailsDto.ItemLocationName = InvoiceDetailsDto.ItemLocationName
-		LayawayRefundDetailsDto.ItemDisplay = InvoiceDetailsDto.ItemDisplay
+		LayawayRefundDetailsDto.tbird_Layaway_RefundId = Id of the LayawayRefundMaster. Will be inserted automatically during the first creation.
+		LayawayRefundDetailsDto.tbird_ItemId = LayawayDetailsDto.tbid_ItemId
+		LayawayRefundDetailsDto.tbird_ItemCategory = LayawayDetailsDto.tbid_ItemCategory
+		LayawayRefundDetailsDto.tbird_DepartmentName = LayawayDetailsDto.tbid_DepartmentName
+		LayawayRefundDetailsDto.tbird_Size = LayawayDetailsDto.tbid_Size
+		LayawayRefundDetailsDto.tbird_Brand = LayawayDetailsDto.tbid_Brand
+		LayawayRefundDetailsDto.tbird_Series = LayawayDetailsDto.tbid_Series
+		LayawayRefundDetailsDto.tbird_Bolt = LayawayDetailsDto.tbid_Bolt
+		LayawayRefundDetailsDto.tbird_HoleS = LayawayDetailsDto.tbid_HoleS
+		LayawayRefundDetailsDto.tbird_Zone = LayawayDetailsDto.tbid_Zone
+		LayawayRefundDetailsDto.tbird_DistributorId = LayawayDetailsDto.tbid_DistributorId
+		LayawayRefundDetailsDto.tbird_DistributorName = LayawayDetailsDto.tbid_DistributorName
+		LayawayRefundDetailsDto.tbird_Qty = refund Qty from form
+		LayawayRefundDetailsDto.tbird_Layaway_Qty = LayawayDetailsDto.tbid_Qty
+		LayawayRefundDetailsDto.tbird_Layaway_Qty_LineTotal = LayawayDetailsDto.tbid_LineTotal
+		LayawayRefundDetailsDto.tbird_Layaway_Qty_TaxAmt = LayawayDetailsDto.tbid_TaxAmt
+		LayawayRefundDetailsDto.tbird_Taxable = LayawayDetailsDto.tbid_Taxable
+		LayawayRefundDetailsDto.tbird_UnitPrice = LayawayDetailsDto.tbid_UnitPrice
+		LayawayRefundDetailsDto.tbird_LineTotal = Will be calculated from frontend
+		LayawayRefundDetailsDto.tbird_TaxRate = Will get from api
+		LayawayRefundDetailsDto.tbird_TaxAmt = Calculated from front end
+		LayawayRefundDetailsDto.ItemDepartmentName = LayawayDetailsDto.ItemDepartmentName
+		LayawayRefundDetailsDto.ItemDistributorName = LayawayDetailsDto.ItemDistributorName
+		LayawayRefundDetailsDto.ItemLocationName = LayawayDetailsDto.ItemLocationName
+		LayawayRefundDetailsDto.ItemDisplay = LayawayDetailsDto.ItemDisplay
+
 			  
-        And Maps Refund Payment datatable to InvoiceRefundPaymentsDto
+        And Maps Layaway Refund Payment datatable to LayawayRefundPaymentsDto
 		
 		and finaly calls the CreateRefund Api with those values.
 		
-		
-        On clicking Payment Refund:
-		Enerything will be like Item Refund Except, there will be no option for editing Items in the InvoiceDetails datatable.
-		No data will be saved in the LayawayRefundDetailsDto.
-		
-5) Item Refund Calculation:
-   It will take the origianl price and tax from the InvoiceDetails.
-6) Payment Refund Calculation:
-   Refund Amount will be directly saved in the LayawayRefundMaster.
-7) In the LayawayRefundMaster datatable, there will be a edit button that will allow edit in the LayawayRefundMaster and related LayawayRefundDetails.
-8) In the LayawayRefundMaster datatable, there will be a delete button to delete the record.
-		
-9) Create a link under "Transaction" named "Invoice Refund"
 
-You can find the InvoiceMaster design related information in :
-agent-guides/transaction-module-guide.md
-/react-tables/transaction/invoice - List page
-/react-tables/transaction/invoice/[id]/edit - Edit page
-/react-tables/transaction/invoice/create - Create page
 
+You can find the InvoiceRefundMaster design related information in :
+\agent-guides\prompts\Invoice_Refund_Notes.md
+
+Create the menu under "Transaction".
+
+Please keep a track of the what you are doing as usual.
 
 
 
