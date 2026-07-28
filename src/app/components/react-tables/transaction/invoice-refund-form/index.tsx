@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { Icon } from '@iconify/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 
 import { getApiUrl, getFetcher, postFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
@@ -71,6 +71,9 @@ function Field({ label, children, className, required }: FieldProps) {
 
 const money = (n: number | null | undefined) =>
   (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** Round a monetary value to 2 decimal places to avoid floating-point drift. */
+const r2 = (n: number) => Math.round(n * 100) / 100
 
 // Build the human-readable item description used throughout the form.
 const itemDescription = (d: { tbird_DepartmentName?: string; tbird_Size?: string; tbird_Brand?: string; tbird_Series?: string; tbird_Bolt?: string; tbird_HoleS?: string; tbird_Zone?: string }) =>
@@ -315,13 +318,13 @@ export default function InvoiceRefundForm({ mode, refundId, sourceInvoiceId, ref
   const totals = useMemo(() => {
     const isItem = refundModeState === 'item'
     const subTotal = isItem
-      ? computedDetails.reduce((sum, d) => sum + (Number(d.tbird_LineTotal) || 0), 0)
+      ? r2(computedDetails.reduce((sum, d) => sum + (Number(d.tbird_LineTotal) || 0), 0))
       : 0
     const saleTax = isItem
-      ? computedDetails.reduce((sum, d) => sum + (Number(d.tbird_TaxAmt) || 0), 0)
+      ? r2(computedDetails.reduce((sum, d) => sum + (Number(d.tbird_TaxAmt) || 0), 0))
       : 0
-    const total = isItem ? subTotal + saleTax : 0
-    const refundAmt = payments.reduce((sum, p) => sum + (Number(p.tbirp_RefundAmt) || 0), 0)
+    const total = isItem ? r2(subTotal + saleTax) : 0
+    const refundAmt = r2(payments.reduce((sum, p) => sum + (Number(p.tbirp_RefundAmt) || 0), 0))
     return { subTotal, saleTax, total, refundAmt }
   }, [computedDetails, payments, refundModeState])
 
@@ -469,7 +472,13 @@ export default function InvoiceRefundForm({ mode, refundId, sourceInvoiceId, ref
       }
       router.push('/react-tables/transaction/invoice-refund')
     } catch (err) {
-      toast.error(isEdit ? 'Failed to update refund' : 'Failed to create refund')
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : isEdit
+            ? 'Failed to update refund'
+            : 'Failed to create refund',
+      )
     } finally {
       setSaving(false)
     }
@@ -491,6 +500,7 @@ export default function InvoiceRefundForm({ mode, refundId, sourceInvoiceId, ref
 
   return (
     <div className='space-y-5'>
+      <ToastContainer />
       {/* Page header */}
       <Card className='p-4 md:p-5'>
         <div className='flex items-center justify-between'>

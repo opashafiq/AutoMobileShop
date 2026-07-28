@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { Icon } from '@iconify/react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
 
 import { getApiUrl, getFetcher, postFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
@@ -72,6 +72,9 @@ function Field({ label, children, className, required }: OptionalFormFieldProps)
 
 const money = (n: number | null | undefined) =>
   (Number(n) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/** Round a monetary value to 2 decimal places to avoid floating-point drift. */
+const r2 = (n: number) => Math.round(n * 100) / 100
 
 // Build the human-readable item description used throughout the form.
 const itemDescription = (d: { tbid_DepartmentName?: string; tbid_Size?: string; tbid_Brand?: string; tbid_Series?: string; tbid_Bolt?: string; tbid_HoleS?: string; tbid_Zone?: string }) =>
@@ -288,15 +291,15 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
 
   // ----- Derived totals -----
   const totals = useMemo(() => {
-    const subTotal = details.reduce((sum, d) => sum + (Number(d.tbid_LineTotal) || 0), 0)
-    const saleTax = details.reduce((sum, d) => sum + (Number(d.tbid_TaxAmt) || 0), 0)
+    const subTotal = r2(details.reduce((sum, d) => sum + (Number(d.tbid_LineTotal) || 0), 0))
+    const saleTax = r2(details.reduce((sum, d) => sum + (Number(d.tbid_TaxAmt) || 0), 0))
     const disPer = Number(master.tbim_DisPer) || 0
-    const disAmt = (subTotal * disPer) / 100
+    const disAmt = r2((subTotal * disPer) / 100)
     const labour = Number(master.tbim_Labour) || 0
     const adjAmt = Number(master.tbim_AdjAmt) || 0
-    const total = adjAmt + subTotal + saleTax + labour - disAmt
-    const totalPaid = payments.reduce((sum, p) => sum + (Number(p.tbip_PayAmt) || 0), 0)
-    const layawayTotal = layawayRefunds.reduce((sum, r) => sum + (Number(r.tbip_PayAmt) || 0), 0)
+    const total = r2(adjAmt + subTotal + saleTax + labour - disAmt)
+    const totalPaid = r2(payments.reduce((sum, p) => sum + (Number(p.tbip_PayAmt) || 0), 0))
+    const layawayTotal = r2(layawayRefunds.reduce((sum, r) => sum + (Number(r.tbip_PayAmt) || 0), 0))
     return { subTotal, saleTax, disAmt, labour, adjAmt, total, totalPaid, layawayTotal }
   }, [details, payments, layawayRefunds, master.tbim_DisPer, master.tbim_Labour, master.tbim_AdjAmt])
 
@@ -578,7 +581,13 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       }
       router.push('/react-tables/transaction/invoice')
     } catch (err) {
-      toast.error(isEdit ? 'Failed to update invoice' : 'Failed to create invoice')
+      toast.error(
+        err instanceof Error && err.message
+          ? err.message
+          : isEdit
+            ? 'Failed to update invoice'
+            : 'Failed to create invoice',
+      )
     } finally {
       setSaving(false)
     }
@@ -638,6 +647,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
   // Close buttons for the bottom toolbar
   return (
     <div className='space-y-5'>
+      <ToastContainer />
       {/* Page header */}
       <Card className='p-4 md:p-5'>
         <div>

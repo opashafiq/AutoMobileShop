@@ -28,9 +28,44 @@ const postFetcher = (url:string,arg:any) => {
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 
-    return fetch(url, { method: 'POST', headers, body: JSON.stringify(arg) }).then((res) => {
+    return fetch(url, { method: 'POST', headers, body: JSON.stringify(arg) }).then(async (res) => {
         if(!res.ok){
-            throw new Error("Failed to post data")
+            // Surface the server-provided error message and HTTP status code
+            // (e.g. 400, 500) instead of a generic "Failed to post data", so
+            // callers can display the real cause of the failure.
+            let serverMessage = ''
+            try {
+                const text = await res.text()
+                if (text) {
+                    // Try to parse a structured error body first, then fall
+                    // back to raw text for non-JSON responses.
+                    try {
+                        const parsed = JSON.parse(text)
+                        serverMessage =
+                            parsed?.msg ||
+                            parsed?.message ||
+                            parsed?.detail ||   // ProblemDetails.detail
+                            parsed?.error?.message ||
+                            parsed?.error ||
+                            parsed?.title ||   // ProblemDetails.title
+                            (typeof parsed === 'string' ? parsed : '') ||
+                            ''
+                    } catch {
+                        serverMessage = text
+                    }
+                }
+            } catch {
+                // Response body could not be read; ignore and use status text.
+            }
+            const err = new Error(
+                serverMessage
+                    ? `Server error ${res.status}: ${serverMessage}`
+                    : `Failed to post data (HTTP ${res.status}: ${res.statusText})`
+            )
+            // Attach metadata for callers that want to inspect it directly.
+            ;(err as any).status = res.status
+            ;(err as any).serverMessage = serverMessage
+            throw err
         }
         return res.json()
     })
