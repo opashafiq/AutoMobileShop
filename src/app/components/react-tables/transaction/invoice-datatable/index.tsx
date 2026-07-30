@@ -53,7 +53,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import {
-  AnimatedTableWrapper,
   AnimatedTableBody,
   AnimatedTableRow,
 } from '@/app/components/animatedComponents/AnimatedTable'
@@ -99,9 +98,10 @@ const MASTER_ACCESSORS: Record<string, string> = {
   paymentType: 'paymentMethodName',
   paidAmount: 'tbim_PaidAmt',
   refundAmount: 'refundAmount',
+  pendingAmount: 'pendingAmount',
 }
 
-const FILTERABLE_COLUMNS = ['customerName', 'phone', 'paymentType', 'paidAmount', 'refundAmount', 'totalAmount']
+const FILTERABLE_COLUMNS = ['customerName', 'phone', 'paymentType', 'paidAmount', 'refundAmount', 'pendingAmount', 'totalAmount']
 
 const columnHelper = createColumnHelper<InvoiceListResponseItem>()
 
@@ -110,6 +110,7 @@ export default function InvoiceDatatable() {
   const toastShown = useRef(false)
 
   // ----- API-side filter state -----
+  const [transactionId, setTransactionId] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [phoneNo, setPhoneNo] = useState('')
   const [paymentSlot, setPaymentSlot] = useState('')
@@ -143,6 +144,7 @@ export default function InvoiceDatatable() {
     paymentType: true,
     paidAmount: true,
     refundAmount: true,
+    pendingAmount: true,
   })
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -288,6 +290,11 @@ export default function InvoiceDatatable() {
         cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.invoiceMasterDto.refundAmount)}</p>,
       }),
       columnHelper.display({
+        id: 'pendingAmount',
+        header: 'Pending Amount',
+        cell: ({ row }) => <p className='text-sm font-semibold text-warning'>${formatMoney(row.original.invoiceMasterDto.pendingAmount)}</p>,
+      }),
+      columnHelper.display({
         id: 'actions',
         header: 'Actions',
         cell: ({ row }) => {
@@ -343,13 +350,14 @@ export default function InvoiceDatatable() {
   // ---- API filter bar (customerName, phoneNo, paymentSlot, startDate, endDate) ----
   const buildFilterParams = useCallback(() => {
     const params = new URLSearchParams()
+    if (transactionId.trim()) params.set('invoiceId', transactionId.trim())
     if (customerName.trim()) params.set('customerName', customerName.trim())
     if (phoneNo.trim()) params.set('phoneNo', phoneNo.trim())
     if (paymentSlot && paymentSlot !== 'all') params.set('paymentSlot', paymentSlot)
     if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'))
     if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'))
     return params.toString()
-  }, [customerName, phoneNo, paymentSlot, startDate, endDate])
+  }, [transactionId, customerName, phoneNo, paymentSlot, startDate, endDate])
 
   const handleSearch = () => {
     setFilterParams(buildFilterParams())
@@ -357,6 +365,7 @@ export default function InvoiceDatatable() {
   }
 
   const resetFilters = () => {
+    setTransactionId('')
     setCustomerName('')
     setPhoneNo('')
     setPaymentSlot('')
@@ -474,6 +483,7 @@ export default function InvoiceDatatable() {
           case 'paymentType': return m.paymentMethodName || PAY_LABEL[m.tbim_PayInfo] || ''
           case 'paidAmount': return m.tbim_PaidAmt
           case 'refundAmount': return m.refundAmount
+          case 'pendingAmount': return m.pendingAmount
           default: return ''
         }
       }),
@@ -575,6 +585,15 @@ export default function InvoiceDatatable() {
         {showFilters && (
           <div className='mb-4 rounded-lg border border-ld bg-lightprimary/10 p-4 dark:bg-darkinfo/5'>
             <div className='flex flex-wrap items-end gap-4'>
+              <div className='min-w-[150px] flex-1'>
+                <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>Transaction Id</Label>
+                <Input
+                  placeholder='Filter by transaction'
+                  value={transactionId}
+                  onChange={(e) => setTransactionId(e.target.value)}
+                  className='h-10'
+                />
+              </div>
               <div className='min-w-[180px] flex-1'>
                 <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>Customer Name</Label>
                 <Input
@@ -675,7 +694,7 @@ export default function InvoiceDatatable() {
         {/* ---- Table ---- */}
         <div className='overflow-x-auto'>
           <div className='border rounded-md border-ld overflow-hidden'>
-            <AnimatedTableWrapper className='overflow-x-auto'>
+            <div>
               <table className='min-w-full w-full'>
                 <thead>
                   {table.getHeaderGroups().map((headerGroup) => (
@@ -689,16 +708,18 @@ export default function InvoiceDatatable() {
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
                               <div className='inline-flex items-center gap-0.5'>
-                                <button
-                                  type='button'
-                                  onClick={header.column.getToggleSortingHandler()}
-                                  className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
-                                >
-                                  {flexRender(header.column.columnDef.header, header.getContext())}
+                                <div className={`relative grid w-full ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}>
+                                  <button
+                                    type='button'
+                                    onClick={header.column.getToggleSortingHandler()}
+                                    className={`p-0 block w-full text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
+                                  >
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                  </button>
                                   {header.column.getCanSort() && (
-                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
+                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none' />
                                   )}
-                                </button>
+                                </div>
                                 {FILTERABLE_COLUMNS.includes(colId) && (
                                   <ColumnFilterInput
                                     columnData={colData as (string | number | undefined)[]}
@@ -729,7 +750,7 @@ export default function InvoiceDatatable() {
                   )}
                 </AnimatedTableBody>
               </table>
-            </AnimatedTableWrapper>
+            </div>
           </div>
         </div>
 
@@ -843,7 +864,7 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
         }`}
       >
         {row.getVisibleCells().map((cell: any) => (
-          <td key={cell.id} className='px-4 py-2'>
+          <td key={cell.id} className='px-4 py-2 text-left'>
             {flexRender(cell.column.columnDef.cell, cell.getContext())}
           </td>
         ))}

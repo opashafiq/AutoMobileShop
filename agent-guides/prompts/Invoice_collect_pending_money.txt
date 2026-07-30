@@ -1,0 +1,43 @@
+1) I want another form, that will show the same invoice form, with all filters in same format, except:
+   a) No need to show the filter "paymentSlot".
+   b) It will show only the invoices that have pending amount. To get this, you have to send one extra parameter named "PendingListOnly" of boolean type with true value.
+   c) In the action column, there will be only one button named "Collect"
+   
+2) The moto of this form is to collect pending money. So give headers accordingly.
+3) On clicking Collect button will open a form almost similar to EditInvoice.I have shared the screenshot (agent-guides\prompts\PendingAmountCollection.docx) from my existing form. You have to design in light of this , keeping match with the invoice edit form.
+4) As in screenshot, you don't have to show existing payment records in the payment datatable, rather it will collect new payments upto pending amount and save to db using the endpoint:  
+   /api/InvoiceMaster/SavePayments
+   
+   Input will be:
+   [
+  {
+    "id": 0,
+    "tbip_InvoiceId": 4059,
+    "tbip_PaymentId": 4,
+    "tbip_PayAmt": 999,
+    "tbip_Date": "2026-07-30T03:36:28.645Z",
+    "tbip_PaymentType": "P",
+    "tbip_LayawayId": null,
+    "tdip_fromlayaway": "N",
+    "tbip_LayawayDate": null,
+    "paymentName": "cash"
+  }
+]
+
+response will be:
+{
+  "message": "Payment adjusted successfully",
+  "invoiceId": 4059
+}
+
+
+5) With each entry add/delete in  the payment datatable, it will automatically update the fields:
+   -> Paid Amount
+   -> Pending Amount
+   -> Current Paid Amount
+   -> Current Pending Amount
+   
+6) Create a link named "Collect Invoice Amount" under Transaction.
+7) Please keep a track of what you are doing in separate file so that I can do the same for Layaway pending amount collection.
+   
+   

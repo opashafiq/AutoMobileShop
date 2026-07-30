@@ -46,6 +46,7 @@ export interface LayawayMasterDto {
   taxPhone: string
   paymentMethodName: string
   refundAmount: number
+  pendingAmount: number
 }
 
 export interface LayawayDetailsDto {

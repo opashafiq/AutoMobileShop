@@ -1,0 +1,41 @@
+1) I want another form, that will show the same Layaway form, with all filters in same format, except:
+   a) No need to show the filter "paymentSlot".
+   b) It will show only the Layaways that have pending amount. To get this, you have to send one extra parameter named "PendingListOnly" of boolean type with true value.
+   c) In the action column, there will be only one button named "Collect"
+   
+2) The moto of this form is to collect pending money for layaway. So give headers accordingly.
+3) You have to follow the same thing you did for the Collect Invoice Form.
+4)  it will collect new payments upto pending amount and save to db using the endpoint:  
+   /api/LayawayMaster/SavePayments
+   
+   Input will be:
+[
+  {
+    "id": 0,
+    "tbip_InvoiceId": 0,
+    "tbip_PaymentId": 0,
+    "tbip_PayAmt": 0,
+    "tbip_Date": "2026-07-30T08:52:55.786Z",
+    "tbip_PaymentType": "string",
+    "paymentName": "string"
+  }
+]
+
+response will be:
+{
+  "message": "Payment adjusted successfully",
+  "invoiceId": 4059
+}
+
+
+5) With each entry add/delete in  the payment datatable, it will automatically update the fields:
+   -> Paid Amount
+   -> Pending Amount
+   -> Current Paid Amount
+   -> Current Pending Amount
+
+6) For reference you can use agent-guides\prompts\Invoice_Pending_Collection_Notes.md  which was used during Invoice Pending Collection.
+6) Create a link named "Collect Layaway Amount" under Transaction.
+7) Please keep a track of what you are doing in separate file.
+   
+   

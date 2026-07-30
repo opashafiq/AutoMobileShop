@@ -202,6 +202,18 @@ const SidebarContent: MenuItem[] = [
         url: "/react-tables/transaction/invoice-refund",
       },
       {
+        name: "Collect Invoice Amount",
+        icon: "solar:card-money-linear",
+        id: uniqueId(),
+        url: "/react-tables/transaction/invoice-collect",
+      },
+      {
+        name: "Collect Layaway Amount",
+        icon: "solar:hand-money-linear",
+        id: uniqueId(),
+        url: "/react-tables/transaction/layaway-collect",
+      },
+      {
         name: "Layaway Refund",
         icon: "solar:undo-left-round-square-linear",
         id: uniqueId(),

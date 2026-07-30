@@ -18,7 +18,7 @@ import {
 import { Icon } from '@iconify/react'
 import { toast, ToastContainer } from 'react-toastify'
 
-import { getApiUrl, getFetcher, deleteFetcher } from '@/app/api/globalFetcher'
+import { getApiUrl, getFetcher } from '@/app/api/globalFetcher'
 import {
   type LayawayListResponse,
   type LayawayListResponseItem,
@@ -30,14 +30,6 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -82,13 +74,6 @@ const formatMoney = (n: number | null | undefined): string => {
 
 const PAY_LABEL: Record<string, string> = { F: 'Full', P: 'Partial', L: 'Pending' }
 
-const getBalanceClass = (total: number, paid: number): string => {
-  const bal = (total || 0) - (paid || 0)
-  if (bal <= 0) return 'font-medium text-success'
-  return 'font-medium text-error'
-}
-
-// Map a column id to the nested path on LayawayListResponseItem for filter data extraction.
 const MASTER_ACCESSORS: Record<string, string> = {
   transactionId: 'tbim_InvoiceIdRad',
   customerName: 'tbim_Name',
@@ -97,23 +82,21 @@ const MASTER_ACCESSORS: Record<string, string> = {
   phone: 'tbim_Phone',
   paymentType: 'paymentMethodName',
   paidAmount: 'tbim_PaidAmt',
-  refundAmount: 'refundAmount',
   pendingAmount: 'pendingAmount',
 }
 
-const FILTERABLE_COLUMNS = ['customerName', 'phone', 'paymentType', 'paidAmount', 'refundAmount', 'pendingAmount', 'totalAmount']
+const FILTERABLE_COLUMNS = ['customerName', 'phone', 'paymentType', 'paidAmount', 'pendingAmount', 'totalAmount']
 
 const columnHelper = createColumnHelper<LayawayListResponseItem>()
 
-export default function LayawayDatatable() {
+export default function LayawayCollectDatatable() {
   const router = useRouter()
   const toastShown = useRef(false)
 
-  // ----- API-side filter state -----
+  // ----- API-side filter state (no paymentSlot) -----
   const [transactionId, setTransactionId] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [phoneNo, setPhoneNo] = useState('')
-  const [paymentSlot, setPaymentSlot] = useState('')
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
   // ---- Server-side pagination ----
@@ -121,10 +104,9 @@ export default function LayawayDatatable() {
   const [pageSize, setPageSize] = useState(10)
   const [totalCount, setTotalCount] = useState(0)
   const [totalPages, setTotalPages] = useState(0)
-  // The committed filter-string (only updated on Search/Reset so keystrokes don't refetch).
   const [filterParams, setFilterParams] = useState('')
 
-  const queryString = `pageNumber=${pageNumber}&pageSize=${pageSize}${filterParams ? `&${filterParams}` : ''}`
+  const queryString = `pageNumber=${pageNumber}&pageSize=${pageSize}${filterParams ? `&${filterParams}` : ''}&PendingListOnly=true`
   const API_URL = getApiUrl(`/api/LayawayMaster?${queryString}`)
   const { data, isLoading, error, mutate } = useSWR<LayawayListResponse>(API_URL, getFetcher)
 
@@ -143,15 +125,10 @@ export default function LayawayDatatable() {
     phone: true,
     paymentType: true,
     paidAmount: true,
-    refundAmount: true,
     pendingAmount: true,
   })
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [feedback, setFeedback] = useState<string | null>(null)
-
-  // Delete state
-  const [deleteTarget, setDeleteTarget] = useState<LayawayListResponseItem | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (data) {
@@ -161,9 +138,6 @@ export default function LayawayDatatable() {
     }
   }, [data])
 
-  // If the server reports fewer pages than our current pageNumber (e.g. after a
-  // filter narrows the result set, or a delete removed the last page), snap back
-  // to the last valid page so the Next arrow state and the fetched page stay sane.
   useEffect(() => {
     if (totalPages > 0 && pageNumber > totalPages) {
       setPageNumber(totalPages)
@@ -184,26 +158,6 @@ export default function LayawayDatatable() {
       toastShown.current = false
     }
   }, [feedback])
-
-  // ---- delete ----
-  const handleDelete = async () => {
-    if (!deleteTarget) return
-    setIsDeleting(true)
-    try {
-      const id = deleteTarget.layawayMasterDto.id
-      await deleteFetcher(`${getApiUrl('/api/LayawayMaster')}/${id}`)
-      // If this was the last row on the current page, step back one page so
-      // we don't end up fetching an empty page.
-      if (tableData.length === 1 && pageNumber > 1) setPageNumber((p) => p - 1)
-      else mutate()
-      setFeedback('Layaway deleted')
-      setDeleteTarget(null)
-    } catch {
-      setFeedback('Failed to delete layaway')
-    } finally {
-      setIsDeleting(false)
-    }
-  }
 
   // ---- columns ----
   const allColumns = useMemo<ColumnDef<LayawayListResponseItem>[]>(() => {
@@ -285,11 +239,6 @@ export default function LayawayDatatable() {
         cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.layawayMasterDto.tbim_PaidAmt)}</p>,
       }),
       columnHelper.display({
-        id: 'refundAmount',
-        header: 'Refund Amount',
-        cell: ({ row }) => <p className='text-sm'>${formatMoney(row.original.layawayMasterDto.refundAmount)}</p>,
-      }),
-      columnHelper.display({
         id: 'pendingAmount',
         header: 'Pending Amount',
         cell: ({ row }) => <p className='text-sm font-semibold text-warning'>${formatMoney(row.original.layawayMasterDto.pendingAmount)}</p>,
@@ -298,39 +247,16 @@ export default function LayawayDatatable() {
         id: 'actions',
         header: 'Actions',
         cell: ({ row }) => {
-          const invId = row.original.layawayMasterDto.id
+          const layawayId = row.original.layawayMasterDto.id
           return (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <span className='btn-circle-hover cursor-pointer p-0 h-7 w-7 bg-white dark:bg-black'>
-                  <Icon icon='solar:menu-dots-bold' width={18} height={18} aria-label='menu' />
-                </span>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className='shadow dark:shadow-white/20'>
-                <DropdownMenuCheckboxItem
-                  onClick={() => router.push(`/react-tables/transaction/layaway/${invId}/edit`)}
-                  className='cursor-pointer'
-                >
-                  <Icon icon='solar:pen-2-linear' width={20} height={20} className='me-2' />
-                  Edit
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem
-                  onClick={() => router.push(`/react-tables/transaction/layaway/create?reorder=${invId}`)}
-                  className='cursor-pointer'
-                >
-                  <Icon icon='solar:refresh-circle-linear' width={20} height={20} className='me-2' />
-                  Reorder
-                </DropdownMenuCheckboxItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem
-                  onClick={() => setDeleteTarget(row.original)}
-                  className='cursor-pointer text-red-600 focus:text-red-700'
-                >
-                  <Icon icon='solar:trash-bin-2-outline' width={20} height={20} className='me-2' />
-                  Delete
-                </DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              size='sm'
+              variant='primary'
+              onClick={() => router.push(`/react-tables/transaction/layaway-collect/${layawayId}`)}
+            >
+              <Icon icon='solar:card-money-linear' width={16} height={16} className='me-1' />
+              Collect
+            </Button>
           )
         },
         enableSorting: false,
@@ -347,17 +273,16 @@ export default function LayawayDatatable() {
     [allColumns, columnVisibility],
   )
 
-  // ---- API filter bar (customerName, phoneNo, paymentSlot, startDate, endDate) ----
+  // ---- API filter bar (customerName, phoneNo, startDate, endDate — no paymentSlot) ----
   const buildFilterParams = useCallback(() => {
     const params = new URLSearchParams()
     if (transactionId.trim()) params.set('invoiceId', transactionId.trim())
     if (customerName.trim()) params.set('customerName', customerName.trim())
     if (phoneNo.trim()) params.set('phoneNo', phoneNo.trim())
-    if (paymentSlot && paymentSlot !== 'all') params.set('paymentSlot', paymentSlot)
     if (startDate) params.set('startDate', format(startDate, 'yyyy-MM-dd'))
     if (endDate) params.set('endDate', format(endDate, 'yyyy-MM-dd'))
     return params.toString()
-  }, [transactionId, customerName, phoneNo, paymentSlot, startDate, endDate])
+  }, [transactionId, customerName, phoneNo, startDate, endDate])
 
   const handleSearch = () => {
     setFilterParams(buildFilterParams())
@@ -368,7 +293,6 @@ export default function LayawayDatatable() {
     setTransactionId('')
     setCustomerName('')
     setPhoneNo('')
-    setPaymentSlot('')
     setStartDate(undefined)
     setEndDate(undefined)
     setFilterParams('')
@@ -381,7 +305,6 @@ export default function LayawayDatatable() {
   }
   const handleClearAllFilters = () => setColumnFilters({})
 
-  // Pre-extract filter data for the master-level fields
   const filterDataMap = useMemo(() => {
     const map: Record<string, (string | number | undefined)[]> = {}
     for (const colId of FILTERABLE_COLUMNS) {
@@ -396,7 +319,6 @@ export default function LayawayDatatable() {
     return map
   }, [tableData])
 
-  // Apply column filters
   const filteredData = useMemo(
     () => applyColumnFilters(
       tableData as unknown as Record<string, unknown>[],
@@ -405,7 +327,6 @@ export default function LayawayDatatable() {
     [tableData, columnFilters],
   )
 
-  // Build a compact list of page numbers (with ellipses) for the pager.
   const pageNumbers = useMemo<(number | '…')[]>(() => {
     if (totalPages <= 1) return totalPages === 1 ? [1] : []
     const pages: (number | '…')[] = []
@@ -440,20 +361,6 @@ export default function LayawayDatatable() {
     getExpandedRowModel: getExpandedRowModel(),
   })
 
-  // ---- bulk delete (defined after `table` so it can reference it) ----
-  const handleBulkDelete = useCallback(() => {
-    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.layawayMasterDto.id)
-    if (selectedIds.length === 0) return
-    selectedIds.forEach((id) => {
-      deleteFetcher(`${getApiUrl('/api/LayawayMaster')}/${id}`).catch(() => {})
-    })
-    // Re-fetch the current page from the server so totals/counts stay in sync.
-    if (selectedIds.length >= tableData.length && pageNumber > 1) setPageNumber((p) => p - 1)
-    else mutate()
-    table.resetRowSelection()
-    setFeedback(`Deleted ${selectedIds.length} layaway(s)`)
-  }, [table, tableData, pageNumber, mutate])
-
   // ---- CSV export ----
   const visibleExportKeys = useMemo(
     () => visibleColumns
@@ -480,7 +387,6 @@ export default function LayawayDatatable() {
           case 'phone': return m.tbim_Phone
           case 'paymentType': return m.paymentMethodName || PAY_LABEL[m.tbim_PayInfo] || ''
           case 'paidAmount': return m.tbim_PaidAmt
-          case 'refundAmount': return m.refundAmount
           case 'pendingAmount': return m.pendingAmount
           default: return ''
         }
@@ -493,7 +399,7 @@ export default function LayawayDatatable() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
-    a.href = url; a.download = 'layaways.csv'
+    a.href = url; a.download = 'layaway-pending-collection.csv'
     document.body.appendChild(a); a.click(); document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }, [filteredData, visibleExportKeys, exportHeaders])
@@ -504,7 +410,7 @@ export default function LayawayDatatable() {
         {/* ---- Toolbar ---- */}
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            Manage Layaways
+            Collect Layaway Pending Amount
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {!showSearch ? (
@@ -562,24 +468,16 @@ export default function LayawayDatatable() {
                 <Icon icon='solar:filter-linear' width={18} height={18} />
               )}
             </Button>
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <Button variant='error' onClick={handleBulkDelete}>
-                <Icon icon='solar:trash-bin-2-outline' width={18} height={18} />
-              </Button>
-            )}
             {Object.keys(columnFilters).length > 0 && (
               <Button variant='secondary' onClick={handleClearAllFilters} size='sm' className='text-xs'>
                 <Icon icon='solar:close-circle-outline' width={16} height={16} className='me-1' />
                 Clear Filters
               </Button>
             )}
-            <Button variant='lightprimary' shape='pill' onClick={() => router.push('/react-tables/transaction/layaway/create')} aria-label='Create Layaway'>
-              Create Layaway
-            </Button>
           </div>
         </div>
 
-        {/* ---- API-side filter bar (toggleable via the filter button in the toolbar) ---- */}
+        {/* ---- API-side filter bar (no paymentSlot) ---- */}
         {showFilters && (
           <div className='mb-4 rounded-lg border border-ld bg-lightprimary/10 p-4 dark:bg-darkinfo/5'>
             <div className='flex flex-wrap items-end gap-4'>
@@ -609,20 +507,6 @@ export default function LayawayDatatable() {
                   onChange={(e) => setPhoneNo(e.target.value)}
                   className='h-10'
                 />
-              </div>
-              <div className='min-w-[150px] flex-1'>
-                <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>Payment</Label>
-                <Select value={paymentSlot} onValueChange={setPaymentSlot}>
-                  <SelectTrigger className='h-10' aria-label='Payment slot'>
-                    <SelectValue placeholder='All' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value='all'>All</SelectItem>
-                    <SelectItem value='F'>Full Payment</SelectItem>
-                    <SelectItem value='P'>Partial Payment</SelectItem>
-                    <SelectItem value='L'>Pending</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div className='min-w-[150px] flex-1'>
                 <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>Start Date</Label>
@@ -685,7 +569,7 @@ export default function LayawayDatatable() {
         {/* ---- Error banner ---- */}
         {error && (
           <div className='mb-4 rounded-lg border border-error/30 bg-error/5 p-4 text-sm text-error'>
-            Failed to load layaways. Please ensure the backend API is reachable.
+            Failed to load pending layaways. Please ensure the backend API is reachable.
           </div>
         )}
 
@@ -738,7 +622,7 @@ export default function LayawayDatatable() {
                   {table.getRowModel().rows.length === 0 ? (
                     <tr>
                       <td colSpan={visibleColumns.length} className='text-center py-8 text-sm text-darklink dark:text-bodytext'>
-                        {isLoading ? 'Loading layaways...' : 'No layaways found.'}
+                        {isLoading ? 'Loading pending layaways...' : 'No pending layaways found.'}
                       </td>
                     </tr>
                   ) : (
@@ -815,26 +699,6 @@ export default function LayawayDatatable() {
         ) : null}
       </div>
 
-      {/* ---- Delete confirm dialog ---- */}
-      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className='max-w-sm'>
-          <DialogHeader>
-            <DialogTitle>Delete Layaway</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete layaway{' '}
-              <span className='font-semibold text-primary'>{deleteTarget?.layawayMasterDto.tbim_InvoiceIdRad}</span>
-              ? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant='outline' onClick={() => setDeleteTarget(null)} disabled={isDeleting}>Cancel</Button>
-            <Button variant='destructive' onClick={handleDelete} disabled={isDeleting} className='bg-error'>
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {feedback && <ToastContainer />}
     </Card>
   )
@@ -844,7 +708,6 @@ export default function LayawayDatatable() {
 function FragmentRow({ row, index }: { row: any; index: number }) {
   const master: LayawayMasterDto = row.original.layawayMasterDto
   const details: LayawayDetailsDto[] = row.original.layawayDetailsDto || []
-  const hasRefund = (Number(master.refundAmount) || 0) > 0
 
   const buildDescription = (d: LayawayDetailsDto): string =>
     [d.tbid_DepartmentName, d.tbid_Size, d.tbid_Brand, d.tbid_Series, d.tbid_Bolt, d.tbid_HoleS, d.tbid_Zone]
@@ -855,11 +718,7 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
     <>
       <AnimatedTableRow
         index={index}
-        className={`border-b last:border-b-0 border-ld transition-colors duration-200 ${
-          hasRefund
-            ? 'bg-lightsuccess/20 hover:bg-lightsuccess/30 dark:bg-lightsuccess/10 dark:hover:bg-lightsuccess/15'
-            : 'hover:bg-lightprimary'
-        }`}
+        className='border-b last:border-b-0 border-ld transition-colors duration-200 hover:bg-lightprimary'
       >
         {row.getVisibleCells().map((cell: any) => (
           <td key={cell.id} className='px-4 py-2 text-left'>
@@ -908,9 +767,7 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
                   </table>
                 </div>
               )}
-              {/* ---- Financial breakdown: cost on the left, payment on the right ---- */}
               <div className='mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2'>
-                {/* Cost build-up */}
                 <div className='space-y-1 rounded-md border border-ld/60 p-3 text-sm'>
                   <div className='flex items-center justify-between'>
                     <span className='text-darklink dark:text-bodytext'>Sub Total</span>
@@ -946,7 +803,6 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
                   </div>
                 </div>
 
-                {/* Payment side */}
                 <div className='space-y-1 rounded-md border border-ld/60 p-3 text-sm'>
                   <div className='flex items-center justify-between'>
                     <span className='text-darklink dark:text-bodytext'>Total Amount</span>
@@ -956,18 +812,10 @@ function FragmentRow({ row, index }: { row: any; index: number }) {
                     <span className='text-darklink dark:text-bodytext'>Paid</span>
                     <span className='font-medium text-success'>−${formatMoney(master.tbim_PaidAmt)}</span>
                   </div>
-                  {(master.refundAmount || 0) > 0 && (
-                    <div className='flex items-center justify-between'>
-                      <span className='text-darklink dark:text-bodytext'>Refund</span>
-                      <span className='font-medium text-warning'>−${formatMoney(master.refundAmount)}</span>
-                    </div>
-                  )}
                   <div className='border-t border-ld pt-1'>
                     <div className='flex items-center justify-between font-semibold'>
-                      <span className='text-ld dark:text-darklink'>Balance</span>
-                      <span className={getBalanceClass(master.tbim_Total, master.tbim_PaidAmt)}>
-                        ${formatMoney(master.tbim_Total - master.tbim_PaidAmt)}
-                      </span>
+                      <span className='text-ld dark:text-darklink'>Pending</span>
+                      <span className='font-semibold text-warning'>${formatMoney(master.pendingAmount)}</span>
                     </div>
                   </div>
                 </div>
