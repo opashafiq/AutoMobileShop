@@ -49,12 +49,13 @@ import {
 } from '@/app/components/animatedComponents/AnimatedTable'
 import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
-import useSWR from 'swr'
+import useSWR, { mutate } from 'swr'
 import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
 import { applyColumnFilters, ColumnFilterValue } from '@/app/components/react-tables/shared/columnFilterUtils'
+import ItemBulkImportModal from '@/app/components/react-tables/master/itemmaster-import-modal'
 
 function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
   const { activeMode } = useContext(CustomizerContext)
@@ -111,6 +112,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const [confirmDeleteCount, setConfirmDeleteCount] = useState(0)
   const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
   const [apiLoading, setApiLoading] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   const [currentItem, setCurrentItem] = useState<Partial<ItemMasterType>>({
     id: 0,
     tbim_ItemCategoryId: 0,
@@ -629,6 +631,10 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
             <Button variant='lightprimary' shape='pill' onClick={openCreateDialog} aria-label='Create Item'>
               Create Item
             </Button>
+            <Button variant='lightprimary' shape='pill' onClick={() => setImportModalOpen(true)} aria-label='Import from Excel'>
+              <Icon icon='solar:upload-minimalistic-line-duotone' width={18} height={18} className='me-1' />
+              Import
+            </Button>
           </div>
         </div>
 
@@ -768,6 +774,13 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Bulk Import Modal */}
+        <ItemBulkImportModal
+          open={importModalOpen}
+          onOpenChange={setImportModalOpen}
+          onImportComplete={() => mutate(API_URL)}
+        />
 
         {feedback && <ToastContainer />}
 
