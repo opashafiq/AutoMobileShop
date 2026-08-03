@@ -18,7 +18,8 @@ import {
 import { Icon } from '@iconify/react'
 import { toast, ToastContainer } from 'react-toastify'
 
-import { getApiUrl, getFetcher, deleteFetcher } from '@/app/api/globalFetcher'
+import { getApiUrl, getFetcher, deleteFetcher, postFetcher } from '@/app/api/globalFetcher'
+import { getUserSession } from '@/app/api/auth'
 import {
   type InvoiceListResponse,
   type InvoiceListResponseItem,
@@ -109,6 +110,12 @@ export default function InvoiceDatatable() {
   const router = useRouter()
   const toastShown = useRef(false)
 
+  // Admin role check
+  const userSession = getUserSession()
+  const isAdmin = userSession?.roles?.some(
+    (role: string) => role.toLowerCase() === 'admin'
+  ) ?? false
+
   // ----- API-side filter state -----
   const [transactionId, setTransactionId] = useState('')
   const [customerName, setCustomerName] = useState('')
@@ -155,11 +162,16 @@ export default function InvoiceDatatable() {
 
   useEffect(() => {
     if (data) {
-      setTableData(data.items ?? [])
-      setTotalCount(data.totalCount ?? 0)
+      const items = data.items ?? []
+      // Non-admin users should not see invoices marked as hidden (tbim_Delinfo === 'D')
+      const visibleItems = isAdmin
+        ? items
+        : items.filter((item) => item.invoiceMasterDto.tbim_Delinfo !== 'D')
+      setTableData(visibleItems)
+      setTotalCount(isAdmin ? (data.totalCount ?? 0) : visibleItems.length)
       setTotalPages(data.totalPages ?? 0)
     }
-  }, [data])
+  }, [data, isAdmin])
 
   // If the server reports fewer pages than our current pageNumber (e.g. after a
   // filter narrows the result set, or a delete removed the last page), snap back
@@ -202,6 +214,26 @@ export default function InvoiceDatatable() {
       setFeedback('Failed to delete invoice')
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  // ---- toggle hide/show ----
+  const handleToggleHideShow = async (invoiceId: number, currentDelinfo: string) => {
+    const newFlag = currentDelinfo === 'D' ? 'A' : 'D'
+    try {
+      const url = getApiUrl(`/api/InvoiceMaster/HideShowToUsers?invoiceid=${invoiceId}&showhideflag=${newFlag}`)
+      await postFetcher(url, {})
+      // Update local state to reflect the change immediately
+      setTableData((prev) =>
+        prev.map((item) =>
+          item.invoiceMasterDto.id === invoiceId
+            ? { ...item, invoiceMasterDto: { ...item.invoiceMasterDto, tbim_Delinfo: newFlag } }
+            : item
+        )
+      )
+      setFeedback(newFlag === 'D' ? 'Invoice hidden from users' : 'Invoice shown to users')
+    } catch {
+      setFeedback('Failed to update invoice visibility')
     }
   }
 
@@ -321,6 +353,30 @@ export default function InvoiceDatatable() {
                   <Icon icon='solar:refresh-circle-linear' width={20} height={20} className='me-2' />
                   Reorder
                 </DropdownMenuCheckboxItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuCheckboxItem
+                      onClick={() => {
+                        const currentDelinfo = row.original.invoiceMasterDto.tbim_Delinfo || 'A'
+                        handleToggleHideShow(invId, currentDelinfo)
+                      }}
+                      className='cursor-pointer'
+                    >
+                      <Icon
+                        icon={
+                          (row.original.invoiceMasterDto.tbim_Delinfo || 'A') === 'D'
+                            ? 'solar:eye-outline'
+                            : 'solar:eye-closed-outline'
+                        }
+                        width={20}
+                        height={20}
+                        className='me-2'
+                      />
+                      {(row.original.invoiceMasterDto.tbim_Delinfo || 'A') === 'D' ? 'Show' : 'Hide'}
+                    </DropdownMenuCheckboxItem>
+                  </>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuCheckboxItem
                   onClick={() => setDeleteTarget(row.original)}
@@ -693,7 +749,7 @@ export default function InvoiceDatatable() {
 
         {/* ---- Table ---- */}
         <div className='overflow-x-auto'>
-          <div className='border rounded-md border-ld overflow-hidden'>
+          <div className='border rounded-md border-ld'>
             <div>
               <table className='min-w-full w-full'>
                 <thead>

@@ -54,7 +54,7 @@ import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
-import { applyColumnFilters, ColumnFilterValue } from '@/app/components/react-tables/shared/columnFilterUtils'
+import { applyColumnFilters, ColumnFilterValue, FilterType } from '@/app/components/react-tables/shared/columnFilterUtils'
 import ItemBulkImportModal from '@/app/components/react-tables/master/itemmaster-import-modal'
 
 function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
@@ -801,6 +801,8 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                           : []
                         const isFilterable = enableColumnFilters && columnKey && columnKey !== 'id' &&
                           ['tbim_Size', 'tbim_Brand', 'tbim_Series', 'tbim_Bolt', 'tbim_HoleS', 'tbim_Zone', 'departmentName', 'distributorName', 'locationName'].includes(columnKey)
+                        const forcedFilterType: FilterType | undefined =
+                          columnKey === 'departmentName' ? 'select' : undefined
                         return (
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
@@ -816,6 +818,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                                     filterValue={columnFilters[columnKey] || undefined}
                                     onFilterChange={(value) => handleColumnFilterChange(columnKey, value)}
                                     columnName={String(header.column.columnDef.header || columnKey)}
+                                    filterType={forcedFilterType}
                                   />
                                 )}
                               </div>

@@ -13,3 +13,27 @@ Browser/tab closed → sessionStorage would be lost but localStorage persists; s
 
 
 agent-guides/layaway-module-guide.md — has the full file map, endpoint table, type-diff notes vs Invoice, a "Modification Cheatsheet" mapping each common change to the exact file/anchor, and build verification steps. Next time you want to tweak the LayawayMaster page, start there.
+
+
+User Information:
+roles are being saved during login. The UserSession interface includes roles: string[], populated via fetchUserSession() which is called inside login() at auth.ts:181. 
+The roles are fetched from /api/ApplicationUser/getbyusername/{username} and persisted to localStorage via setUserSession() at auth.ts:113.
+
+User roles are already saved during login via fetchUserSession() in auth.ts:181, which calls setUserSession() at auth.ts:113. 
+The roles array is fetched from /api/ApplicationUser/getbyusername/{username} and persisted to localStorage. No additional work needed.
+
+To check the role of the current user:
+src\app\components\react-tables\transaction\invoice-datatable\index.tsx
+
+export default function InvoiceDatatable() {
+  const router = useRouter()
+  const toastShown = useRef(false)
+
+  // Admin role check
+  const userSession = getUserSession()
+  const isAdmin = userSession?.roles?.some(
+    (role: string) => role.toLowerCase() === 'admin'
+  ) ?? false
+  console.log('InvoiceDatatable - userSession:', userSession)
+  console.log('InvoiceDatatable - roles:', userSession?.roles)
+  console.log('InvoiceDatatable - isAdmin:', isAdmin)
