@@ -40,7 +40,7 @@ const SYSTEM_FIELDS = [
   { key: 'tbim_CodeTOT', label: 'Code TOT', required: false },
   { key: 'tbim_OURP', label: 'OURP', required: false },
   { key: 'tbim_ourp', label: 'OURP TOT', required: false },
-  { key: 'tbim_DistributorId', label: 'Distributor', required: false },
+  { key: 'tbim_DistributorName', label: 'Distributor', required: false },
 ] as const
 
 /* ── Types ── */
@@ -107,7 +107,7 @@ function deduplicateRows(rows: MappedRow[]): { unique: MappedRow[]; removedCount
 }
 
 /* ── Row validators ── */
-function validateRow(row: MappedRow, categories: LookupEntry[], distributors: LookupEntry[]): string[] {
+function validateRow(row: MappedRow, categories: LookupEntry[]): string[] {
   const errors: string[] = []
 
   const catVal = row.tbim_ItemCategoryId
@@ -145,15 +145,6 @@ function resolveCategoryId(value: unknown, categories: LookupEntry[]): number {
   return match ? match.id : 0
 }
 
-function resolveDistributorId(value: unknown, distributors: LookupEntry[]): number | null {
-  if (value === null || value === undefined || value === '') return null
-  if (typeof value === 'number') return value
-  const str = String(value).trim()
-  if (!str) return null
-  const match = distributors.find(d => d.name.toLowerCase() === str.toLowerCase())
-  return match ? match.id : null
-}
-
 /* ════════════════════════════════════════════════════════════
    MAIN COMPONENT
    ════════════════════════════════════════════════════════════ */
@@ -182,7 +173,6 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
   /* ── loading / lookup data ── */
   const [importing, setImporting] = useState(false)
   const [categories, setCategories] = useState<LookupEntry[]>([])
-  const [distributors, setDistributors] = useState<LookupEntry[]>([])
 
   /* ── fetch lookup data on open ── */
   React.useEffect(() => {
@@ -192,13 +182,6 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
     }).then(r => r.ok ? r.json() : []).then((d: unknown) => {
       if (Array.isArray(d)) {
         setCategories(d.map((c: any) => ({ id: c.id, name: c.tbid_DepartmentName })))
-      }
-    }).catch(() => {})
-    fetch(`${getApiUrl('/api/Distributors')}`, {
-      headers: (() => { const h: Record<string, string> = {}; const t = localStorage.getItem('NEXT_AUTH_TOKEN'); if (t) h['Authorization'] = `Bearer ${t}`; return h })()
-    }).then(r => r.ok ? r.json() : []).then((d: unknown) => {
-      if (Array.isArray(d)) {
-        setDistributors(d.map((d: any) => ({ id: d.id, name: d.name })))
       }
     }).catch(() => {})
   }, [open])
@@ -310,14 +293,6 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
             ? resolveCategoryId(rawValue, categories)
             : ''
           mappedRow[field.key] = resolved || rawValue
-        } else if (field.key === 'tbim_DistributorId') {
-          // Same for distributor — allow null (spec: distributor may be empty).
-          if (rawValue === '' || rawValue === null || rawValue === undefined) {
-            mappedRow[field.key] = null
-          } else {
-            const resolved = resolveDistributorId(rawValue, distributors)
-            mappedRow[field.key] = resolved // number | null
-          }
         } else {
           mappedRow[field.key] = rawValue
         }
@@ -337,14 +312,14 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
     // Validate all rows
     const errors: Record<string, string[]> = {}
     mapped.forEach((row) => {
-      const rowErrors = validateRow(row, categories, distributors)
+      const rowErrors = validateRow(row, categories)
       if (rowErrors.length > 0) {
         errors[String(row._rowIndex)] = rowErrors
       }
     })
     setCellErrors(errors)
     setStep(3)
-  }, [rawRows, columnMapping, categories, distributors])
+  }, [rawRows, columnMapping, categories])
 
   /* ── Step 3: Row operations ── */
   const deleteRow = useCallback((rowIndex: number) => {
@@ -362,7 +337,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
       // Re-validate this row
       const row = updated.find(r => r._rowIndex === rowIndex)
       if (row) {
-        const errors = validateRow(row, categories, distributors)
+        const errors = validateRow(row, categories)
         setCellErrors(prevErr => {
           const next = { ...prevErr }
           if (errors.length > 0) next[String(rowIndex)] = errors
@@ -372,7 +347,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
       }
       return updated
     })
-  }, [categories, distributors])
+  }, [categories])
 
   /* ── Step 3: Validation stats ── */
   const validationStats = useMemo(() => {
@@ -408,7 +383,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
           tbim_QtyOp: Number(row.tbim_Qty) || 0,
           tbim_Code: Number(row.tbim_Code) || 0,
           tbim_CodeTOT: Number(row.tbim_CodeTOT) || 0,
-          tbim_DistributorId: resolveDistributorId(row.tbim_DistributorId, distributors),
+          tbim_DistributorName: row.tbim_DistributorName ? String(row.tbim_DistributorName).trim() : null,
           tbim_OURP: Number(row.tbim_OURP ?? row.tbim_ourp) || 0,
           tbim_LocationId: 1,
           tbim_ThrashDate: null,
@@ -443,7 +418,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
     } finally {
       setImporting(false)
     }
-  }, [mappedRows, skipErrors, categories, distributors, validationStats, isRowValid])
+  }, [mappedRows, skipErrors, categories, validationStats, isRowValid])
 
   /* ── Helpers ── */
   const stepTitle = useMemo(() => {
@@ -698,28 +673,6 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
                                   <SelectContent>
                                     {categories.map(cat => (
                                       <SelectItem key={cat.id} value={String(cat.id)}>{cat.name}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </td>
-                            )
-                          }
-
-                          // Render distributor as dropdown
-                          if (field.key === 'tbim_DistributorId') {
-                            return (
-                              <td key={cellKey} className='py-1 px-1 whitespace-nowrap'>
-                                <Select
-                                  value={String(row.tbim_DistributorId || '__none__')}
-                                  onValueChange={(val) => updateCell(rowIdx, 'tbim_DistributorId', val === '__none__' ? null : val)}
-                                >
-                                  <SelectTrigger className='h-7 text-xs w-[140px]'>
-                                    <SelectValue placeholder='Select...' />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value='__none__'>None</SelectItem>
-                                    {distributors.map(dist => (
-                                      <SelectItem key={dist.id} value={String(dist.id)}>{dist.name}</SelectItem>
                                     ))}
                                   </SelectContent>
                                 </Select>

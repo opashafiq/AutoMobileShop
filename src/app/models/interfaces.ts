@@ -112,6 +112,7 @@ export interface ItemMasterType {
   tbim_Code: number
   tbim_CodeTOT: number
   tbim_DistributorId: number
+  tbim_DistributorName: string | null
   tbim_OURP: number
   tbim_LocationId: number
   tbim_ThrashDate: string | null
