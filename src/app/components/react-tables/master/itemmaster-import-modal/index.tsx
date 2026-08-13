@@ -230,7 +230,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
             return
           }
           const sheet = workbook.Sheets[sheetName]
-          const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' })
+          const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' }) as Record<string, unknown>[]
 
           if (rows.length === 0) {
             toast.error('The file contains no data rows')
@@ -368,7 +368,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
       const username = getUserName() ?? ''
       const now = getLocalISO()
 
-      const payload: Partial<ItemMasterType>[] = mappedRows
+      const payload = mappedRows
         .filter(row => skipErrors ? isRowValid(row._rowIndex) : true)
         .map(row => ({
           id: 0,
@@ -389,7 +389,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
           tbim_ThrashDate: null,
           userName: username,
           setDate: now,
-        }))
+        })) as Partial<ItemMasterType>[]
 
       if (!skipErrors && validationStats.invalid > 0) {
         toast.error(`Cannot import: ${validationStats.invalid} row(s) have validation errors. Enable "Skip Errors" or fix them.`)
@@ -700,7 +700,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
                                     onDoubleClick={() => setEditingCell({ row: rowIdx, key: field.key })}
                                     title={hasError ? cellErrors[String(rowIdx)]?.join(', ') : 'Double-click to edit'}
                                   >
-                                    {row[field.key] ?? ''}
+                                    {String(row[field.key] ?? '')}
                                   </span>
                                 )}
                               </td>
@@ -725,7 +725,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
                                   onDoubleClick={() => setEditingCell({ row: rowIdx, key: field.key })}
                                   title={hasError ? cellErrors[String(rowIdx)]?.join(', ') : 'Double-click to edit'}
                                 >
-                                  {row[field.key] ?? ''}
+                                  {String(row[field.key] ?? '')}
                                 </span>
                               )}
                             </td>

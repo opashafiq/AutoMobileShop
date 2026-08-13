@@ -167,6 +167,7 @@ const emptyMaster = (): LayawayMasterDto => ({
   taxPhone: '',
   paymentMethodName: '',
   refundAmount: 0,
+  pendingAmount: 0,
 })
 
 interface LayawayFormProps {

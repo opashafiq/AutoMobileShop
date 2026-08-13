@@ -251,7 +251,7 @@ export default function LayawayCollectDatatable() {
           return (
             <Button
               size='sm'
-              variant='primary'
+              variant='default'
               onClick={() => router.push(`/react-tables/transaction/layaway-collect/${layawayId}`)}
             >
               <Icon icon='solar:card-money-linear' width={16} height={16} className='me-1' />

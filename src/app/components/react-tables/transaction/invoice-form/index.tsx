@@ -169,6 +169,7 @@ const emptyMaster = (): InvoiceMasterDto => ({
   taxPhone: '',
   paymentMethodName: '',
   refundAmount: 0,
+  pendingAmount: 0,
   layawayRefund: [],
 })
 
