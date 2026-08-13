@@ -2,6 +2,7 @@
 
 import { Icon } from '@iconify/react'
 
+import { useUser } from '@/app/context/UserContext'
 import React, { useContext } from 'react'
 import * as profileData from './Data'
 import Link from 'next/link'
@@ -21,6 +22,7 @@ import {getUserName} from "@/app/api/auth";
 
 const Profile = () => {
   const { activeDir } = useContext(CustomizerContext)
+  const { user } = useUser()
   const router = useRouter()
 
   return (
@@ -55,14 +57,14 @@ const Profile = () => {
                   {getUserName() }
                 </h5>
                 <span className='card-subtitle text-muted font-normal'>
-                  Designer
+                  {user?.locationName || '—'}
                 </span>
                 <p className='card-subtitle font-normal text-muted mb-0 mt-1 flex items-center'>
                   <Icon
                     icon='tabler:mail'
                     className='text-base me-1 relative top-0.5'
                   />
-                  info@Modernize.com
+                  {user?.email || '—'}
                 </p>
               </div>
             </div>

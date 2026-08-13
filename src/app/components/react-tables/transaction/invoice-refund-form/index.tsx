@@ -201,6 +201,13 @@ export default function InvoiceRefundForm({ mode, refundId, sourceInvoiceId, ref
   const editRefundUrl = isEdit && refundId ? getApiUrl(`/api/InvoiceRefundMaster/${refundId}`) : null
   const { data: editData, isLoading: editLoading, mutate: mutateEdit } = useSWR<RefundListResponseItem>(editRefundUrl, getFetcher)
 
+  // ----- Edit-mode: fetch source invoice so we can show ALL original items (not just refunded ones) -----
+  const editSourceInvoiceId = isEdit && editData?.invoiceRefundMasterDto?.tbirm_InvoiceId
+    ? editData.invoiceRefundMasterDto.tbirm_InvoiceId
+    : null
+  const editSourceInvoiceUrl = editSourceInvoiceId ? getApiUrl(`/api/InvoiceMaster/${editSourceInvoiceId}`) : null
+  const { data: editSourceInvoiceData } = useSWR<InvoiceListResponseItem>(editSourceInvoiceUrl, getFetcher)
+
   // ----- Form state -----
   const [master, setMaster] = useState<InvoiceRefundMasterDto>(emptyRefundMaster)
   const [details, setDetails] = useState<DraftRefundDetail[]>([])
@@ -258,52 +265,86 @@ export default function InvoiceRefundForm({ mode, refundId, sourceInvoiceId, ref
   }, [isEdit, sourceInvoiceData, hydrated, refundMode])
 
   // ----- Hydrate from existing refund (edit) -----
+  // Step 1: Load refund master + basic details (no merge yet — waiting for source invoice)
   useEffect(() => {
     if (isEdit && editData && !hydrated) {
       const rm = editData.invoiceRefundMasterDto
-      const rdetails = editData.invoiceRefundDetailsDto ?? []
       const rpayments = editData.invoiceRefundPaymentsDto ?? []
 
-      const sourceInv: InvoiceMasterDto | null = null // source invoice isn't returned by refund GET; show what we have
-      setSourceInvoiceMaster(sourceInv)
+      setSourceInvoiceMaster(null)
       setMaster({ ...rm })
       setRemainingRefundable(0) // not enforced on edit
-      // Determine mode from whether there are details.
-      setRefundModeState(rdetails.length > 0 ? 'item' : 'payment')
-
-      setDetails(rdetails.map((d) => ({
-        id: d.id,
-        tbird_InvoiceRefundId: d.tbird_InvoiceRefundId,
-        tbird_ItemId: d.tbird_ItemId,
-        tbird_ItemCategory: d.tbird_ItemCategory,
-        tbird_DepartmentName: d.tbird_DepartmentName,
-        tbird_Size: d.tbird_Size,
-        tbird_Brand: d.tbird_Brand,
-        tbird_Series: d.tbird_Series,
-        tbird_Bolt: d.tbird_Bolt,
-        tbird_HoleS: d.tbird_HoleS,
-        tbird_Zone: d.tbird_Zone,
-        tbird_DistributorId: d.tbird_DistributorId,
-        tbird_DistributorName: d.tbird_DistributorName,
-        tbird_Qty: d.tbird_Qty,
-        tbird_Taxable: d.tbird_Taxable,
-        tbird_UnitPrice: d.tbird_UnitPrice,
-        tbird_LineTotal: d.tbird_LineTotal,
-        tbird_TaxAmt: d.tbird_TaxAmt,
-        itemDepartmentName: d.itemDepartmentName,
-        itemDistributorName: d.itemDistributorName,
-        itemLocationName: d.itemLocationName,
-        itemDisplay: d.itemDisplay,
-        refundQty: d.tbird_Qty,
-        originalQty: d.tbird_Qty,
-        taxRate: d.tbird_Taxable && Number(d.tbird_LineTotal) > 0
-          ? (Number(d.tbird_TaxAmt) / Number(d.tbird_LineTotal)) * 100
-          : 0,
-      })))
+      // Mode determined once source invoice arrives (default to item until then)
+      setRefundModeState('item')
       setPayments(rpayments.map((p) => ({ ...p })))
       setHydrated(true)
     }
   }, [isEdit, editData, hydrated])
+
+  // Step 2: Once source invoice is available, merge ALL original items with refunded items
+  useEffect(() => {
+    if (isEdit && hydrated && editData && editSourceInvoiceData) {
+      const rdetails = editData.invoiceRefundDetailsDto ?? []
+      const sourceInv = editSourceInvoiceData.invoiceMasterDto
+      const invoiceItems = editSourceInvoiceData.invoiceDetailsDto ?? []
+
+      setSourceInvoiceMaster(sourceInv)
+
+      // If there are no refund details (pure payment refund), don't merge
+      if (rdetails.length === 0) {
+        setRefundModeState('payment')
+        return
+      }
+
+      // Build a map of refunded items by ItemId
+      const refundedMap = new Map<number, InvoiceRefundDetailsDto>()
+      for (const rd of rdetails) {
+        refundedMap.set(rd.tbird_ItemId, rd)
+      }
+
+      // Merge: show ALL original invoice items, overlay refund quantities where applicable
+      const merged: DraftRefundDetail[] = invoiceItems.map((d) => {
+        const refunded = refundedMap.get(Number(d.tbid_ItemId) || 0)
+        if (refunded) {
+          // Item was refunded — use original qty from invoice, refund qty from refund record
+          return {
+            id: refunded.id,
+            tbird_InvoiceRefundId: refunded.tbird_InvoiceRefundId,
+            tbird_ItemId: refunded.tbird_ItemId,
+            tbird_ItemCategory: refunded.tbird_ItemCategory,
+            tbird_DepartmentName: refunded.tbird_DepartmentName,
+            tbird_Size: refunded.tbird_Size,
+            tbird_Brand: refunded.tbird_Brand,
+            tbird_Series: refunded.tbird_Series,
+            tbird_Bolt: refunded.tbird_Bolt,
+            tbird_HoleS: refunded.tbird_HoleS,
+            tbird_Zone: refunded.tbird_Zone,
+            tbird_DistributorId: refunded.tbird_DistributorId,
+            tbird_DistributorName: refunded.tbird_DistributorName,
+            tbird_Qty: refunded.tbird_Qty,
+            tbird_Taxable: refunded.tbird_Taxable,
+            tbird_UnitPrice: refunded.tbird_UnitPrice,
+            tbird_LineTotal: refunded.tbird_LineTotal,
+            tbird_TaxAmt: refunded.tbird_TaxAmt,
+            itemDepartmentName: refunded.itemDepartmentName,
+            itemDistributorName: refunded.itemDistributorName,
+            itemLocationName: refunded.itemLocationName,
+            itemDisplay: refunded.itemDisplay,
+            refundQty: refunded.tbird_Qty,
+            originalQty: Number(d.tbid_Qty) || 0, // ← use original invoice qty, not refund qty
+            taxRate: refunded.tbird_Taxable && Number(refunded.tbird_LineTotal) > 0
+              ? (Number(refunded.tbird_TaxAmt) / Number(refunded.tbird_LineTotal)) * 100
+              : deriveTaxRate(d),
+          }
+        }
+        // Item NOT refunded yet — include with refundQty=0, preserve original qty
+        return detailFromInvoice(d)
+      })
+
+      setDetails(merged)
+      setRefundModeState('item')
+    }
+  }, [isEdit, hydrated, editData, editSourceInvoiceData])
 
   // Recompute line totals whenever refundQty / unitPrice / taxable / taxRate changes.
   const computedDetails = useMemo(() => {

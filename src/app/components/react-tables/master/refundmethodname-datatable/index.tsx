@@ -165,6 +165,7 @@ function RefundMethodNameTable({ enableColumnFilters = true }: { enableColumnFil
       [
         columnHelper.display({
           id: 'select',
+          enableSorting: false,
           header: ({ table }) => (<Checkbox checked={table.getIsAllPageRowsSelected()} onCheckedChange={(checked) => table.toggleAllPageRowsSelected(checked === true)} />),
           cell: ({ row }) => (<Checkbox checked={!!row.getIsSelected()} onCheckedChange={(checked) => row.toggleSelected(checked === true)} />),
         }),
@@ -188,6 +189,7 @@ function RefundMethodNameTable({ enableColumnFilters = true }: { enableColumnFil
         }),
         columnHelper.display({
           id: 'actions',
+          enableSorting: false,
           header: 'Actions',
           cell: ({ row }) => {
             const rowId = row.original.id
@@ -354,10 +356,17 @@ function RefundMethodNameTable({ enableColumnFilters = true }: { enableColumnFil
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
                               <div className='inline-flex items-center gap-0.5'>
-                                <button type='button' onClick={header.column.getToggleSortingHandler()} className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}>
-                                  {flexRender(header.column.columnDef.header, header.getContext())}
-                                  {header.column.getCanSort() && <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />}
-                                </button>
+                                {header.column.getCanSort() ? (
+                                  <button type='button' onClick={header.column.getToggleSortingHandler()}
+                                    className='inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white cursor-pointer select-none'>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
+                                  </button>
+                                ) : (
+                                  <span className='inline-flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                  </span>
+                                )}
                                 {isFilterable && <ColumnFilterInput columnData={columnData as (string | number | undefined)[]} filterValue={columnFilters[columnKey] || undefined} onFilterChange={(value) => handleColumnFilterChange(columnKey, value)} columnName={String(header.column.columnDef.header || columnKey)} />}
                               </div>
                             )}

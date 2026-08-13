@@ -1,3 +1,108 @@
+Environment variables are in .env in the home directory with following contents.
+NEXT_PUBLIC_API_BASE_URL=https://localhost:44352
+NEXT_PUBLIC_BASE_URL=http://localhost:3000
+NEXT_PUBLIC_GEMINI_API_KEY="YOUR_GEMINI_API_KEY"
+
+
+--
+Home page/ Dashboard is in:
+src/app/(DashboardLayout)/page.tsx
+Layout is in:
+src/app/(DashboardLayout)/layout.tsx
+
+--
+page.tsx is the Next.js App Router page file for the root route /
+In Next.js, folder names wrapped in parentheses like (DashboardLayout) are route groups and do not appear in the URL
+So page.tsx serves http://localhost:3000/
+
+--
+To start in a custom port rather than 3000, npx next dev -p 4000 or PORT=4000 npx next dev
+
+--
+Customers: 
+src/app/(DashboardLayout)/react-tables/user-datatable/page.tsx
+src/app/components/react-tables/user-datatable/index.tsx
+Orders:
+src/app/(DashboardLayout)/react-tables/order-datatable/page.tsx (Want to use filter option from here)
+Contact:
+src/app/(DashboardLayout)/apps/contacts/page.tsx
+
+TaxID:
+src/app/(DashboardLayout)/react-tables/master/tax-id/page.tsx
+src/app/components/react-tables/master/daily-expense-datatable/index.tsx
+
+
+
+-- A sample SWR fetch implemented by shafiq in src/app/(DashboardLayout)/react-tables/user-datatable/index.tsx
+
+-- Fetcher functions are written in: app/api/globalFetcher.ts
+
+
+--
+Changing the context values like:
+const { activeMode,setActiveMode } = useContext(CustomizerContext)
+console.log('Current theme mode from context:', activeMode)
+setActiveMode('dark') // Example of changing theme mode from the component
+console.log('Current theme mode from context after change:', activeMode)
+
+All the availble values for context are in:
+src/app/context/CustomizerContext/index.tsx
+
+--
+Set initial values in:
+src/context/CustomizerContext.tsx
+
+--
+Menu is in:
+src/app/(DashboardLayout)/layout/vertical/sidebar/Sidebaritems.tsx
+
+
+
+
+----
+Authentication implemented by github
+----
+Summary
+
+Auth helper: Added auth.ts:1 — login(), set/get/clear token utilities. (/src/app/api/auth.ts)
+Fetchers: Updated globalFetcher.ts:1 to attach Authorization: Bearer <token> (from localStorage key NEXT_AUTH_TOKEN) when present.
+Login UI: Wired login form in AuthLogin.tsx:1 to call auth.login(...), store token, and redirect on success. (/src/app/auth/authforms/AuthLogin.tsx)
+Protect dashboard: Dashboard layout now checks auth and redirects unauthenticated users to the login page (layout.tsx:1).
+Logout: Logout button in profile clears token and redirects to login (Profile.tsx:1). (src/app/(DashboardLayout)/layout/vertical/header/Profile.tsx)
+Env: Added NEXT_PUBLIC_API_BASE_URL to .env:1 so the base URL is configurable.
+Files changed
+
+Added: auth.ts:1
+Updated: globalFetcher.ts:1
+Updated: AuthLogin.tsx:1
+Updated: layout.tsx:1
+Updated: Profile.tsx:1
+Updated: .env:1
+
+
+---------------------------------------------------------------
+
+------
+Models
+----------------
+Models are in: src/app/models/interfaces.ts
+
+
+
+--------------
+Funnel column filter files
+------------
+/src/app/components/reac-tables/shared/ColumnFilterInput.tsx
+/src/app/components/reac-tables/shared/ColumnFilterUtils.ts
+
+
+--------------------------
+MD Files
+--------------------------
+/main/agent-guides
+
+
+
 Invoice Page:
 /react-tables/transaction/invoice - List page
 /react-tables/transaction/invoice/[id]/edit - Edit page
@@ -37,3 +142,143 @@ export default function InvoiceDatatable() {
   console.log('InvoiceDatatable - userSession:', userSession)
   console.log('InvoiceDatatable - roles:', userSession?.roles)
   console.log('InvoiceDatatable - isAdmin:', isAdmin)
+  
+==============================
+User Interface
+==============================
+
+The user-session interface is defined in src/app/api/auth.ts:10-20:
+
+export interface UserSession {
+  id: string
+  userName: string
+  firstName: string
+  lastName: string
+  isActive: boolean
+  locationId: number
+  locationName: string
+  email: string
+  roles: string[]
+}  
+
+
+How it gets populated at login:
+-----------------------------------
+The login flow is in the same file (auth.ts:117-187):
+
+login() POSTs to /Authentication/Login and stores the JWT in localStorage under NEXT_AUTH_TOKEN.
+It then calls fetchUserSession() (auth.ts:82-115), which GETs /api/ApplicationUser/getbyusername/{username}, maps the response into a UserSession, and persists it to localStorage under NEXT_AUTH_USER_SESSION via setUserSession().
+So after login, the full user object (id, locationId, roles, etc.) is sitting in localStorage.
+
+
+Two ways to retrieve it in a form
+1. Directly from the auth helper (what your refund form already does for the username):
+
+
+import { getUserSession } from '@/app/api/auth'
+
+const user = getUserSession()
+user?.locationId   // number
+user?.userName     // string
+user?.roles        // string[]
+Your current invoice-refund-form/index.tsx:10 imports getUserName and uses it the same way — getUserSession() just returns the whole object.
+
+
+2. The recommended way — via the UserContext (already mounted in the dashboard layout at (DashboardLayout)/layout.tsx:39):
+
+
+import { useUser } from '@/app/context/UserContext'
+
+// inside a component rendered under the dashboard layout:
+const { user, loading, locationId } = useUser()
+This rehydrates from localStorage on mount, stays in sync across tabs via a storage listener, and gives you reactive access — so if you want the form to react to login/logout, this beats a one-shot getUserSession() call.
+
+
+
+Concrete usage in a react-hook-form form
+A typical pattern, auto-filling a field from the logged-in user and including locationId in the submit payload:
+
+
+'use client'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { useUser } from '@/app/context/UserContext'
+import { postFetcher } from '@/app/api/globalFetcher'
+
+export function MyForm() {
+  const { user, loading, locationId } = useUser()
+  const { register, reset, handleSubmit } = useForm({
+    defaultValues: { preparedBy: '', note: '' },
+  })
+
+  // Once the session is hydrated, seed the field.
+  useEffect(() => {
+    if (!loading && user) {
+      reset({ preparedBy: `${user.firstName} ${user.lastName}`.trim() || user.userName })
+    }
+  }, [loading, user, reset])
+
+  const onSubmit = async (values) => {
+    // locationId comes from the session, not the form input
+    await postFetcher('/api/Something', {
+      ...values,
+      locationId,        // ← from useUser(), guaranteed present when authenticated
+      preparedById: user?.id,
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('preparedBy')} />
+      <input {...register('note')} />
+      <button type='submit'>Save</button>
+    </form>
+  )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -241,6 +241,13 @@ export default function LayawayRefundForm({ mode, refundId, sourceLayawayId, ref
   const editRefundUrl = isEdit && refundId ? getApiUrl(`/api/LayawayRefundMaster/${refundId}`) : null
   const { data: editData, isLoading: editLoading, mutate: mutateEdit } = useSWR<LayawayRefundListResponseItem>(editRefundUrl, getFetcher)
 
+  // ----- Edit-mode: fetch source layaway so we can show ALL original items (not just refunded ones) -----
+  const editSourceLayawayId = isEdit && editData?.layawayRefundMasterDto?.layaway_tbim_InvoiceId
+    ? editData.layawayRefundMasterDto.layaway_tbim_InvoiceId
+    : null
+  const editSourceLayawayUrl = editSourceLayawayId ? getApiUrl(`/api/LayawayMaster/${editSourceLayawayId}`) : null
+  const { data: editSourceLayawayData } = useSWR<LayawayListResponseItem>(editSourceLayawayUrl, getFetcher)
+
   // ----- Form state -----
   const [master, setMaster] = useState<LayawayRefundMasterDto>(emptyRefundMaster)
   const [details, setDetails] = useState<DraftLayawayRefundDetail[]>([])
@@ -328,51 +335,87 @@ export default function LayawayRefundForm({ mode, refundId, sourceLayawayId, ref
   }, [isEdit, sourceLayawayData, hydrated, refundMode])
 
   // ----- Hydrate from existing refund (edit) -----
+  // Step 1: Load refund master + payments (no item merge yet — waiting for source layaway)
   useEffect(() => {
     if (isEdit && editData && !hydrated) {
       const rm = editData.layawayRefundMasterDto
-      const rdetails = editData.layawayRefundDetailsDto ?? []
       const rpayments = editData.layawayRefundPaymentsDto ?? []
 
-      setSourceLayawayMaster(null) // source layaway isn't returned by refund GET
+      setSourceLayawayMaster(null)
       setMaster({ ...rm })
       setRemainingRefundable(0) // not enforced on edit
-      setRefundModeState(rdetails.length > 0 ? 'item' : 'payment')
-
-      setDetails(rdetails.map((d) => ({
-        id: d.id,
-        tbird_Layaway_RefundId: d.tbird_Layaway_RefundId,
-        tbird_ItemId: d.tbird_ItemId,
-        tbird_ItemCategory: d.tbird_ItemCategory,
-        tbird_DepartmentName: d.tbird_DepartmentName,
-        tbird_Size: d.tbird_Size,
-        tbird_Brand: d.tbird_Brand,
-        tbird_Series: d.tbird_Series,
-        tbird_Bolt: d.tbird_Bolt,
-        tbird_HoleS: d.tbird_HoleS,
-        tbird_Zone: d.tbird_Zone,
-        tbird_DistributorId: d.tbird_DistributorId,
-        tbird_DistributorName: d.tbird_DistributorName,
-        tbird_Qty: d.tbird_Qty,
-        tbird_Layaway_Qty: d.tbird_Layaway_Qty,
-        tbird_Layaway_Qty_LineTotal: d.tbird_Layaway_Qty_LineTotal,
-        tbird_Layaway_Qty_TaxAmt: d.tbird_Layaway_Qty_TaxAmt,
-        tbird_Taxable: d.tbird_Taxable,
-        tbird_UnitPrice: d.tbird_UnitPrice,
-        tbird_LineTotal: d.tbird_LineTotal,
-        tbird_TaxRate: d.tbird_TaxRate,
-        tbird_TaxAmt: d.tbird_TaxAmt,
-        itemDepartmentName: d.itemDepartmentName,
-        itemDistributorName: d.itemDistributorName,
-        itemLocationName: d.itemLocationName,
-        itemDisplay: d.itemDisplay,
-        refundQty: d.tbird_Qty,
-        originalQty: d.tbird_Layaway_Qty,
-      })))
+      // Mode determined once source layaway arrives (default to item until then)
+      setRefundModeState('item')
       setPayments(rpayments.map((p) => ({ ...p })))
       setHydrated(true)
     }
   }, [isEdit, editData, hydrated])
+
+  // Step 2: Once source layaway is available, merge ALL original items with refunded items
+  useEffect(() => {
+    if (isEdit && hydrated && editData && editSourceLayawayData) {
+      const rdetails = editData.layawayRefundDetailsDto ?? []
+      const sourceInv = editSourceLayawayData.layawayMasterDto
+      const layawayItems = editSourceLayawayData.layawayDetailsDto ?? []
+
+      setSourceLayawayMaster(sourceInv)
+
+      // If there are no refund details (pure payment refund), don't merge
+      if (rdetails.length === 0) {
+        setRefundModeState('payment')
+        return
+      }
+
+      // Build a map of refunded items by ItemId
+      const refundedMap = new Map<number, LayawayRefundDetailsDto>()
+      for (const rd of rdetails) {
+        refundedMap.set(rd.tbird_ItemId, rd)
+      }
+
+      // Merge: show ALL original layaway items, overlay refund quantities where applicable
+      const merged: DraftLayawayRefundDetail[] = layawayItems.map((d) => {
+        const refunded = refundedMap.get(Number(d.tbid_ItemId) || 0)
+        if (refunded) {
+          // Item was refunded — use original qty from layaway, refund qty from refund record
+          return {
+            id: refunded.id,
+            tbird_Layaway_RefundId: refunded.tbird_Layaway_RefundId,
+            tbird_ItemId: refunded.tbird_ItemId,
+            tbird_ItemCategory: refunded.tbird_ItemCategory,
+            tbird_DepartmentName: refunded.tbird_DepartmentName,
+            tbird_Size: refunded.tbird_Size,
+            tbird_Brand: refunded.tbird_Brand,
+            tbird_Series: refunded.tbird_Series,
+            tbird_Bolt: refunded.tbird_Bolt,
+            tbird_HoleS: refunded.tbird_HoleS,
+            tbird_Zone: refunded.tbird_Zone,
+            tbird_DistributorId: refunded.tbird_DistributorId,
+            tbird_DistributorName: refunded.tbird_DistributorName,
+            tbird_Qty: refunded.tbird_Qty,
+            tbird_Layaway_Qty: refunded.tbird_Layaway_Qty,
+            tbird_Layaway_Qty_LineTotal: refunded.tbird_Layaway_Qty_LineTotal,
+            tbird_Layaway_Qty_TaxAmt: refunded.tbird_Layaway_Qty_TaxAmt,
+            tbird_Taxable: refunded.tbird_Taxable,
+            tbird_UnitPrice: refunded.tbird_UnitPrice,
+            tbird_LineTotal: refunded.tbird_LineTotal,
+            tbird_TaxRate: refunded.tbird_TaxRate,
+            tbird_TaxAmt: refunded.tbird_TaxAmt,
+            itemDepartmentName: refunded.itemDepartmentName,
+            itemDistributorName: refunded.itemDistributorName,
+            itemLocationName: refunded.itemLocationName,
+            itemDisplay: refunded.itemDisplay,
+            refundQty: refunded.tbird_Qty,
+            originalQty: Number(d.tbid_Qty) || 0, // ← use original layaway qty, not refund qty
+          }
+        }
+        // Item NOT refunded yet — include with refundQty=0, preserve original qty
+        return detailFromLayaway(d)
+      })
+
+      setDetails(merged)
+      setRefundModeState('item')
+    }
+  }, [isEdit, hydrated, editData, editSourceLayawayData])
 
   // Recompute line totals whenever refundQty / unitPrice / taxable / taxRate changes.
   const computedDetails = useMemo(() => {
