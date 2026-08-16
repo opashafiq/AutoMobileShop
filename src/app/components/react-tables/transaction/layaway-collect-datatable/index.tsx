@@ -590,18 +590,17 @@ export default function LayawayCollectDatatable() {
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
                               <div className='inline-flex items-center gap-0.5'>
-                                <div className={`relative grid w-full ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}>
-                                  <button
-                                    type='button'
-                                    onClick={header.column.getToggleSortingHandler()}
-                                    className={`p-0 block w-full text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
-                                  >
+                                {header.column.getCanSort() ? (
+                                  <button type='button' onClick={header.column.getToggleSortingHandler()}
+                                    className='inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white cursor-pointer select-none'>
                                     {flexRender(header.column.columnDef.header, header.getContext())}
+                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
                                   </button>
-                                  {header.column.getCanSort() && (
-                                    <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none' />
-                                  )}
-                                </div>
+                                ) : (
+                                  <span className='inline-flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                  </span>
+                                )}
                                 {FILTERABLE_COLUMNS.includes(colId) && (
                                   <ColumnFilterInput
                                     columnData={colData as (string | number | undefined)[]}

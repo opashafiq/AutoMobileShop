@@ -192,6 +192,7 @@ export default function LayawayRefundDatatable() {
     return [
       columnHelper.display({
         id: 'select',
+        enableSorting: false,
         header: ({ table: t }) => (
           <Checkbox
             checked={t.getIsAllPageRowsSelected()}
@@ -204,7 +205,6 @@ export default function LayawayRefundDatatable() {
             onCheckedChange={(checked) => row.toggleSelected(checked === true)}
           />
         ),
-        enableSorting: false,
         size: 40,
       }),
       columnHelper.display({
@@ -257,6 +257,7 @@ export default function LayawayRefundDatatable() {
       }),
       columnHelper.display({
         id: 'actions',
+        enableSorting: false,
         header: 'Actions',
         cell: ({ row }) => {
           const refundId = row.original.layawayRefundMasterDto.id
@@ -287,7 +288,6 @@ export default function LayawayRefundDatatable() {
             </DropdownMenu>
           )
         },
-        enableSorting: false,
       }),
     ] as ColumnDef<LayawayRefundListResponseItem>[]
   }, [router])
@@ -648,16 +648,17 @@ export default function LayawayRefundDatatable() {
                           <th key={header.id} className='h-12 px-4 border-b border-ld text-left align-middle'>
                             {header.isPlaceholder ? null : (
                               <div className='inline-flex items-center gap-0.5'>
-                                <button
-                                  type='button'
-                                  onClick={header.column.getToggleSortingHandler()}
-                                  className={`inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white ${header.column.getCanSort() ? 'cursor-pointer select-none' : ''}`}
-                                >
-                                  {flexRender(header.column.columnDef.header, header.getContext())}
-                                  {header.column.getCanSort() && (
+                                {header.column.getCanSort() ? (
+                                  <button type='button' onClick={header.column.getToggleSortingHandler()}
+                                    className='inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white cursor-pointer select-none'>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
                                     <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
-                                  )}
-                                </button>
+                                  </button>
+                                ) : (
+                                  <span className='inline-flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>
+                                    {flexRender(header.column.columnDef.header, header.getContext())}
+                                  </span>
+                                )}
                                 {FILTERABLE_COLUMNS.includes(colId) && (
                                   <ColumnFilterInput
                                     columnData={colData as (string | number | undefined)[]}
