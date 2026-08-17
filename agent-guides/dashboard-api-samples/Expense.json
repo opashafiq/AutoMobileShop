@@ -1,0 +1,12 @@
+{
+  "total": 10230,
+  "currency": "USD",
+  "series": [6000, 2500, 1500],
+  "labels": ["Inventory", "Labor", "Utilities"],
+  "colors": ["var(--color-primary)", "var(--color-secondary)", "var(--color-success)"],
+  "breakdown": [
+    { "category": "Inventory Purchases", "amount": 6000 },
+    { "category": "Labor & Wages", "amount": 2500 },
+    { "category": "Utilities & Rent", "amount": 1500 }
+  ]
+}

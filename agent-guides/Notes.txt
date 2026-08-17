@@ -142,7 +142,56 @@ export default function InvoiceDatatable() {
   console.log('InvoiceDatatable - userSession:', userSession)
   console.log('InvoiceDatatable - roles:', userSession?.roles)
   console.log('InvoiceDatatable - isAdmin:', isAdmin)
-  
+
+
+================================
+Top Menu
+================================
+ \main\src\app\(DashboardLayout)\layout\vertical\header\Header.tsx
+
+===============================
+Left Menu Bar
+===============================
+\main\src\app\(DashboardLayout)\layout\vertical\sidebar\Sidebar.tsx
+
+===============================
+Profile/Theme Changer Icons
+===============================
+\main\src\app\(DashboardLayout)\layout\vertical\header\Header.tsx
+
+===============================
+Notification Icon
+===============================
+\main\src\app\(DashboardLayout)\layout\vertical\header\Messages.tsx
+
+===============================
+Language Icon
+===============================
+\main\src\app\(DashboardLayout)\layout\vertical\header\Language.tsx
+
+
+
+===============================
+Login Form
+===============================
+\main\src\app\auth\auth1\login\page.tsx  -- :
+<LeftSidebarPart /> -> \main\src\app\auth\auth1\LeftSidebarPart.tsx
+<AuthLogin /> -> \main\src\app\auth\authforms\AuthLogin.tsx
+
+
+==============================
+SWR Configuration
+==============================
+SWR has been configured in the folder: app/api/globalFetcher.ts
+
+==============================
+Using Environment Variable
+==============================
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://localhost:44352'
+
+
+
+
 ==============================
 User Interface
 ==============================

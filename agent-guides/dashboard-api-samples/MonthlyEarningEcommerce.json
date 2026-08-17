@@ -1,0 +1,15 @@
+{
+  "title": "Monthly Earnings",
+  "total": 6820,
+  "currency": "USD",
+  "changePercent": 9,
+  "trend": "up",
+  "series": [
+    {
+      "name": "monthly earnings",
+      "color": "var(--color-primary)",
+      "data": [25, 66, 20, 40, 12, 58, 20]
+    }
+  ],
+  "categories": ["W1", "W2", "W3", "W4", "W5", "W6", "W7"]
+}

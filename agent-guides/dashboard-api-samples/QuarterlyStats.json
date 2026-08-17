@@ -1,0 +1,33 @@
+{
+  "title": "Quarterly Stats",
+  "subtitle": "Average sales",
+  "series": [
+    { "name": "Sales", "color": "var(--color-primary)", "data": [5, 15, 5, 10, 5] }
+  ],
+  "stats": [
+    {
+      "key": "topSales",
+      "title": "Top Sales",
+      "subtitle": "Michelin Defender",
+      "badgeColor": "lightPrimary",
+      "bgcolor": "bg-lightprimary text-primary",
+      "record": 76
+    },
+    {
+      "key": "topService",
+      "title": "Top Service",
+      "subtitle": "Wheel Balancing",
+      "badgeColor": "lightSuccess",
+      "bgcolor": "bg-lightsuccess text-success",
+      "record": 68
+    },
+    {
+      "key": "topBrand",
+      "title": "Top Brand",
+      "subtitle": "Goodyear",
+      "badgeColor": "lightSecondary",
+      "bgcolor": "bg-lightsecondary text-secondary",
+      "record": 52
+    }
+  ]
+}

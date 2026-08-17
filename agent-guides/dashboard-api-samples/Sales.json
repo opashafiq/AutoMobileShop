@@ -1,0 +1,12 @@
+{
+  "total": 65432,
+  "currency": "USD",
+  "series": [
+    {
+      "name": "Sales",
+      "data": [11, 17, 15, 15, 21, 14, 11]
+    }
+  ],
+  "categories": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  "color": "var(--color-secondary)"
+}

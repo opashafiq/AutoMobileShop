@@ -1,0 +1,15 @@
+{
+  "title": "Weekly Sales",
+  "subtitle": "Every week",
+  "series": [
+    { "name": "Sales", "data": [20, 15, 30, 25, 10, 15, 20] }
+  ],
+  "categories": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+  "highlightIndex": 2,
+  "summary": {
+    "totalSales": 36358,
+    "expenses": 5296,
+    "totalSalesLabel": "Total Sales",
+    "expensesLabel": "Expenses"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "title": "Payment Methods",
+  "subtitle": "Today's income by method",
+  "payments": [
+    {
+      "key": "cash",
+      "method": "Cash",
+      "desc": "Walk-in customers",
+      "amount": "+$2,450",
+      "paymentImg": "/images/svgs/icon-wallet.svg",
+      "color": "bg-lightprimary dark:bg-lightprimary"
+    },
+    {
+      "key": "creditCard",
+      "method": "Credit Card",
+      "desc": "Card payments",
+      "amount": "+$3,235",
+      "paymentImg": "/images/svgs/icon-credit-card.svg",
+      "color": "bg-lightsuccess dark:bg-lightsuccess"
+    },
+    {
+      "key": "debitCard",
+      "method": "Debit Card",
+      "desc": "Bank payments",
+      "amount": "+$1,235",
+      "paymentImg": "/images/svgs/icon-pie2.svg",
+      "color": "bg-lightwarning dark:bg-lightwarning"
+    },
+    {
+      "key": "financing",
+      "method": "Financing",
+      "desc": "Installment plans",
+      "amount": "+$850",
+      "paymentImg": "/images/svgs/icon-paypal2.svg",
+      "color": "bg-lighterror dark:bg-lighterror"
+    }
+  ],
+  "viewAllUrl": "/apps/invoice/list"
+}

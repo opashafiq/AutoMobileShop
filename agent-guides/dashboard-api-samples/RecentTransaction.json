@@ -1,0 +1,57 @@
+{
+  "title": "Recent Transactions",
+  "subtitle": "Latest shop activity",
+  "transactions": [
+    {
+      "key": "t1",
+      "time": "08:45 am",
+      "desc": "Payment received from FleetCo Logistics of $1,385.90",
+      "isSale": false,
+      "borderColor": "border-primary",
+      "isLastItem": false
+    },
+    {
+      "key": "t2",
+      "time": "09:30 am",
+      "desc": "New sale recorded",
+      "isSale": true,
+      "borderColor": "border-info",
+      "isLastItem": false,
+      "saleId": "INV-3467"
+    },
+    {
+      "key": "t3",
+      "time": "10:00 am",
+      "desc": "Service completed — Wheel Alignment $64.95",
+      "isSale": false,
+      "borderColor": "border-success",
+      "isLastItem": false
+    },
+    {
+      "key": "t4",
+      "time": "12:00 pm",
+      "desc": "New sale recorded",
+      "isSale": true,
+      "borderColor": "border-warning",
+      "isLastItem": false,
+      "saleId": "INV-3468"
+    },
+    {
+      "key": "t5",
+      "time": "03:00 pm",
+      "desc": "New sale recorded",
+      "isSale": true,
+      "borderColor": "border-error",
+      "isLastItem": false,
+      "saleId": "INV-3469"
+    },
+    {
+      "key": "t6",
+      "time": "04:45 pm",
+      "desc": "Layaway payment received",
+      "isSale": false,
+      "borderColor": "border-success",
+      "isLastItem": true
+    }
+  ]
+}

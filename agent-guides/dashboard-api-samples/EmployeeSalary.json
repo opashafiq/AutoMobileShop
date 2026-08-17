@@ -1,0 +1,15 @@
+{
+  "title": "Technician Service Revenue",
+  "subtitle": "Every month",
+  "series": [
+    { "name": "Service Revenue", "data": [2000, 1500, 3000, 2500, 1000, 1500, 2000] }
+  ],
+  "categories": ["Apr", "May", "June", "July", "Aug", "Sept", "Oct"],
+  "highlightIndex": 2,
+  "summary": {
+    "salary": 36358,
+    "profit": 5296,
+    "salaryLabel": "Labor Cost",
+    "profitLabel": "Net Profit"
+  }
+}

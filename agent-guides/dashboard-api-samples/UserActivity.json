@@ -1,0 +1,11 @@
+{
+  "title": "Service Activity",
+  "subtitle": "Every day",
+  "series": [
+    { "name": "Tire Sales", "data": [48, 48, 69, 60, 90, 113, 49] },
+    { "name": "Service Jobs", "data": [35, 63, 77, 65, 51, 71, 61] }
+  ],
+  "categories": ["M", "T", "W", "T", "F", "S", "S"],
+  "colors": ["var(--color-primary)", "var(--color-secondary)"],
+  "legend": ["Tire Sales", "Service Jobs"]
+}

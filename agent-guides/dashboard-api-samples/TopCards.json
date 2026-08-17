@@ -1,0 +1,62 @@
+[
+  {
+    "key": "salesToday",
+    "title": "Today's Sales",
+    "value": "$3,240",
+    "metric": "salesToday",
+    "img": "/images/svgs/icon-wallet.svg",
+    "bgcolor": "bg-lightprimary dark:bg-lightprimary",
+    "textclr": "text-primary dark:text-primary",
+    "url": "/apps/invoice/list"
+  },
+  {
+    "key": "pendingInvoices",
+    "title": "Pending Invoices",
+    "value": "12",
+    "metric": "pendingInvoices",
+    "img": "/images/svgs/icon-connect.svg",
+    "bgcolor": "bg-lightsuccess dark:bg-lightsuccess",
+    "textclr": "text-success dark:text-success",
+    "url": "/apps/invoice/list"
+  },
+  {
+    "key": "lowStock",
+    "title": "Low Stock Items",
+    "value": "8",
+    "metric": "lowStockItems",
+    "img": "/images/svgs/icon-briefcase.svg",
+    "bgcolor": "bg-lighterror dark:bg-lighterror",
+    "textclr": "text-error dark:text-error",
+    "url": "/apps/ecommerce/shop"
+  },
+  {
+    "key": "newOrders",
+    "title": "New Orders",
+    "value": "47",
+    "metric": "newOrders",
+    "img": "/images/svgs/icon-speech-bubble.svg",
+    "bgcolor": "bg-lightsecondary dark:bg-lightsecondary",
+    "textclr": "text-secondary dark:text-secondary",
+    "url": "/apps/ecommerce/shop"
+  },
+  {
+    "key": "activeCustomers",
+    "title": "Active Customers",
+    "value": "156",
+    "metric": "activeCustomers",
+    "img": "/images/svgs/icon-user-male.svg",
+    "bgcolor": "bg-lightwarning dark:bg-lightwarning",
+    "textclr": "text-warning dark:text-warning",
+    "url": "/apps/contacts"
+  },
+  {
+    "key": "serviceAppointments",
+    "title": "Service Orders",
+    "value": "23",
+    "metric": "serviceAppointments",
+    "img": "/images/svgs/icon-favorites.svg",
+    "bgcolor": "bg-lightprimary dark:bg-lightprimary",
+    "textclr": "text-primary dark:text-primary",
+    "url": "/apps/kanban"
+  }
+]

@@ -1,0 +1,14 @@
+{
+  "total": 36358,
+  "changePercent": 9,
+  "trend": "down",
+  "comparisonLabel": "last period",
+  "series": [
+    {
+      "name": "Customers",
+      "color": "var(--color-secondary)",
+      "data": [30, 25, 35, 20, 30, 40]
+    }
+  ],
+  "categories": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"]
+}

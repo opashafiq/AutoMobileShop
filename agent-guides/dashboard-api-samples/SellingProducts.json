@@ -1,0 +1,22 @@
+{
+  "title": "Best Selling Tire Brands",
+  "subtitle": "Overview 2026",
+  "products": [
+    {
+      "key": "brand1",
+      "name": "Michelin Defender",
+      "revenue": 23568,
+      "currency": "USD",
+      "percentage": 55,
+      "colorVariant": "primary"
+    },
+    {
+      "key": "brand2",
+      "name": "Bridgestone Turanza",
+      "revenue": 24468,
+      "currency": "USD",
+      "percentage": 65,
+      "colorVariant": "secondary"
+    }
+  ]
+}

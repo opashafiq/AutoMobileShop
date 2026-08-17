@@ -1,0 +1,44 @@
+{
+  "performers": [
+    {
+      "key": "t1",
+      "profileImg": "/images/profile/user-1.jpg",
+      "username": "Carlos Mendez",
+      "designation": "Senior Technician",
+      "project": "Alignments & Balancing",
+      "priority": "High",
+      "color": "lightError",
+      "budget": 24.5
+    },
+    {
+      "key": "t2",
+      "profileImg": "/images/profile/user-2.jpg",
+      "username": "James Carter",
+      "designation": "Service Advisor",
+      "project": "Tire Installation",
+      "priority": "Medium",
+      "color": "lightWarning",
+      "budget": 18.2
+    },
+    {
+      "key": "t3",
+      "profileImg": "/images/profile/user-3.jpg",
+      "username": "Robert Lee",
+      "designation": "Technician",
+      "project": "Rotation & Patch",
+      "priority": "Low",
+      "color": "lightPrimary",
+      "budget": 9.8
+    },
+    {
+      "key": "t4",
+      "profileImg": "/images/profile/user-4.jpg",
+      "username": "Diego Santos",
+      "designation": "Junior Technician",
+      "project": "Wheel Balancing",
+      "priority": "Low",
+      "color": "lightPrimary",
+      "budget": 4.6
+    }
+  ]
+}

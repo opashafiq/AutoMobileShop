@@ -1,0 +1,44 @@
+{
+  "products": [
+    {
+      "key": "p1",
+      "productImg": "/images/products/michelin-defender.jpg",
+      "productname": "Michelin Defender T+H 215/55R17",
+      "category": "Tires",
+      "date": "Sun, Aug 17 2026",
+      "stock": "In Stock",
+      "color": "lightSuccess",
+      "price": 165
+    },
+    {
+      "key": "p2",
+      "productImg": "/images/products/bridgestone-turanza.jpg",
+      "productname": "Bridgestone Turanza 205/60R16",
+      "category": "Tires",
+      "date": "Sat, Aug 16 2026",
+      "stock": "Out Of Stock",
+      "color": "lightError",
+      "price": 132
+    },
+    {
+      "key": "p3",
+      "productImg": "/images/products/goodyear-assurance.jpg",
+      "productname": "Goodyear Assurance 225/45R18",
+      "category": "Tires",
+      "date": "Fri, Aug 15 2026",
+      "stock": "In Stock",
+      "color": "lightSuccess",
+      "price": 178
+    },
+    {
+      "key": "p4",
+      "productImg": "/images/products/continental-truecontact.jpg",
+      "productname": "Continental TrueContact 195/65R15",
+      "category": "Tires",
+      "date": "Thu, Aug 14 2026",
+      "stock": "In Stock",
+      "color": "lightSuccess",
+      "price": 120
+    }
+  ]
+}

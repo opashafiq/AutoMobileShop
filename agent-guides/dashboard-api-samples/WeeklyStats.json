@@ -1,0 +1,37 @@
+{
+  "title": "Weekly Stats",
+  "subtitle": "Average sales",
+  "series": [
+    {
+      "name": "Sales Per Week",
+      "color": "var(--color-primary)",
+      "data": [5, 15, 10, 20]
+    }
+  ],
+  "stats": [
+    {
+      "key": "topSales",
+      "title": "Top Sales",
+      "subtitle": "Michelin Defender",
+      "badgeColor": "lightPrimary",
+      "bgcolor": "bg-lightprimary text-primary",
+      "value": "+68"
+    },
+    {
+      "key": "topService",
+      "title": "Top Service",
+      "subtitle": "Tire Rotation",
+      "badgeColor": "lightSuccess",
+      "bgcolor": "bg-lightsuccess text-success",
+      "value": "+45"
+    },
+    {
+      "key": "topCustomer",
+      "title": "Top Customer",
+      "subtitle": "FleetCo Logistics",
+      "badgeColor": "lightError",
+      "bgcolor": "bg-lighterror text-error",
+      "value": "+32"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "userName": "Shafiq",
+  "welcomePhrases": ["back Shafiq!", "to your dashboard!"],
+  "profileImg": "/images/profile/user-1.jpg",
+  "todaysSales": 3240,
+  "currency": "USD",
+  "overallPerformance": 87,
+  "performanceUnit": "%",
+  "lottieAnimation": "onlinedoctor"
+}

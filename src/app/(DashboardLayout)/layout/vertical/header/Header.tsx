@@ -1,10 +1,7 @@
 'use client'
 
 import { useState, useEffect, useContext } from 'react'
-import Link from 'next/link'
 import { Icon } from '@iconify/react'
-import Search from './Search'
-import AppLinks from './AppLinks'
 import Messages from './Messages'
 import Profile from './Profile'
 import { Language } from './Language'
@@ -113,27 +110,6 @@ const Header = ({ layoutType }: HeaderPropsType) => {
                   </span>
                 ) : null}
 
-                <Search />
-
-                <AppLinks />
-
-                <Link
-                  href='/apps/chats'
-                  className='text-sm text-link dark:text-darklink dark:hover:text-primary px-4 h-10 hover:text-primary flex items-center justify-center'>
-                  Chat
-                </Link>
-
-                <Link
-                  href='/apps/calendar'
-                  className='text-sm text-link dark:text-darklink dark:hover:text-primary px-4 h-10 hover:text-primary flex items-center justify-center'>
-                  Calendar
-                </Link>
-
-                <Link
-                  href='/apps/email'
-                  className='text-sm text-link dark:text-darklink dark:hover:text-primary px-4 h-10 hover:text-primary flex items-center justify-center'>
-                  Email
-                </Link>
               </div>
             </div>
             {/* mobile-logo */}
@@ -173,7 +149,7 @@ const Header = ({ layoutType }: HeaderPropsType) => {
                 <Language />
 
                 {/* Messages Dropdown */}
-                <Messages />
+                {/* <Messages /> */}
 
                 {/* Profile Dropdown */}
                 <Profile />

@@ -71,7 +71,7 @@ const Profile = () => {
           </div>
 
           {/* Dropdown items */}
-          <SimpleBar>
+          {/* <SimpleBar>
             {profileData.profileDD.map((items, index) => (
               <DropdownMenuItem
                 key={index}
@@ -94,7 +94,7 @@ const Profile = () => {
                 </Link>
               </DropdownMenuItem>
             ))}
-          </SimpleBar>
+          </SimpleBar> */}
 
           {/* Logout Button */}
 

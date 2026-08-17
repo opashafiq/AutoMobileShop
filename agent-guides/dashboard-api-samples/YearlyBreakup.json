@@ -1,0 +1,15 @@
+{
+  "totalRevenue": 103000,
+  "currency": "USD",
+  "changePercent": 9,
+  "trend": "up",
+  "comparisonLabel": "last year",
+  "series": [38000, 40000, 25000],
+  "labels": ["2024", "2025", "2026"],
+  "colors": ["var(--color-primary)", "var(--color-lightprimary)", "var(--color-secondary)"],
+  "breakdown": [
+    { "year": "2024", "revenue": 38000, "color": "var(--color-primary)" },
+    { "year": "2025", "revenue": 40000, "color": "var(--color-lightprimary)" },
+    { "year": "2026", "revenue": 25000, "color": "var(--color-secondary)" }
+  ]
+}

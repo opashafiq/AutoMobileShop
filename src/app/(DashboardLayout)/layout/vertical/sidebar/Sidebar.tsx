@@ -24,7 +24,7 @@ const SidebarLayout = () => {
     <>
       <div className='flex'>
         <Sidebar
-          className='fixed menu-sidebar bg-white dark:bg-dark z-[3] border-ld
+          className='fixed menu-sidebar bg-white dark:bg-dark z-[3] border-ld flex flex-col h-screen
           '
           side={activeDir === 'rtl' ? 'right' : 'left'}>
           <SidebarHeader className='p-0'>
@@ -36,7 +36,7 @@ const SidebarLayout = () => {
             </div>
           </SidebarHeader>
 
-          <SimpleBar className='h-[calc(100vh_-_180px)]'>
+          <SimpleBar className='flex-1 min-h-0'>
             <SidebarContent
               className={`${isCollapse === 'full-sidebar' ? 'px-6' : 'px-4'}`}>
               <SidebarGroup className='sidebar-nav p-0'>

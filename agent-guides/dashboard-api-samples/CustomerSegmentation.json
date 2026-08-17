@@ -1,0 +1,11 @@
+{
+  "total": 3566,
+  "series": [2758, 350, 458],
+  "labels": ["Individual", "Fleet", "Wholesale"],
+  "colors": ["var(--color-primary)", "var(--color-lightprimary)", "var(--color-secondary)"],
+  "segments": [
+    { "name": "Individual", "count": 2758, "amount": 36358 },
+    { "name": "Fleet", "count": 350, "amount": 120000 },
+    { "name": "Wholesale", "count": 458, "amount": 52960 }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "total": 16500,
+  "currency": "USD",
+  "series": [
+    { "name": "Sales", "data": [100, 60, 35, 90, 35, 100] }
+  ],
+  "categories": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+  "color": "var(--color-primary)"
+}
