@@ -15,6 +15,8 @@ export interface UserSession {
   isActive: boolean
   locationId: number
   locationName: string
+  tbld_Address1: string
+  tbld_Address2: string
   email: string
   roles: string[]
 }
@@ -107,6 +109,8 @@ export const fetchUserSession = async (
     isActive: body?.isActive ?? true,
     locationId: Number(body?.locationId) || 0,
     locationName: body?.locationName ?? '',
+    tbld_Address1: body?.tbld_Address1 ?? '',
+    tbld_Address2: body?.tbld_Address2 ?? '',
     email: body?.email ?? '',
     roles: Array.isArray(body?.roles) ? body.roles : [],
   }
