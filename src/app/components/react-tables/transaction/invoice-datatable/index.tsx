@@ -347,6 +347,13 @@ export default function InvoiceDatatable() {
                   Edit
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
+                  onClick={() => router.push(`/react-tables/transaction/invoice/${invId}/print`)}
+                  className='cursor-pointer'
+                >
+                  <Icon icon='solar:printer-linear' width={20} height={20} className='me-2' />
+                  View / Print
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
                   onClick={() => router.push(`/react-tables/transaction/invoice/create?reorder=${invId}`)}
                   className='cursor-pointer'
                 >

@@ -36,6 +36,14 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -239,6 +247,10 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
   const [draftPayment, setDraftPayment] = useState<InvoicePaymentsDto>(() => emptyPayment())
 
   const [saving, setSaving] = useState(false)
+
+  // Post-save dialog: prompts user to view/print the invoice after save
+  const [saveSuccessDialogOpen, setSaveSuccessDialogOpen] = useState(false)
+  const [savedInvoiceId, setSavedInvoiceId] = useState<number | null>(null)
 
   // ----- Hydrate form from edit data -----
   useEffect(() => {
@@ -568,6 +580,8 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
         ),
         invoicePaymentsDto: payments,
       }
+      let resultId: number | null = null
+
       if (isEdit && invoiceId) {
         // Note: EditInvoice uses POST, not PUT — the .NET controller
         // decorates this action with [HttpPost] despite the "Edit" naming.
@@ -575,12 +589,35 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
         // Invalidate the SWR cache for this invoice so the next time the
         // edit form mounts, it fetches fresh data instead of stale cache.
         mutateEdit()
+        resultId = Number(invoiceId)
         toast.success('Invoice updated successfully')
       } else {
-        await postFetcher(getApiUrl('/api/InvoiceMaster/CreateInvoice'), payload)
+        const result = await postFetcher(
+          getApiUrl('/api/InvoiceMaster/CreateInvoice'),
+          payload,
+        ) as Record<string, unknown> | undefined
+        // CreateInvoice returns the saved invoice object directly, with the
+        // primary id at invoiceMasterDto.id (matching the list endpoint's
+        // invoiceMasterDto.id used for navigation). Keep fallbacks for other
+        // plausible shapes just in case the contract changes.
+        const r = result as any
+        resultId =
+          r?.invoiceMasterDto?.id ??
+          r?.data?.invoiceMasterDto?.id ??
+          r?.data?.id ??
+          r?.id ??
+          null
+        if (resultId) {
+          console.log('[InvoiceForm] New invoice ID extracted:', resultId)
+        } else {
+          console.warn('[InvoiceForm] Could not extract new invoice ID from create response:', result)
+        }
         toast.success('Invoice created successfully')
       }
-      router.push('/react-tables/transaction/invoice')
+
+      // Show success dialog — user can choose to view/print or go back to list
+      setSavedInvoiceId(resultId)
+      setSaveSuccessDialogOpen(true)
     } catch (err) {
       toast.error(
         err instanceof Error && err.message
@@ -1257,6 +1294,42 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       </Sheet>
 
       {/* Layaway Refund is view-only — the Add/Edit Sheet has been removed */}
+
+      {/* Post-save success dialog — prompts user to view/print the invoice */}
+      <Dialog open={saveSuccessDialogOpen} onOpenChange={setSaveSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invoice Saved Successfully</DialogTitle>
+            <DialogDescription>
+              Would you like to view and print this invoice now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className='flex justify-end gap-2'>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setSaveSuccessDialogOpen(false)
+                router.push('/react-tables/transaction/invoice')
+              }}
+            >
+              No, Go to List
+            </Button>
+            <Button
+              onClick={() => {
+                setSaveSuccessDialogOpen(false)
+                if (savedInvoiceId) {
+                  router.push(`/react-tables/transaction/invoice/${savedInvoiceId}/print`)
+                } else {
+                  router.push('/react-tables/transaction/invoice')
+                }
+              }}
+            >
+              <Icon icon='solar:printer-linear' width={16} height={16} className='me-1.5' />
+              Yes, View & Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

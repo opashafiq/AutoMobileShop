@@ -8,7 +8,7 @@ const LeftSidebarPart = () => {
       <div className='flex justify-center h-screen items-center z-10 relative'>
         <div className='xl:w-5/12 lg:w-10/12 xl:px-0 px-6'>
           <Image
-            src={'/images/backgrounds/bg_3.png'}
+            src={'/images/backgrounds/bg_4.svg'}
             alt='bg-img'
             width={461}
             height={450}
