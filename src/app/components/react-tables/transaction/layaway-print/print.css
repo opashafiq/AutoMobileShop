@@ -1,0 +1,89 @@
+/* ============================================================
+ * Layaway Print Template — @media print rules
+ *
+ * Mirrors the invoice print template rules. Imported by the
+ * LayawayPrintView component.
+ * ============================================================ */
+
+/* Action bar and other non-printable elements */
+.no-print {
+  /* Default: visible on screen */
+}
+
+@media print {
+  /* Page setup — US Letter, portrait */
+  @page {
+    size: letter portrait;
+    margin: 0.3in 0.3in;
+  }
+
+  /* Hide all non-printable elements */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Hide dashboard chrome */
+  nav,
+  header,
+  aside,
+  [data-sidebar],
+  [role='navigation'],
+  .sidebar,
+  .header,
+  .customizer,
+  footer {
+    display: none !important;
+  }
+
+  /* Ensure the report fills the page */
+  .invoice-print-root {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: hidden !important;
+  }
+
+  /* Constrain all inner containers to prevent overflow */
+  .invoice-print-root * {
+    max-width: 100% !important;
+    overflow: hidden !important;
+  }
+
+  /* Tables should not overflow */
+  .invoice-print-root table {
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  /* Bottom grid: 2 columns in print (payment + wheel left, summary right) */
+  .invoice-bottom-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Reduce font sizes slightly for print density */
+  .invoice-print-root {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* Keep table rows together */
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Preserve background colors (important for badges, table headers) */
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Force all backgrounds in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

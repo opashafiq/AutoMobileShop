@@ -35,6 +35,14 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -239,6 +247,10 @@ export default function LayawayForm({ mode, layawayId, reorderId }: LayawayFormP
 
   const [saving, setSaving] = useState(false)
   const [importing, setImporting] = useState(false)
+
+  // Post-save dialog: prompts user to view/print the layaway after save
+  const [saveSuccessDialogOpen, setSaveSuccessDialogOpen] = useState(false)
+  const [savedLayawayId, setSavedLayawayId] = useState<number | null>(null)
 
   // ----- Hydrate form from edit data -----
   useEffect(() => {
@@ -576,15 +588,41 @@ export default function LayawayForm({ mode, layawayId, reorderId }: LayawayFormP
         ),
         layawayPaymentsDto: payments,
       }
+      let resultId: number | null = null
       if (isEdit && layawayId) {
         await postFetcher(getApiUrl(`/api/LayawayMaster/EditLayaway?id=${layawayId}`), payload)
+        // Invalidate the SWR cache for this layaway so the next time the
+        // edit form mounts, it fetches fresh data instead of stale cache.
         mutateEdit()
+        resultId = Number(layawayId)
         toast.success('Layaway updated successfully')
       } else {
-        await postFetcher(getApiUrl('/api/LayawayMaster/CreateLayaway'), payload)
+        const result = await postFetcher(
+          getApiUrl('/api/LayawayMaster/CreateLayaway'),
+          payload,
+        ) as Record<string, unknown> | undefined
+        // CreateLayaway returns the saved layaway object directly, with the
+        // primary id at layawayMasterDto.id (matching the list endpoint's
+        // layawayMasterDto.id used for navigation). Keep fallbacks for other
+        // plausible shapes just in case the contract changes.
+        const r = result as any
+        resultId =
+          r?.layawayMasterDto?.id ??
+          r?.data?.layawayMasterDto?.id ??
+          r?.data?.id ??
+          r?.id ??
+          null
+        if (resultId) {
+          console.log('[LayawayForm] New layaway ID extracted:', resultId)
+        } else {
+          console.warn('[LayawayForm] Could not extract new layaway ID from create response:', result)
+        }
         toast.success('Layaway created successfully')
       }
-      router.push('/react-tables/transaction/layaway')
+
+      // Show success dialog — user can choose to view/print or go back to list
+      setSavedLayawayId(resultId)
+      setSaveSuccessDialogOpen(true)
     } catch (err) {
       toast.error(
         err instanceof Error && err.message
@@ -1238,6 +1276,42 @@ export default function LayawayForm({ mode, layawayId, reorderId }: LayawayFormP
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* ===== Post-save Dialog ===== */}
+      <Dialog open={saveSuccessDialogOpen} onOpenChange={setSaveSuccessDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Layaway Saved Successfully</DialogTitle>
+            <DialogDescription>
+              Would you like to view and print this layaway now?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className='flex justify-end gap-2'>
+            <Button
+              variant='outline'
+              onClick={() => {
+                setSaveSuccessDialogOpen(false)
+                router.push('/react-tables/transaction/layaway')
+              }}
+            >
+              No, Go to List
+            </Button>
+            <Button
+              onClick={() => {
+                setSaveSuccessDialogOpen(false)
+                if (savedLayawayId) {
+                  router.push(`/react-tables/transaction/layaway/${savedLayawayId}/print`)
+                } else {
+                  router.push('/react-tables/transaction/layaway')
+                }
+              }}
+            >
+              <Icon icon='solar:printer-linear' width={16} height={16} className='me-1.5' />
+              Yes, View & Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

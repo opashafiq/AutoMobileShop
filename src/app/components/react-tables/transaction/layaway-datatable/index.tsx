@@ -348,6 +348,13 @@ export default function LayawayDatatable() {
                   Edit
                 </DropdownMenuCheckboxItem>
                 <DropdownMenuCheckboxItem
+                  onClick={() => router.push(`/react-tables/transaction/layaway/${invId}/print`)}
+                  className='cursor-pointer'
+                >
+                  <Icon icon='solar:printer-linear' width={20} height={20} className='me-2' />
+                  View / Print
+                </DropdownMenuCheckboxItem>
+                <DropdownMenuCheckboxItem
                   onClick={() => router.push(`/react-tables/transaction/layaway/create?reorder=${invId}`)}
                   className='cursor-pointer'
                 >

@@ -1,5 +1,6 @@
 import React from 'react'
 import type { InvoiceMasterDto } from '@/app/(DashboardLayout)/types/apps/invoiceMaster'
+import { getUserSession } from '@/app/api/auth'
 
 interface InvoiceHeaderProps {
   master: InvoiceMasterDto
@@ -7,12 +8,17 @@ interface InvoiceHeaderProps {
 
 /**
  * Company header for the invoice print template.
- * Displays the business name, address, and phone in a clean, branded layout.
- *
- * To add a logo: place an <img> tag above the company name.
- * To change brand colors: edit the Tailwind classes on the accent bar.
+ * Reads location name and address from the logged-in user session
+ * (populated at login via fetchUserSession) and falls back to the
+ * master record / hardcoded defaults if the session isn't available.
  */
 export default function InvoiceHeader({ master }: InvoiceHeaderProps) {
+  const session = getUserSession()
+
+  const companyName = session?.locationName || master.tbim_CompanyName || ''
+  const address1 = session?.tbld_Address1 || ''
+  const address2 = session?.tbld_Address2 || ''
+
   return (
     <div className='mb-4'>
       {/* Subtle accent bar */}
@@ -24,11 +30,18 @@ export default function InvoiceHeader({ master }: InvoiceHeaderProps) {
             <img src="/images/logo.png" alt="Company Logo" className="h-12 mx-auto mb-2" />
         */}
         <h1 className='text-xl font-bold text-slate-900 tracking-tight'>
-          {master.tbim_CompanyName || 'Apollo Tire & Wheel'}
+          {companyName}
         </h1>
-        <p className='text-xs text-slate-500 mt-0.5'>
-          {master.tbim_CompanyAddress || '3722 NASA Road 1, Seabrook, TX 77586'}
-        </p>
+        {address1 && (
+          <p className='text-xs text-slate-500 mt-0.5'>
+            {address1}
+          </p>
+        )}
+        {address2 && (
+          <p className='text-xs text-slate-500'>
+            {address2}
+          </p>
+        )}
         {master.tbim_Phone && (
           <p className='text-xs text-slate-500'>
             Ph: {master.tbim_Phone}
