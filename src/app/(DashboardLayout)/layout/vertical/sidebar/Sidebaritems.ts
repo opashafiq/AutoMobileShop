@@ -221,6 +221,17 @@ const SidebarContent: MenuItem[] = [
       },
     ],
   },
+  {
+    heading: "Report",
+    children: [
+      {
+        name: "OURP By Category",
+        icon: "solar:chart-square-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/ourp-by-category",
+      },
+    ],
+  },
   // {
   //   heading: "Apps",
   //   children: [

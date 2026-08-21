@@ -1,0 +1,85 @@
+#Required Endpoints with sample output
+## 1. Company information: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Category Wise OURP: api/Reports/GetTotalOURPByCategory/11
+
+[
+  {
+    "category": "New Tires",
+    "size": "LT33-12.50-17",
+    "brand": "GINELLE GN3000 M/T  10PLY E",
+    "series": "",
+    "bolt": "",
+    "holeS": "",
+    "zone": "HH",
+    "qty": 1,
+    "ourp": 136,
+    "total": 136
+  },
+  {
+    "category": "New Tires",
+    "size": "245-65-17",
+    "brand": "GOODYEAR FORTERA HL 105T",
+    "series": "",
+    "bolt": "",
+    "holeS": "",
+    "zone": "DD-2",
+    "qty": 4,
+    "ourp": 128.95,
+    "total": 515.8
+  }]
+
+## 3. Category List: api/Departments
+
+[
+  {
+    "id": 1,
+    "tbid_DepartmentName": "Accessories",
+    "tbid_IsActive": true,
+    "userName": "adminuser",
+    "setDate": "2015-02-16T23:56:00"
+  },
+  {
+    "id": 2,
+    "tbid_DepartmentName": "Adapters",
+    "tbid_IsActive": true,
+    "userName": "amir",
+    "setDate": "2015-02-16T23:56:00"
+  }
+  ]
+
+# BRS
+1. Create a new left menu link named "Report" (Like Master,Transaction)
+2. Under Report link there will be a submenu name OURP By Category.
+3. Clicking the submenu will open a page to show the OURP by category. Existing page screenshot is attached herewith.
+   But you have the full liberty to design following the industry standard.
+4. There will be a combo box namged category. the key value will be appeared from api mentioned in 3 above.
+5. First category will be selected by default and on the first load of the page call the api mentioned in 2 above with the category id.
+6. Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter
+   following the same design pattern.
+7. There will be three buttons:
+   Show,Download PDF, Export to Excel.
+8. Clicking Show will view report that will be Download as PDF and user can print from that page as well.
+   Existing PDF Report has been attached herewith for your reference.But you have the full liberty to design following the industry standard.
+9. On top of the PDF, there is company information. You will get the information from the api mentioned in 1 above. Use the fields:
+   tbbiBusinessName,tbbi_Address1,tbbi_Address2
+   As this information will be used in all of the reports, please keep it as a common component so that I can attach it to each of the reports.
+10. Please Make a separate folder Named ourpbycategory to keep all the files related to this specific report so that troubleshooting in future will be hassle free.
+11. Please keep track of everything you are doing in a separate file for future reference.   
