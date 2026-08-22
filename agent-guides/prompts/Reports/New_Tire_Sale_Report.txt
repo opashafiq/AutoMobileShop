@@ -1,0 +1,66 @@
+#Required Endpoints with sample output
+## 1. Company Details: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. New Tire Sale Report: api/Reports/GetTireSaleReport?startDate=01-Jan-2025&endDate=10-Jan-2025&Brand=233&Size=56
+Query Parameters:
+startDate datetime nullable
+endDate datetime nullable
+Brand string nullable
+Size string nullable
+
+Response:
+[
+{
+    "category": "New Tires",
+    "brand": " MILETRIP TP99 RT",
+    "size": "37-13.50-20",
+    "qty": 4
+  },
+  {
+    "category": "New Tires",
+    "brand": "ACHILLES DESERT HAWK AT3 BW 117T XL",
+    "size": "275-55-20",
+    "qty": 4
+  }]
+
+
+
+# BRS
+-> Under Report link there will be a submenu name Tire Sale Report.
+-> Clicking the submenu will open a page to show the Tire Sale Report. you have the full liberty to design following the industry standard.
+-> There will be a two datepicker for taking the query parameters. The parameter inputs will be shown using the same pattern used in Report->Customer Details.
+-> Datepicker labels will be "From" and "To".
+-> The same pattern and functionality for the buttons used in Report->Customer Details will also be used here. These buttons will be with input parameter takers.
+-> on the first load of the page call the api mentioned in 2 above.
+   On the first load, I mean when user click Tire Sale Report links, show Current Day in From Date.Show one month back date in To Date and call api with this date range.
+   on First Load call api with default date range values , I mean one month value which is being shown
+-> Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter
+   following the same design pattern. You can follow the one designed in Report->Customer Details.
+
+-> Existing PDF Report has been attached herewith for your reference.But you have the full liberty to design following the industry standard.
+-> On top of the PDF, there is company information. Design it in  the same manner you did in Report->Customer Details.
+-> Details of Report->Customer Details are stored in \agent-guides\prompts\Reports\DEVLOG_Customer_Details.md.
+    You can use this as reference.	
+-> Please Make a separate folder Named tiresalereport to keep all the files related to this specific report so that troubleshooting in future will be hassle free.
+-> Please keep track of everything you are doing in a separate file for future reference.   
+
+
+
+

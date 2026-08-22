@@ -46,70 +46,80 @@ import {
 } from '@/app/components/react-tables/shared/columnFilterUtils'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
 import CompanyInfoHeader from '@/app/components/react-tables/shared/CompanyInfoHeader'
+import DateField from '@/app/components/react-tables/shared/DateField'
 
 /* ── Types ── */
 
-interface Department {
-  id: number
-  tbid_DepartmentName: string
-  tbid_IsActive: boolean
-  [key: string]: unknown
+interface CustomerRow {
+  name: string
+  emailAddress: string
+  phone: string
 }
 
-interface OurpRow {
-  category: string
-  size: string
-  brand: string
-  series: string
-  bolt: string
-  holeS: string
-  zone: string
-  qty: number
-  ourp: number
-  total: number
+/* ── Helper: format a yyyy-MM-dd string to dd-MMM-yyyy for the API ── */
+function toApiDate(isoDate: string): string {
+  if (!isoDate) return ''
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const [yyyy, mm, dd] = isoDate.split('-')
+  return `${dd}-${months[parseInt(mm, 10) - 1]}-${yyyy}`
+}
+
+/* ── Helper: format a Date to yyyy-MM-dd for native date input ── */
+function toInputDate(date: Date): string {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+/* ── Helper: default date range — From = today, To = one month back ── */
+function getDefaultDateRange(): { from: string; to: string } {
+  const today = new Date()
+  const oneMonthBack = new Date()
+  oneMonthBack.setMonth(oneMonthBack.getMonth() - 1)
+  return {
+    from: toInputDate(today),
+    to: toInputDate(oneMonthBack),
+  }
 }
 
 /* ── Main Component ── */
 
-export default function OurpByCategoryReport() {
+export default function CustomerDetailsReport() {
   const printRef = useRef<HTMLDivElement>(null)
 
-  /* ── Category state ── */
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  /* ── Input draft state (not applied until Search is pressed) ── */
+  const defaults = useMemo(() => getDefaultDateRange(), [])
+  const [inputFrom, setInputFrom] = useState(defaults.from)
+  const [inputTo, setInputTo] = useState(defaults.to)
 
-  /* ── Fetch departments (categories) ── */
-  const { data: departmentsData } = useSWR<Department[]>(
-    getApiUrl('/api/Departments'),
-    getFetcher,
-    { refreshInterval: 0 }
-  )
+  /* ── Applied query — only updates on Search / on first load. Null = not queried yet. ── */
+  const [query, setQuery] = useState<{ from: string; to: string } | null>(() => ({
+    from: defaults.from,
+    to: defaults.to,
+  }))
 
-  const departments = useMemo(
-    () => (Array.isArray(departmentsData) ? departmentsData : []),
-    [departmentsData]
-  )
+  /* ── Build API URL from the applied query (null key = no fetch) ── */
+  const apiUrl = useMemo(() => {
+    if (!query) return null
+    const base = getApiUrl('/api/Reports/GetCustomerList')
+    const params = new URLSearchParams()
+    if (query.from) params.set('startDate', toApiDate(query.from))
+    if (query.to) params.set('endDate', toApiDate(query.to))
+    const qs = params.toString()
+    return qs ? `${base}?${qs}` : base
+  }, [query])
 
-  // Select first department by default
-  React.useEffect(() => {
-    if (departments.length > 0 && selectedCategoryId === null) {
-      setSelectedCategoryId(departments[0].id)
-    }
-  }, [departments, selectedCategoryId])
-
-  /* ── Fetch OURP data ── */
-  const apiUrl = selectedCategoryId
-    ? getApiUrl(`/api/Reports/GetTotalOURPByCategory/${selectedCategoryId}`)
-    : null
-
-  const { data: ourpData, isLoading } = useSWR<OurpRow[]>(
+  /* ── Fetch data ── */
+  const { data: customerData, isLoading } = useSWR<CustomerRow[]>(
     apiUrl,
     getFetcher,
     { refreshInterval: 0 }
   )
 
   const reportData = useMemo(
-    () => (Array.isArray(ourpData) ? ourpData : []),
-    [ourpData]
+    () => (Array.isArray(customerData) ? customerData : []),
+    [customerData]
   )
 
   /* ── Table state ── */
@@ -118,16 +128,9 @@ export default function OurpByCategoryReport() {
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [showSearch, setShowSearch] = useState(false)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
-    category: true,
-    size: true,
-    brand: true,
-    series: true,
-    bolt: true,
-    holeS: true,
-    zone: true,
-    qty: true,
-    ourp: true,
-    total: true,
+    name: true,
+    emailAddress: true,
+    phone: true,
   })
 
   const handleColumnFilterChange = (columnKey: string, value: ColumnFilterValue) => {
@@ -139,7 +142,7 @@ export default function OurpByCategoryReport() {
   }
 
   /* ── Column definitions ── */
-  const columnHelper = createColumnHelper<OurpRow>()
+  const columnHelper = createColumnHelper<CustomerRow>()
 
   /** Render a subtle gray dash for empty/blank string values */
   const dashIfEmpty = (value: string) => {
@@ -153,71 +156,23 @@ export default function OurpByCategoryReport() {
   const columns = useMemo(
     () =>
       [
-        columnHelper.accessor('category', {
-          header: 'Category',
+        columnHelper.accessor('name', {
+          header: 'Customer Name',
           cell: (info) => <p className='text-sm font-medium'>{dashIfEmpty(info.getValue())}</p>,
         }),
-        columnHelper.accessor('size', {
-          header: 'Size',
+        columnHelper.accessor('emailAddress', {
+          header: 'Email',
           cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
         }),
-        columnHelper.accessor('brand', {
-          header: 'Brand',
+        columnHelper.accessor('phone', {
+          header: 'Phone',
           cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
         }),
-        columnHelper.accessor('series', {
-          header: 'Series',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('bolt', {
-          header: 'Bolt',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('holeS', {
-          header: 'HoleS',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('zone', {
-          header: 'Zone',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('qty', {
-          header: 'Qty',
-          cell: (info) => (
-            <p className='text-sm text-right'>{info.getValue()}</p>
-          ),
-        }),
-        columnHelper.accessor('ourp', {
-          header: 'OURP',
-          cell: (info) => (
-            <p className='text-sm text-right'>
-              {info.getValue().toFixed(2)}
-            </p>
-          ),
-        }),
-        columnHelper.accessor('total', {
-          header: 'Total',
-          cell: (info) => (
-            <p className='text-sm text-right font-medium'>
-              {info.getValue().toFixed(2)}
-            </p>
-          ),
-        }),
-      ] as ColumnDef<OurpRow>[],
+      ] as ColumnDef<CustomerRow>[],
     []
   )
 
-  /* ── Filter data ── */
-  const filteredData = useMemo(
-    () =>
-      applyColumnFilters(
-        reportData as unknown as Record<string, unknown>[],
-        columnFilters
-      ) as unknown as OurpRow[],
-    [reportData, columnFilters]
-  )
-
-  /* ── Visible columns based on visibility state ── */
+  /* ── Visible columns ── */
   const visibleColumns = useMemo(
     () =>
       columns.filter((col) => {
@@ -227,6 +182,16 @@ export default function OurpByCategoryReport() {
         return true
       }),
     [columns, columnVisibility]
+  )
+
+  /* ── Filter data ── */
+  const filteredData = useMemo(
+    () =>
+      applyColumnFilters(
+        reportData as unknown as Record<string, unknown>[],
+        columnFilters
+      ) as unknown as CustomerRow[],
+    [reportData, columnFilters]
   )
 
   /* ── Table instance ── */
@@ -248,25 +213,30 @@ export default function OurpByCategoryReport() {
     autoResetPageIndex: true,
   })
 
-  /* ── Selected category name ── */
-  const selectedCategoryName = useMemo(() => {
-    if (!selectedCategoryId) return ''
-    const dept = departments.find((d) => d.id === selectedCategoryId)
-    return dept?.tbid_DepartmentName || ''
-  }, [selectedCategoryId, departments])
+  /* ── Column filter keys ── */
+  const filterableColumns = ['name', 'emailAddress', 'phone']
 
-  /* ── Column filter keys that should have funnel filters ── */
-  const filterableColumns = ['category', 'size', 'brand', 'series', 'bolt', 'holeS', 'zone']
+  /* ── Search: apply the draft inputs to the query and fetch ── */
+  const handleSearch = () => {
+    setQuery({ from: inputFrom, to: inputTo })
+  }
+
+  /* ── Reset: clear every input (dates show "Pick a Date") and drop the query so no fetch fires ── */
+  const handleReset = () => {
+    setInputFrom('')
+    setInputTo('')
+    setQuery(null)
+  }
 
   /* ═══════════════════════════════════════════════════════════
-     PDF / PRINT HANDLERS
+     PDF HELPERS
      ═══════════════════════════════════════════════════════════ */
 
   const buildPdf = async (): Promise<jsPDF | null> => {
     const node = printRef.current
     if (!node) return null
 
-    const PAGE_WIDTH_PX = 816 // 8.5in at 96 DPI
+    const PAGE_WIDTH_PX = 816
 
     const wrapper = document.createElement('div')
     wrapper.style.position = 'fixed'
@@ -319,7 +289,7 @@ export default function OurpByCategoryReport() {
     }
   }
 
-  /** Show — open PDF in a new tab so the user can view & print */
+  /** Show — open PDF in a new tab */
   const handlePrint = async () => {
     const pdf = await buildPdf()
     if (!pdf) return
@@ -327,11 +297,11 @@ export default function OurpByCategoryReport() {
     window.open(blobUrl, '_blank')
   }
 
-  /** PDF Export — download the PDF file */
+  /** PDF Export — download */
   const handleDownloadPdf = async () => {
     const pdf = await buildPdf()
     if (!pdf) return
-    pdf.save(`OURP_By_Category_${selectedCategoryName || 'Report'}.pdf`)
+    pdf.save('Customer_Details_Report.pdf')
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -339,21 +309,13 @@ export default function OurpByCategoryReport() {
      ═══════════════════════════════════════════════════════════ */
 
   const handleExportExcel = useCallback(() => {
-    const headers = ['Category', 'Size', 'Brand', 'Series', 'Bolt', 'HoleS', 'Zone', 'Qty', 'OURP', 'Total']
+    const headers = ['Customer Name', 'Email', 'Phone']
     const rows = filteredData.map((row) => [
-      row.category,
-      row.size,
-      row.brand,
-      row.series,
-      row.bolt,
-      row.holeS,
-      row.zone,
-      row.qty,
-      row.ourp,
-      row.total,
+      row.name,
+      row.emailAddress,
+      row.phone,
     ])
 
-    // BOM prefix ensures Excel opens the file with correct UTF-8 encoding
     const BOM = '﻿'
     const csvContent =
       BOM +
@@ -368,12 +330,12 @@ export default function OurpByCategoryReport() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `OURP_By_Category_${selectedCategoryName || 'Report'}.csv`)
+    link.setAttribute('download', 'Customer_Details_Report.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }, [filteredData, selectedCategoryName])
+  }, [filteredData])
 
   /* ═══════════════════════════════════════════════════════════
      RENDER
@@ -387,12 +349,7 @@ export default function OurpByCategoryReport() {
           {/* ── Title + Toolbar ── */}
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
             <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-              Preview - OURP Total For Category
-              {selectedCategoryName && (
-                <span className='text-sm font-normal text-muted-foreground ml-2'>
-                  ({selectedCategoryName})
-                </span>
-              )}
+              Preview - Customer Details
             </h3>
             <div className='flex flex-wrap items-center gap-1 md:gap-2'>
               {/* Search */}
@@ -478,37 +435,27 @@ export default function OurpByCategoryReport() {
             </div>
           </div>
 
-          {/* ── Filter Bar (Category + action buttons) ── */}
+          {/* ── Filter Bar (Date pickers + action buttons) ── */}
           <div className='mb-4 rounded-lg border border-ld bg-lightprimary/10 p-4 dark:bg-darkinfo/5'>
             <div className='flex flex-wrap items-end gap-4'>
-              <div className='min-w-[180px] max-w-[320px]'>
-                <label className='mb-1 block text-sm font-medium text-ld dark:text-darklink'>
-                  Category
-                </label>
-                <Select
-                  value={selectedCategoryId !== null ? String(selectedCategoryId) : ''}
-                  onValueChange={(val) => setSelectedCategoryId(Number(val))}>
-                  <SelectTrigger className='h-10' aria-label='Select category'>
-                    <SelectValue placeholder='Select category' />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departments.map((dept) => (
-                      <SelectItem key={dept.id} value={String(dept.id)}>
-                        {dept.tbid_DepartmentName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              <DateField label='From' value={inputFrom} onChange={setInputFrom} />
+              <DateField label='To' value={inputTo} onChange={setInputTo} />
               <div className='flex items-end gap-2'>
                 <Button
                   variant='default'
                   size='sm'
                   className='h-10 text-white [&_svg]:text-white'
-                  onClick={handlePrint}
-                  disabled={isLoading || reportData.length === 0}>
-                  <Icon icon='solar:printer-linear' width={16} height={16} className='me-1.5' />
-                  Show
+                  onClick={handleSearch}>
+                  <Icon icon='solar:minimalistic-magnifer-line-duotone' width={16} height={16} className='me-1.5' />
+                  Search
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-10'
+                  onClick={handleReset}>
+                  <Icon icon='solar:refresh-linear' width={16} height={16} className='me-1.5' />
+                  Reset
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -516,7 +463,7 @@ export default function OurpByCategoryReport() {
                       variant='outline'
                       size='sm'
                       className='h-10'
-                      disabled={isLoading || reportData.length === 0}>
+                      disabled={reportData.length === 0}>
                       <Icon icon='solar:download-linear' width={16} height={16} className='me-1.5 [&_svg]:text-current' />
                       Export
                       <Icon icon='solar:alt-arrow-down-linear' width={14} height={14} className='ms-1 [&_svg]:text-current' />
@@ -615,10 +562,16 @@ export default function OurpByCategoryReport() {
                           Loading...
                         </td>
                       </tr>
+                    ) : query === null ? (
+                      <tr>
+                        <td colSpan={visibleColumns.length} className='text-center py-8 text-muted dark:text-gray-500'>
+                          Set filters and press Search to load data.
+                        </td>
+                      </tr>
                     ) : table.getRowModel().rows.length === 0 ? (
                       <tr>
                         <td colSpan={visibleColumns.length} className='text-center py-8'>
-                          No data found.
+                          No customers found for the selected date range.
                         </td>
                       </tr>
                     ) : (
@@ -631,7 +584,7 @@ export default function OurpByCategoryReport() {
                             <td
                               key={cell.id}
                               className={`px-4 py-2 ${
-                                cell.column.id === 'brand' ? 'min-w-[200px]' : ''
+                                cell.column.id === 'name' ? 'min-w-[200px]' : ''
                               }`}>
                               {flexRender(
                                 cell.column.columnDef.cell,
@@ -732,11 +685,13 @@ export default function OurpByCategoryReport() {
           {/* Report Title */}
           <div className='text-center mb-3'>
             <h2 className='text-lg font-bold text-slate-900 uppercase tracking-wide'>
-              OURP Total For Category
+              Customer Details
             </h2>
-            {selectedCategoryName && (
+            {(query?.from || query?.to) && (
               <p className='text-sm text-slate-600 mt-1'>
-                Category: <strong>{selectedCategoryName}</strong>
+                {query.from && <span>From: <strong>{toApiDate(query.from)}</strong></span>}
+                {query.from && query.to && <span className='mx-2'>|</span>}
+                {query.to && <span>To: <strong>{toApiDate(query.to)}</strong></span>}
               </p>
             )}
           </div>
@@ -745,45 +700,29 @@ export default function OurpByCategoryReport() {
           <table className='w-full text-xs border-collapse'>
             <thead>
               <tr className='bg-slate-100'>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Category</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Size</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Brand</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Series</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Bolt</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>HoleS</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Zone</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Qty</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>OURP</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Total</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>#</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Customer Name</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Email</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Phone</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.map((row, idx) => (
                 <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td className='border border-slate-300 px-2 py-1'>{row.category}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.size}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.brand}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.series}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.bolt}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.holeS}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.zone}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right'>{row.qty}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right'>{row.ourp.toFixed(2)}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right font-medium'>{row.total.toFixed(2)}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{idx + 1}</td>
+                  <td className='border border-slate-300 px-2 py-1 font-medium'>{row.name || '—'}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{row.emailAddress || '—'}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{row.phone || '—'}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className='bg-slate-100 font-bold'>
-                <td className='border border-slate-300 px-2 py-1.5' colSpan={7}>
-                  Grand Total
+                <td className='border border-slate-300 px-2 py-1.5' colSpan={3}>
+                  Total Customers
                 </td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>
-                  {filteredData.reduce((sum, r) => sum + r.qty, 0)}
-                </td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>-</td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>
-                  {filteredData.reduce((sum, r) => sum + r.total, 0).toFixed(2)}
+                <td className='border border-slate-300 px-2 py-1.5'>
+                  {filteredData.length}
                 </td>
               </tr>
             </tfoot>

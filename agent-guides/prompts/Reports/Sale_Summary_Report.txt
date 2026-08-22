@@ -1,0 +1,92 @@
+#Required Endpoints with sample output
+## 1. Company Details: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Sale Summary Report: api/Reports/GetSaleSummary?startDate=01-Jan-2025&endDate=10-Jan-2025&Category=11
+Query Parameters:
+startDate datetime nullable
+endDate datetime nullable
+Category long nullable
+
+Response:
+[
+{
+    "categoryName": "New Tires",
+    "brand": null,
+    "size": "215-60-16",
+    "totalQty": 8,
+    "avgPrice": 90,
+    "tbim_OURP": 46.04
+  },
+  {
+    "categoryName": "New Tires",
+    "brand": null,
+    "size": "275-55-20",
+    "totalQty": 8,
+    "avgPrice": 210,
+    "tbim_OURP": 87
+  }]
+
+
+## 3. Category List: api/Departments
+Response:
+[
+  {
+    "id": 1,
+    "tbid_DepartmentName": "Accessories",
+    "tbid_IsActive": true,
+    "userName": "adminuser",
+    "setDate": "2015-02-16T23:56:00"
+  },
+  {
+    "id": 2,
+    "tbid_DepartmentName": "Adapters",
+    "tbid_IsActive": true,
+    "userName": "amir",
+    "setDate": "2015-02-16T23:56:00"
+  }
+  ]
+
+
+
+
+
+# BRS
+-> Under Report link there will be a submenu name Sale Summary Report.
+-> Clicking the submenu will open a page to show the Sale Summary Report. you have the full liberty to design following the industry standard.
+-> There will be a two datepicker for taking the query parameters. The parameter inputs will be shown using the same pattern used in Report->Tire Sale Report.
+-> Datepicker labels will be "From" and "To".
+-> There will be a combo box namged category. the key value will be appeared from api mentioned in 3 above
+-> The same pattern and functionality for the buttons used in Report->Tire Sale Report will also be used here. These buttons will be with input parameter takers.
+-> on the first load of the page call the api mentioned in 2 above.
+   On the first load, I mean when user click Sale Summary Report links, show Current Day in From Date.Show one month back date in To Date and call api with this date range.
+   on First Load call api with default date range values , I mean one month value which is being shown
+-> Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter
+   following the same design pattern. You can follow the one designed in Report->Tire Sale Report.
+
+-> Existing PDF Report has been attached herewith for your reference.But you have the full liberty to design following the industry standard.
+-> On top of the PDF, there is company information. Design it in  the same manner you did in Report->Tire Sale Report.
+-> Details of Report->Tire Sale Report are stored in \agent-guides\prompts\Reports\DEVLOG_Tire_Sale_Report.md.
+    You can use this as reference.	
+-> Please Make a separate folder Named wheelsalereport to keep all the files related to this specific report so that troubleshooting in future will be hassle free.
+-> Please keep track of everything you are doing in a separate file for future reference.   
+
+
+
+

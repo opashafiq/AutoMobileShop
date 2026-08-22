@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useCallback, useMemo, useState, useRef } from 'react'
+import React, { useCallback, useMemo, useState, useRef, useEffect } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
 import { toPng } from 'html-to-image'
@@ -46,6 +46,7 @@ import {
 } from '@/app/components/react-tables/shared/columnFilterUtils'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
 import CompanyInfoHeader from '@/app/components/react-tables/shared/CompanyInfoHeader'
+import DateField from '@/app/components/react-tables/shared/DateField'
 
 /* ── Types ── */
 
@@ -56,26 +57,68 @@ interface Department {
   [key: string]: unknown
 }
 
-interface OurpRow {
-  category: string
+interface SaleSummaryRow {
+  categoryName: string
+  brand: string | null
   size: string
-  brand: string
-  series: string
-  bolt: string
-  holeS: string
-  zone: string
-  qty: number
-  ourp: number
-  total: number
+  totalQty: number
+  avgPrice: number
+  tbim_OURP: number
+}
+
+/* ── Helpers ── */
+
+function toApiDate(isoDate: string): string {
+  if (!isoDate) return ''
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+  const [yyyy, mm, dd] = isoDate.split('-')
+  return `${dd}-${months[parseInt(mm, 10) - 1]}-${yyyy}`
+}
+
+function toInputDate(date: Date): string {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function getDefaultDateRange(): { from: string; to: string } {
+  const today = new Date()
+  const oneMonthBack = new Date()
+  oneMonthBack.setMonth(oneMonthBack.getMonth() - 1)
+  return {
+    from: toInputDate(today),
+    to: toInputDate(oneMonthBack),
+  }
+}
+
+const formatPrice = (value: number) => {
+  if (value === null || value === undefined || isNaN(value)) return '0.00'
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 /* ── Main Component ── */
 
-export default function OurpByCategoryReport() {
+export default function SaleSummaryReport() {
   const printRef = useRef<HTMLDivElement>(null)
 
-  /* ── Category state ── */
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  /* ── Input draft state (not applied until Search is pressed) ── */
+  const defaults = useMemo(() => getDefaultDateRange(), [])
+  const [inputFrom, setInputFrom] = useState(defaults.from)
+  const [inputTo, setInputTo] = useState(defaults.to)
+
+  /* ── Category draft (combo selection) ── */
+  const [draftCategoryId, setDraftCategoryId] = useState<number | null>(null)
+
+  /* ── Applied query — dates change only on Search; category changes call immediately. Null = not queried yet. ── */
+  const [query, setQuery] = useState<{
+    from: string
+    to: string
+    categoryId: number | null
+  } | null>(() => ({ from: defaults.from, to: defaults.to, categoryId: null }))
 
   /* ── Fetch departments (categories) ── */
   const { data: departmentsData } = useSWR<Department[]>(
@@ -89,27 +132,47 @@ export default function OurpByCategoryReport() {
     [departmentsData]
   )
 
-  // Select first department by default
-  React.useEffect(() => {
-    if (departments.length > 0 && selectedCategoryId === null) {
-      setSelectedCategoryId(departments[0].id)
+  // Select the first department by default; the combo-on-change rule applies it to the query too
+  useEffect(() => {
+    if (departments.length > 0 && draftCategoryId === null) {
+      const first = departments[0].id
+      setDraftCategoryId(first)
+      setQuery((prev) =>
+        prev ? { ...prev, categoryId: first } : { from: defaults.from, to: defaults.to, categoryId: first }
+      )
     }
-  }, [departments, selectedCategoryId])
+  }, [departments, draftCategoryId, defaults.from, defaults.to])
 
-  /* ── Fetch OURP data ── */
-  const apiUrl = selectedCategoryId
-    ? getApiUrl(`/api/Reports/GetTotalOURPByCategory/${selectedCategoryId}`)
-    : null
+  /* ── Applied category name (what the data is currently filtered by) ── */
+  const appliedCategoryName = useMemo(() => {
+    const id = query?.categoryId
+    if (id === null || id === undefined) return ''
+    const dept = departments.find((d) => d.id === id)
+    return dept?.tbid_DepartmentName || ''
+  }, [query, departments])
 
-  const { data: ourpData, isLoading } = useSWR<OurpRow[]>(
+  /* ── Build API URL from the applied query (null key = no fetch) ── */
+  const apiUrl = useMemo(() => {
+    if (!query) return null
+    const base = getApiUrl('/api/Reports/GetSaleSummary')
+    const params = new URLSearchParams()
+    if (query.from) params.set('startDate', toApiDate(query.from))
+    if (query.to) params.set('endDate', toApiDate(query.to))
+    if (query.categoryId !== null) params.set('Category', String(query.categoryId))
+    const qs = params.toString()
+    return qs ? `${base}?${qs}` : base
+  }, [query])
+
+  /* ── Fetch data ── */
+  const { data: saleData, isLoading } = useSWR<SaleSummaryRow[]>(
     apiUrl,
     getFetcher,
     { refreshInterval: 0 }
   )
 
   const reportData = useMemo(
-    () => (Array.isArray(ourpData) ? ourpData : []),
-    [ourpData]
+    () => (Array.isArray(saleData) ? saleData : []),
+    [saleData]
   )
 
   /* ── Table state ── */
@@ -118,16 +181,12 @@ export default function OurpByCategoryReport() {
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
   const [showSearch, setShowSearch] = useState(false)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
-    category: true,
-    size: true,
+    categoryName: true,
     brand: true,
-    series: true,
-    bolt: true,
-    holeS: true,
-    zone: true,
-    qty: true,
-    ourp: true,
-    total: true,
+    size: true,
+    totalQty: true,
+    avgPrice: true,
+    tbim_OURP: true,
   })
 
   const handleColumnFilterChange = (columnKey: string, value: ColumnFilterValue) => {
@@ -139,10 +198,9 @@ export default function OurpByCategoryReport() {
   }
 
   /* ── Column definitions ── */
-  const columnHelper = createColumnHelper<OurpRow>()
+  const columnHelper = createColumnHelper<SaleSummaryRow>()
 
-  /** Render a subtle gray dash for empty/blank string values */
-  const dashIfEmpty = (value: string) => {
+  const dashIfEmpty = (value: string | null | undefined) => {
     const trimmed = value?.trim()
     if (!trimmed) {
       return <span className='text-gray-300 dark:text-gray-600'>—</span>
@@ -153,71 +211,41 @@ export default function OurpByCategoryReport() {
   const columns = useMemo(
     () =>
       [
-        columnHelper.accessor('category', {
+        columnHelper.accessor('categoryName', {
           header: 'Category',
           cell: (info) => <p className='text-sm font-medium'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('size', {
-          header: 'Size',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
         }),
         columnHelper.accessor('brand', {
           header: 'Brand',
           cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
         }),
-        columnHelper.accessor('series', {
-          header: 'Series',
+        columnHelper.accessor('size', {
+          header: 'Size',
           cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
         }),
-        columnHelper.accessor('bolt', {
-          header: 'Bolt',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('holeS', {
-          header: 'HoleS',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('zone', {
-          header: 'Zone',
-          cell: (info) => <p className='text-sm'>{dashIfEmpty(info.getValue())}</p>,
-        }),
-        columnHelper.accessor('qty', {
-          header: 'Qty',
+        columnHelper.accessor('totalQty', {
+          header: 'Total Qty',
           cell: (info) => (
-            <p className='text-sm text-right'>{info.getValue()}</p>
+            <p className='text-sm text-right font-medium'>{info.getValue()}</p>
           ),
         }),
-        columnHelper.accessor('ourp', {
+        columnHelper.accessor('avgPrice', {
+          header: 'Avg Price',
+          cell: (info) => (
+            <p className='text-sm text-right'>{formatPrice(info.getValue())}</p>
+          ),
+        }),
+        columnHelper.accessor('tbim_OURP', {
           header: 'OURP',
           cell: (info) => (
-            <p className='text-sm text-right'>
-              {info.getValue().toFixed(2)}
-            </p>
+            <p className='text-sm text-right'>{formatPrice(info.getValue())}</p>
           ),
         }),
-        columnHelper.accessor('total', {
-          header: 'Total',
-          cell: (info) => (
-            <p className='text-sm text-right font-medium'>
-              {info.getValue().toFixed(2)}
-            </p>
-          ),
-        }),
-      ] as ColumnDef<OurpRow>[],
+      ] as ColumnDef<SaleSummaryRow>[],
     []
   )
 
-  /* ── Filter data ── */
-  const filteredData = useMemo(
-    () =>
-      applyColumnFilters(
-        reportData as unknown as Record<string, unknown>[],
-        columnFilters
-      ) as unknown as OurpRow[],
-    [reportData, columnFilters]
-  )
-
-  /* ── Visible columns based on visibility state ── */
+  /* ── Visible columns ── */
   const visibleColumns = useMemo(
     () =>
       columns.filter((col) => {
@@ -227,6 +255,16 @@ export default function OurpByCategoryReport() {
         return true
       }),
     [columns, columnVisibility]
+  )
+
+  /* ── Filter data ── */
+  const filteredData = useMemo(
+    () =>
+      applyColumnFilters(
+        reportData as unknown as Record<string, unknown>[],
+        columnFilters
+      ) as unknown as SaleSummaryRow[],
+    [reportData, columnFilters]
   )
 
   /* ── Table instance ── */
@@ -248,25 +286,58 @@ export default function OurpByCategoryReport() {
     autoResetPageIndex: true,
   })
 
-  /* ── Selected category name ── */
-  const selectedCategoryName = useMemo(() => {
-    if (!selectedCategoryId) return ''
-    const dept = departments.find((d) => d.id === selectedCategoryId)
-    return dept?.tbid_DepartmentName || ''
-  }, [selectedCategoryId, departments])
+  /* ── Column filter keys (string columns only — numeric ones excluded) ── */
+  const filterableColumns = ['categoryName', 'brand', 'size']
 
-  /* ── Column filter keys that should have funnel filters ── */
-  const filterableColumns = ['category', 'size', 'brand', 'series', 'bolt', 'holeS', 'zone']
+  /* ── Category combo change calls the API immediately (dates stay as currently applied) ── */
+  const handleCategoryChange = (val: string) => {
+    const id = Number(val)
+    setDraftCategoryId(id)
+    setQuery((prev) =>
+      prev ? { ...prev, categoryId: id } : { from: defaults.from, to: defaults.to, categoryId: id }
+    )
+  }
+
+  /* ── Search: apply the draft date ranges to the query and fetch ── */
+  const handleSearch = () => {
+    setQuery({ from: inputFrom, to: inputTo, categoryId: draftCategoryId })
+  }
+
+  /* ── Reset: clear every input (dates show "Pick a Date") and drop the query so no fetch fires ── */
+  const handleReset = () => {
+    setInputFrom('')
+    setInputTo('')
+    setDraftCategoryId(null)
+    setQuery(null)
+  }
+
+  /* ── Summary totals ── */
+  const summary = useMemo(() => {
+    const totalQtySum = filteredData.reduce((sum, r) => sum + (r.totalQty || 0), 0)
+    const weightedRevenue = filteredData.reduce(
+      (sum, r) => sum + (r.totalQty || 0) * (r.avgPrice || 0),
+      0
+    )
+    const weightedOurp = filteredData.reduce(
+      (sum, r) => sum + (r.totalQty || 0) * (r.tbim_OURP || 0),
+      0
+    )
+    return {
+      totalQtySum,
+      avgPriceWeighted: totalQtySum ? weightedRevenue / totalQtySum : 0,
+      ourpWeighted: totalQtySum ? weightedOurp / totalQtySum : 0,
+    }
+  }, [filteredData])
 
   /* ═══════════════════════════════════════════════════════════
-     PDF / PRINT HANDLERS
+     PDF HELPERS
      ═══════════════════════════════════════════════════════════ */
 
   const buildPdf = async (): Promise<jsPDF | null> => {
     const node = printRef.current
     if (!node) return null
 
-    const PAGE_WIDTH_PX = 816 // 8.5in at 96 DPI
+    const PAGE_WIDTH_PX = 816
 
     const wrapper = document.createElement('div')
     wrapper.style.position = 'fixed'
@@ -319,19 +390,10 @@ export default function OurpByCategoryReport() {
     }
   }
 
-  /** Show — open PDF in a new tab so the user can view & print */
-  const handlePrint = async () => {
-    const pdf = await buildPdf()
-    if (!pdf) return
-    const blobUrl = pdf.output('bloburl')
-    window.open(blobUrl, '_blank')
-  }
-
-  /** PDF Export — download the PDF file */
   const handleDownloadPdf = async () => {
     const pdf = await buildPdf()
     if (!pdf) return
-    pdf.save(`OURP_By_Category_${selectedCategoryName || 'Report'}.pdf`)
+    pdf.save(`Sale_Summary_${appliedCategoryName || 'Report'}.pdf`)
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -339,21 +401,16 @@ export default function OurpByCategoryReport() {
      ═══════════════════════════════════════════════════════════ */
 
   const handleExportExcel = useCallback(() => {
-    const headers = ['Category', 'Size', 'Brand', 'Series', 'Bolt', 'HoleS', 'Zone', 'Qty', 'OURP', 'Total']
+    const headers = ['Category', 'Brand', 'Size', 'Total Qty', 'Avg Price', 'OURP']
     const rows = filteredData.map((row) => [
-      row.category,
+      row.categoryName,
+      row.brand ?? '',
       row.size,
-      row.brand,
-      row.series,
-      row.bolt,
-      row.holeS,
-      row.zone,
-      row.qty,
-      row.ourp,
-      row.total,
+      row.totalQty,
+      row.avgPrice,
+      row.tbim_OURP,
     ])
 
-    // BOM prefix ensures Excel opens the file with correct UTF-8 encoding
     const BOM = '﻿'
     const csvContent =
       BOM +
@@ -368,12 +425,12 @@ export default function OurpByCategoryReport() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `OURP_By_Category_${selectedCategoryName || 'Report'}.csv`)
+    link.setAttribute('download', `Sale_Summary_${appliedCategoryName || 'Report'}.csv`)
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }, [filteredData, selectedCategoryName])
+  }, [filteredData, appliedCategoryName])
 
   /* ═══════════════════════════════════════════════════════════
      RENDER
@@ -381,32 +438,26 @@ export default function OurpByCategoryReport() {
 
   return (
     <>
-      {/* ── Data Table Card ── */}
       <Card className='no-print'>
         <div className='p-4'>
           {/* ── Title + Toolbar ── */}
           <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
             <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-              Preview - OURP Total For Category
-              {selectedCategoryName && (
+              Preview - Sale Summary Report
+              {appliedCategoryName && (
                 <span className='text-sm font-normal text-muted-foreground ml-2'>
-                  ({selectedCategoryName})
+                  ({appliedCategoryName})
                 </span>
               )}
             </h3>
             <div className='flex flex-wrap items-center gap-1 md:gap-2'>
-              {/* Search */}
               {!showSearch ? (
                 <Button
                   variant='ghostprimary'
                   onClick={() => setShowSearch(true)}
                   aria-label='Show search'
                   shape='pill'>
-                  <Icon
-                    icon='solar:minimalistic-magnifer-line-duotone'
-                    width={18}
-                    height={18}
-                  />
+                  <Icon icon='solar:minimalistic-magnifer-line-duotone' width={18} height={18} />
                 </Button>
               ) : (
                 <Input
@@ -414,23 +465,15 @@ export default function OurpByCategoryReport() {
                   className='form-control! w-40 md:w-56'
                   value={globalFilter ?? ''}
                   onChange={(e) => setGlobalFilter(e.target.value)}
-                  onBlur={() => {
-                    if (!globalFilter) setShowSearch(false)
-                  }}
+                  onBlur={() => { if (!globalFilter) setShowSearch(false) }}
                   aria-label='Search report'
                 />
               )}
 
-              {/* Column visibility dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant='ghostprimary' shape='pill'>
-                    <Icon
-                      icon='solar:settings-line-duotone'
-                      width={18}
-                      height={18}
-                      aria-label='Column visibility'
-                    />
+                    <Icon icon='solar:settings-line-duotone' width={18} height={18} aria-label='Column visibility' />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className='w-48 p-2 shadow dark:shadow-white/20'>
@@ -439,10 +482,7 @@ export default function OurpByCategoryReport() {
                       key={col}
                       checked={columnVisibility[col]}
                       onCheckedChange={() =>
-                        setColumnVisibility((prev) => ({
-                          ...prev,
-                          [col]: !prev[col],
-                        }))
+                        setColumnVisibility((prev) => ({ ...prev, [col]: !prev[col] }))
                       }
                       className='capitalize'>
                       {col}
@@ -451,20 +491,14 @@ export default function OurpByCategoryReport() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Download as CSV button */}
               <Button
                 variant='ghostprimary'
                 onClick={handleExportExcel}
                 shape='pill'
                 aria-label='Download CSV'>
-                <Icon
-                  icon='solar:download-minimalistic-line-duotone'
-                  width={18}
-                  height={18}
-                />
+                <Icon icon='solar:download-minimalistic-line-duotone' width={18} height={18} />
               </Button>
 
-              {/* Clear filters button */}
               {Object.keys(columnFilters).length > 0 && (
                 <Button
                   variant='secondary'
@@ -478,16 +512,18 @@ export default function OurpByCategoryReport() {
             </div>
           </div>
 
-          {/* ── Filter Bar (Category + action buttons) ── */}
+          {/* ── Filter Bar ── */}
           <div className='mb-4 rounded-lg border border-ld bg-lightprimary/10 p-4 dark:bg-darkinfo/5'>
             <div className='flex flex-wrap items-end gap-4'>
+              <DateField label='From' value={inputFrom} onChange={setInputFrom} />
+              <DateField label='To' value={inputTo} onChange={setInputTo} />
               <div className='min-w-[180px] max-w-[320px]'>
                 <label className='mb-1 block text-sm font-medium text-ld dark:text-darklink'>
                   Category
                 </label>
                 <Select
-                  value={selectedCategoryId !== null ? String(selectedCategoryId) : ''}
-                  onValueChange={(val) => setSelectedCategoryId(Number(val))}>
+                  value={draftCategoryId !== null ? String(draftCategoryId) : ''}
+                  onValueChange={handleCategoryChange}>
                   <SelectTrigger className='h-10' aria-label='Select category'>
                     <SelectValue placeholder='Select category' />
                   </SelectTrigger>
@@ -505,18 +541,21 @@ export default function OurpByCategoryReport() {
                   variant='default'
                   size='sm'
                   className='h-10 text-white [&_svg]:text-white'
-                  onClick={handlePrint}
-                  disabled={isLoading || reportData.length === 0}>
-                  <Icon icon='solar:printer-linear' width={16} height={16} className='me-1.5' />
-                  Show
+                  onClick={handleSearch}>
+                  <Icon icon='solar:minimalistic-magnifer-line-duotone' width={16} height={16} className='me-1.5' />
+                  Search
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-10'
+                  onClick={handleReset}>
+                  <Icon icon='solar:refresh-linear' width={16} height={16} className='me-1.5' />
+                  Reset
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      className='h-10'
-                      disabled={isLoading || reportData.length === 0}>
+                    <Button variant='outline' size='sm' className='h-10' disabled={reportData.length === 0}>
                       <Icon icon='solar:download-linear' width={16} height={16} className='me-1.5 [&_svg]:text-current' />
                       Export
                       <Icon icon='solar:alt-arrow-down-linear' width={14} height={14} className='ms-1 [&_svg]:text-current' />
@@ -569,35 +608,20 @@ export default function OurpByCategoryReport() {
                                       type='button'
                                       onClick={header.column.getToggleSortingHandler()}
                                       className='inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400 hover:text-foreground dark:hover:text-white cursor-pointer select-none'>
-                                      {flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
-                                      <Icon
-                                        icon='solar:transfer-vertical-line-duotone'
-                                        width={14}
-                                        height={14}
-                                        className='shrink-0'
-                                      />
+                                      {flexRender(header.column.columnDef.header, header.getContext())}
+                                      <Icon icon='solar:transfer-vertical-line-duotone' width={14} height={14} className='shrink-0' />
                                     </button>
                                   ) : (
                                     <span className='inline-flex items-center text-xs font-semibold uppercase tracking-wider text-muted-foreground dark:text-gray-400'>
-                                      {flexRender(
-                                        header.column.columnDef.header,
-                                        header.getContext()
-                                      )}
+                                      {flexRender(header.column.columnDef.header, header.getContext())}
                                     </span>
                                   )}
                                   {isFilterable && (
                                     <ColumnFilterInput
                                       columnData={columnData}
                                       filterValue={columnFilters[columnKey] || undefined}
-                                      onFilterChange={(value) =>
-                                        handleColumnFilterChange(columnKey, value)
-                                      }
-                                      columnName={String(
-                                        header.column.columnDef.header || columnKey
-                                      )}
+                                      onFilterChange={(value) => handleColumnFilterChange(columnKey, value)}
+                                      columnName={String(header.column.columnDef.header || columnKey)}
                                     />
                                   )}
                                 </div>
@@ -611,15 +635,17 @@ export default function OurpByCategoryReport() {
                   <AnimatedTableBody>
                     {isLoading ? (
                       <tr>
-                        <td colSpan={visibleColumns.length} className='text-center py-8'>
-                          Loading...
+                        <td colSpan={visibleColumns.length} className='text-center py-8'>Loading...</td>
+                      </tr>
+                    ) : query === null ? (
+                      <tr>
+                        <td colSpan={visibleColumns.length} className='text-center py-8 text-muted dark:text-gray-500'>
+                          Set filters and press Search to load data.
                         </td>
                       </tr>
                     ) : table.getRowModel().rows.length === 0 ? (
                       <tr>
-                        <td colSpan={visibleColumns.length} className='text-center py-8'>
-                          No data found.
-                        </td>
+                        <td colSpan={visibleColumns.length} className='text-center py-8'>No data found.</td>
                       </tr>
                     ) : (
                       table.getRowModel().rows.map((row, index) => (
@@ -630,13 +656,8 @@ export default function OurpByCategoryReport() {
                           {row.getVisibleCells().map((cell) => (
                             <td
                               key={cell.id}
-                              className={`px-4 py-2 ${
-                                cell.column.id === 'brand' ? 'min-w-[200px]' : ''
-                              }`}>
-                              {flexRender(
-                                cell.column.columnDef.cell,
-                                cell.getContext()
-                              )}
+                              className={`px-4 py-2 ${cell.column.id === 'brand' ? 'min-w-[220px]' : ''}`}>
+                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
                             </td>
                           ))}
                         </AnimatedTableRow>
@@ -661,9 +682,7 @@ export default function OurpByCategoryReport() {
                   </SelectTrigger>
                   <SelectContent>
                     {[10, 20, 30, 50, 100].map((pageSize) => (
-                      <SelectItem key={pageSize} value={String(pageSize)}>
-                        {pageSize}
-                      </SelectItem>
+                      <SelectItem key={pageSize} value={String(pageSize)}>{pageSize}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -683,11 +702,7 @@ export default function OurpByCategoryReport() {
                 <div className='flex items-center gap-2'>
                   <Icon
                     icon='solar:arrow-left-line-duotone'
-                    className={`text-dark dark:text-white hover:text-primary cursor-pointer ${
-                      table.getState().pagination.pageIndex === 0
-                        ? 'opacity-50 cursor-not-allowed!'
-                        : ''
-                    }`}
+                    className={`text-dark dark:text-white hover:text-primary cursor-pointer ${table.getState().pagination.pageIndex === 0 ? 'opacity-50 cursor-not-allowed!' : ''}`}
                     width={20}
                     height={20}
                     onClick={() => table.previousPage()}
@@ -697,17 +712,10 @@ export default function OurpByCategoryReport() {
                   </span>
                   <Icon
                     icon='solar:arrow-right-line-duotone'
-                    className={`text-dark dark:text-white hover:text-primary cursor-pointer ${
-                      table.getState().pagination.pageIndex + 1 === table.getPageCount()
-                        ? 'opacity-50 cursor-not-allowed!'
-                        : ''
-                    }`}
+                    className={`text-dark dark:text-white hover:text-primary cursor-pointer ${table.getState().pagination.pageIndex + 1 === table.getPageCount() ? 'opacity-50 cursor-not-allowed!' : ''}`}
                     width={20}
                     height={20}
-                    onClick={() =>
-                      table.getState().pagination.pageIndex + 1 < table.getPageCount() &&
-                      table.nextPage()
-                    }
+                    onClick={() => table.getState().pagination.pageIndex + 1 < table.getPageCount() && table.nextPage()}
                   />
                 </div>
               </div>
@@ -721,94 +729,69 @@ export default function OurpByCategoryReport() {
         <div
           ref={printRef}
           className='bg-white text-slate-900 p-4'
-          style={{
-            fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-            maxWidth: '8.5in',
-            width: '816px',
-          }}>
-          {/* Company Header */}
+          style={{ fontFamily: "'Inter', system-ui, -apple-system, sans-serif", maxWidth: '8.5in', width: '816px' }}>
           <CompanyInfoHeader className='mb-4' />
 
-          {/* Report Title */}
           <div className='text-center mb-3'>
-            <h2 className='text-lg font-bold text-slate-900 uppercase tracking-wide'>
-              OURP Total For Category
-            </h2>
-            {selectedCategoryName && (
+            <h2 className='text-lg font-bold text-slate-900 uppercase tracking-wide'>Sale Summary Report</h2>
+            {query && (query.from || query.to || query.categoryId !== null) && (
               <p className='text-sm text-slate-600 mt-1'>
-                Category: <strong>{selectedCategoryName}</strong>
+                {query.from && <span>From: <strong>{toApiDate(query.from)}</strong></span>}
+                {query.from && query.to && <span className='mx-2'>|</span>}
+                {query.to && <span>To: <strong>{toApiDate(query.to)}</strong></span>}
+                {appliedCategoryName && (
+                  <>
+                    <span className='mx-2'>|</span>
+                    <span>Category: <strong>{appliedCategoryName}</strong></span>
+                  </>
+                )}
               </p>
             )}
           </div>
 
-          {/* Print Table */}
           <table className='w-full text-xs border-collapse'>
             <thead>
               <tr className='bg-slate-100'>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>#</th>
                 <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Category</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Size</th>
                 <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Brand</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Series</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Bolt</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>HoleS</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Zone</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Qty</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-left font-semibold'>Size</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Total Qty</th>
+                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Avg Price</th>
                 <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>OURP</th>
-                <th className='border border-slate-300 px-2 py-1.5 text-right font-semibold'>Total</th>
               </tr>
             </thead>
             <tbody>
               {filteredData.map((row, idx) => (
                 <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td className='border border-slate-300 px-2 py-1'>{row.category}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.size}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.brand}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.series}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.bolt}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.holeS}</td>
-                  <td className='border border-slate-300 px-2 py-1'>{row.zone}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right'>{row.qty}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right'>{row.ourp.toFixed(2)}</td>
-                  <td className='border border-slate-300 px-2 py-1 text-right font-medium'>{row.total.toFixed(2)}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{idx + 1}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{row.categoryName || '—'}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{row.brand || '—'}</td>
+                  <td className='border border-slate-300 px-2 py-1'>{row.size || '—'}</td>
+                  <td className='border border-slate-300 px-2 py-1 text-right font-medium'>{row.totalQty}</td>
+                  <td className='border border-slate-300 px-2 py-1 text-right'>{formatPrice(row.avgPrice)}</td>
+                  <td className='border border-slate-300 px-2 py-1 text-right'>{formatPrice(row.tbim_OURP)}</td>
                 </tr>
               ))}
             </tbody>
             <tfoot>
               <tr className='bg-slate-100 font-bold'>
-                <td className='border border-slate-300 px-2 py-1.5' colSpan={7}>
-                  Grand Total
-                </td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>
-                  {filteredData.reduce((sum, r) => sum + r.qty, 0)}
-                </td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>-</td>
-                <td className='border border-slate-300 px-2 py-1.5 text-right'>
-                  {filteredData.reduce((sum, r) => sum + r.total, 0).toFixed(2)}
-                </td>
+                <td className='border border-slate-300 px-2 py-1.5' colSpan={4}>Total</td>
+                <td className='border border-slate-300 px-2 py-1.5 text-right'>{summary.totalQtySum}</td>
+                <td className='border border-slate-300 px-2 py-1.5 text-right'>{formatPrice(summary.avgPriceWeighted)}</td>
+                <td className='border border-slate-300 px-2 py-1.5 text-right'>{formatPrice(summary.ourpWeighted)}</td>
               </tr>
             </tfoot>
           </table>
         </div>
       </div>
 
-      {/* ── Print styles ── */}
       <style>{`
         @media print {
-          body * {
-            visibility: hidden !important;
-          }
-          .no-print,
-          .no-print * {
-            visibility: hidden !important;
-          }
-          .no-print-same,
-          .no-print-same * {
-            visibility: visible !important;
-          }
-          .no-print-same {
-            position: static !important;
-            left: auto !important;
-          }
+          body * { visibility: hidden !important; }
+          .no-print, .no-print * { visibility: hidden !important; }
+          .no-print-same, .no-print-same * { visibility: visible !important; }
+          .no-print-same { position: static !important; left: auto !important; }
         }
       `}</style>
     </>

@@ -1,0 +1,62 @@
+#Required Endpoints with sample output
+## 1. New Tire Sale Report: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Customer Details: api/Reports/GetCustomerList?startDate=01-Jan-2025&endDate=31-Jan-2025
+Query Parameters:
+startDate datetime nullable
+endDate datetime nullable
+
+Response:
+[
+  {
+    "name": "11",
+    "emailAddress": "",
+    "phone": "111"
+  },
+  {
+    "name": "A-ABLE PLUMBING",
+    "emailAddress": "",
+    "phone": "281-532-2253"
+  }]
+
+
+
+# BRS
+-> Under Report link there will be a submenu name Customer Details.
+-> Clicking the submenu will open a page to show the Customer Details. you have the full liberty to design following the industry standard.
+-> There will be a two datepicker for taking the query parameters. The parameter inputs will be shown using the same pattern used in Report->OURP By Category.
+-> Datepicker labels will be "From" and "To".
+-> The same pattern and functionality for the buttons used in Report->OURP By Category will also be used here. These buttons will be with input parameter takers.
+-> on the first load of the page call the api mentioned in 2 above.
+   On the first load, I mean when user click Customer Details links, show Current Day in From Date.Show one month back date in To Date and call api with this date range.
+   on First Load call api with default date range values , I mean one month value which is being shown
+-> Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter
+   following the same design pattern. You can follow the one designed in Report->OURP By Category.
+
+-> Existing PDF Report has been attached herewith for your reference.But you have the full liberty to design following the industry standard.
+-> On top of the PDF, there is company information. Design it in  the same manner you did in Report->OURP By Category.
+-> Details of Report->OURP By Category are stored in agent-guides\prompts\Reports\DEVLOG_OURP_By_Category.md.
+    You can use this as reference.	
+-> Please Make a separate folder Named customerdetails to keep all the files related to this specific report so that troubleshooting in future will be hassle free.
+-> Please keep track of everything you are doing in a separate file for future reference.   
+
+
+
+

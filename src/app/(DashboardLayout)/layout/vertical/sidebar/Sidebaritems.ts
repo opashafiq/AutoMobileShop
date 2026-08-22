@@ -230,6 +230,36 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/react-tables/report/ourp-by-category",
       },
+      {
+        name: "Customer Details",
+        icon: "solar:users-group-rounded-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/customer-details",
+      },
+      {
+        name: "Tire Sale Report",
+        icon: "solar:cart-large-2-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/tire-sale-report",
+      },
+      {
+        name: "Wheel Sale Report",
+        icon: "solar:reel-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/wheel-sale-report",
+      },
+      {
+        name: "Sale Summary Report",
+        icon: "solar:pie-chart-3-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/sale-summary-report",
+      },
+      {
+        name: "Total OURP Report",
+        icon: "solar:pie-chart-2-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/total-ourp-report",
+      },
     ],
   },
   // {
