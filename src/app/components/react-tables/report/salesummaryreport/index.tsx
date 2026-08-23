@@ -87,8 +87,8 @@ function getDefaultDateRange(): { from: string; to: string } {
   const oneMonthBack = new Date()
   oneMonthBack.setMonth(oneMonthBack.getMonth() - 1)
   return {
-    from: toInputDate(today),
-    to: toInputDate(oneMonthBack),
+    from: toInputDate(oneMonthBack),
+    to: toInputDate(today),
   }
 }
 
@@ -390,6 +390,13 @@ export default function SaleSummaryReport() {
     }
   }
 
+  const handlePrint = async () => {
+    const pdf = await buildPdf()
+    if (!pdf) return
+    const blobUrl = pdf.output('bloburl')
+    window.open(blobUrl, '_blank')
+  }
+
   const handleDownloadPdf = async () => {
     const pdf = await buildPdf()
     if (!pdf) return
@@ -552,6 +559,15 @@ export default function SaleSummaryReport() {
                   onClick={handleReset}>
                   <Icon icon='solar:refresh-linear' width={16} height={16} className='me-1.5' />
                   Reset
+                </Button>
+                <Button
+                  variant='outline'
+                  size='sm'
+                  className='h-10'
+                  onClick={handlePrint}
+                  disabled={isLoading || reportData.length === 0}>
+                  <Icon icon='solar:printer-linear' width={16} height={16} className='me-1.5' />
+                  View PDF
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -9,6 +9,28 @@ import { buttonVariants } from "@/components/ui/button"
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>
 
+/**
+ * Pick a representative date from a react-day-picker `selected` value so the
+ * calendar can open on the selected date's month instead of always the current
+ * month (the default when only `selected` is provided).
+ */
+function monthFromSelected(selected: unknown): Date | undefined {
+  if (!selected) return undefined
+  if (selected instanceof Date) return selected
+  if (Array.isArray(selected)) {
+    for (const item of selected) {
+      const d = monthFromSelected(item)
+      if (d) return d
+    }
+    return undefined
+  }
+  if (typeof selected === 'object') {
+    const maybe = selected as { from?: Date; to?: Date }
+    return maybe.from || maybe.to || undefined
+  }
+  return undefined
+}
+
 function Calendar({
   className,
   classNames,
@@ -62,6 +84,7 @@ function Calendar({
         ),
       }}
       {...props}
+      defaultMonth={props.month ?? props.defaultMonth ?? monthFromSelected(props.selected)}
     />
   )
 }

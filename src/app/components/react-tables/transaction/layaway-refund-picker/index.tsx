@@ -69,6 +69,8 @@ export default function LayawayRefundPicker({ onSelect, onCancel }: LayawayRefun
   const [paymentSlot, setPaymentSlot] = useState('')
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const [openStart, setOpenStart] = useState(false)
+  const [openEnd, setOpenEnd] = useState(false)
   const [pageNumber, setPageNumber] = useState(1)
   const [pageSize, setPageSize] = useState(10)
   const [totalCount, setTotalCount] = useState(0)
@@ -296,7 +298,7 @@ export default function LayawayRefundPicker({ onSelect, onCancel }: LayawayRefun
             </div>
             <div className='min-w-[130px] flex-1'>
               <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>From Date</Label>
-              <Popover>
+              <Popover open={openStart} onOpenChange={setOpenStart}>
                 <PopoverTrigger asChild>
                   <Button variant='outline' className='h-10 w-full justify-start text-left font-normal text-ld border-ld'>
                     {startDate ? format(startDate, 'dd/MM/yyyy') : <span className='text-darklink'>Pick date</span>}
@@ -304,13 +306,13 @@ export default function LayawayRefundPicker({ onSelect, onCancel }: LayawayRefun
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-auto p-0' align='start'>
-                  <Calendar mode='single' selected={startDate} onSelect={setStartDate} initialFocus />
+                  <Calendar mode='single' selected={startDate} onSelect={(date) => { setStartDate(date); setOpenStart(false) }} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>
             <div className='min-w-[130px] flex-1'>
               <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>To Date</Label>
-              <Popover>
+              <Popover open={openEnd} onOpenChange={setOpenEnd}>
                 <PopoverTrigger asChild>
                   <Button variant='outline' className='h-10 w-full justify-start text-left font-normal text-ld border-ld'>
                     {endDate ? format(endDate, 'dd/MM/yyyy') : <span className='text-darklink'>Pick date</span>}
@@ -318,7 +320,7 @@ export default function LayawayRefundPicker({ onSelect, onCancel }: LayawayRefun
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className='w-auto p-0' align='start'>
-                  <Calendar mode='single' selected={endDate} onSelect={setEndDate} initialFocus />
+                  <Calendar mode='single' selected={endDate} onSelect={(date) => { setEndDate(date); setOpenEnd(false) }} initialFocus />
                 </PopoverContent>
               </Popover>
             </div>

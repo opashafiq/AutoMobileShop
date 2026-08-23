@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -29,6 +29,7 @@ function toISO(date: Date): string {
 }
 
 export default function DateField({ label, value, onChange }: DateFieldProps) {
+  const [open, setOpen] = useState(false)
   const selected = value ? new Date(`${value}T00:00:00`) : undefined
 
   return (
@@ -36,7 +37,7 @@ export default function DateField({ label, value, onChange }: DateFieldProps) {
       <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>
         {label}
       </Label>
-      <Popover>
+      <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
             variant='outline'
@@ -54,7 +55,10 @@ export default function DateField({ label, value, onChange }: DateFieldProps) {
           <Calendar
             mode='single'
             selected={selected}
-            onSelect={(date) => onChange(date ? toISO(date) : '')}
+            onSelect={(date) => {
+              onChange(date ? toISO(date) : '')
+              setOpen(false)
+            }}
             initialFocus
           />
         </PopoverContent>

@@ -106,6 +106,8 @@ export default function InvoiceRefundDatatable() {
   const [phoneNo, setPhoneNo] = useState('')
   const [startDate, setStartDate] = useState<Date | undefined>(undefined)
   const [endDate, setEndDate] = useState<Date | undefined>(undefined)
+  const [openStart, setOpenStart] = useState(false)
+  const [openEnd, setOpenEnd] = useState(false)
   // ---- Server-side pagination ----
   const [pageNumber, setPageNumber] = useState(1)
   const [pageSize, setPageSize] = useState(10)
@@ -568,7 +570,7 @@ export default function InvoiceRefundDatatable() {
               </div>
               <div className='min-w-[150px] flex-1'>
                 <Label className='mb-1.5 block text-sm font-medium text-ld dark:text-darklink'>From Date</Label>
-                <Popover>
+                <Popover open={openStart} onOpenChange={setOpenStart}>
                   <PopoverTrigger asChild>
                     <Button
                       variant='outline'
@@ -582,7 +584,7 @@ export default function InvoiceRefundDatatable() {
                     <Calendar
                       mode='single'
                       selected={startDate}
-                      onSelect={setStartDate}
+                      onSelect={(date) => { setStartDate(date); setOpenStart(false) }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -604,7 +606,7 @@ export default function InvoiceRefundDatatable() {
                     <Calendar
                       mode='single'
                       selected={endDate}
-                      onSelect={setEndDate}
+                      onSelect={(date) => { setEndDate(date); setOpenEnd(false) }}
                       initialFocus
                     />
                   </PopoverContent>
