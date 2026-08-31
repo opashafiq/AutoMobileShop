@@ -1,0 +1,85 @@
+/* ============================================================
+ * Sales & Inventory Dashboard — helper + print styles
+ *
+ * Heatmap cells are scaled with `--heat-pct` (set inline from the
+ * widget: 0% = no sales → transparent, 100% = period peak). Colours
+ * follow the design-system primary token, so theme switches apply.
+ * ============================================================ */
+
+.heat-cell {
+  background-color: color-mix(in oklab, var(--color-primary) var(--heat-pct, 0%), transparent);
+}
+
+.heat-legend {
+  background: linear-gradient(
+    to right,
+    color-mix(in oklab, var(--color-primary) 4%, transparent),
+    color-mix(in oklab, var(--color-primary) 22%, transparent),
+    color-mix(in oklab, var(--color-primary) 48%, transparent),
+    color-mix(in oklab, var(--color-primary) 100%, transparent)
+  );
+}
+
+@media print {
+  /* Page setup — US Letter, landscape fits wide dashboards better. */
+  @page {
+    size: letter landscape;
+    margin: 0.3in 0.3in;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Force light backgrounds, kill shadows/gradients.
+     (Sidebar + header live outside this page's DOM — the global
+     chrome-hiding rules from invoice-print apply repo-wide; this
+     file handles the dashboard's own surfaces.) */
+  * {
+    background: transparent !important;
+    background-color: #fff !important;
+    color: #000 !important;
+    box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  /* No clipped charts/cards when paginating. */
+  .apexcharts-canvas,
+  .apexcharts-svg,
+  svg {
+    max-width: 100% !important;
+    overflow: visible !important;
+  }
+
+  .apexcharts-tooltip,
+  .apexcharts-legend,
+  [class*='select'],          /* period/branch/threshold dropdowns */
+  button {
+    display: none !important;
+  }
+
+  /* Dashboards paginate better when cards don't split mid-chart. */
+  [class*='grid'],
+  article,
+  section {
+    page-break-inside: avoid;
+  }
+
+  table,
+  tr,
+  td,
+  th {
+    page-break-inside: avoid;
+  }
+
+  table {
+    width: 100% !important;
+  }
+}

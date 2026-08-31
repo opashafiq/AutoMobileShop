@@ -7,7 +7,7 @@ import { NextResponse } from 'next/server';
 
 const chance = new Chance();
 
-let ChatData: ChatsType[] = [
+const ChatData: ChatsType[] = [
   {
     id: 1,
     name: 'James Johnson',

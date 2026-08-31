@@ -42,6 +42,12 @@ const SidebarContent: MenuItem[] = [
         url: "/",
       },
       {
+        name: "Sales Analytics",
+        icon: "solar:chart-line-linear",
+        id: uniqueId(),
+        url: "/dashboards/sales-analytics",
+      },
+      {
         name: "eCommerce",
         icon: "solar:bag-5-linear",
         id: uniqueId(),

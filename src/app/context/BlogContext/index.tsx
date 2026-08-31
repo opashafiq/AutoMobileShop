@@ -68,18 +68,31 @@ export const BlogProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         );
     }
 
-    // Fetches a specific blog post by its title from the API endpoint and updates the selected post in the state.
-    const fetchPostById =  (id: number) => {
-            const {data:specificPostData,isLoading:isSpecificPostLoading , error:isSpecificPostError} = useSWR(`/api/blog/${id}`,getFetcher);
-            if(specificPostData){
-                setLoading(isSpecificPostLoading);
-                setSelectedPost(specificPostData);
-            }else if(isSpecificPostError){
-                setError(isSpecificPostError);
-                setLoading(isSpecificPostLoading);
-            }else{
-                setLoading(isSpecificPostLoading);
-            }
+    // Fetches a specific blog post by its id from the API endpoint and updates
+    // the selected post in the state. The SWR call itself must live at the top
+    // of the provider (a hook can't be defined inside a plain function).
+    const [postId, setPostId] = useState<number | null>(null);
+
+    const { data: specificPostData, isLoading: isSpecificPostLoading, error: isSpecificPostError } =
+        useSWR(postId != null ? `/api/blog/${postId}` : null, getFetcher);
+
+    useEffect(() => {
+        // No reader has requested a post yet — leave the posts-list loading alone.
+        if (postId == null) return;
+
+        if (specificPostData) {
+            setSelectedPost(specificPostData);
+            setLoading(isSpecificPostLoading);
+        } else if (isSpecificPostError) {
+            setError(isSpecificPostError);
+            setLoading(isSpecificPostLoading);
+        } else {
+            setLoading(isSpecificPostLoading);
+        }
+    }, [postId, specificPostData, isSpecificPostError, isSpecificPostLoading]);
+
+    const fetchPostById = (id: number) => {
+        setPostId(id);
     };
 
     const value: BlogContextProps = {

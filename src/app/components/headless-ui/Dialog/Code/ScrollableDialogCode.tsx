@@ -7,7 +7,7 @@ import {
 import { useState } from 'react'
 
 const ScrollableDialogCode = () => {
-  let [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <div>

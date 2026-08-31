@@ -58,9 +58,9 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     useEffect(() => {
         if(ChatsData){
             setLoading(isChatsLoading);
-            let chatsData = ChatsData.data;
+            const chatsData = ChatsData.data;
             if (chatData.length === 0) {
-                let specificChat = chatsData[0];
+                const specificChat = chatsData[0];
                 setSelectedChat(specificChat);
             }
             setChatData(chatsData);
@@ -78,8 +78,8 @@ export const ChatProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const sendMessage = async (chatId: number | string, message: MessageType) => {
         try {
-           let {data} = await mutate(postFetcher('/api/chat' , {chatId,message}));
-           let chat = data.find((chat:any) => chat.id === chatId)
+           const {data} = await mutate(postFetcher('/api/chat' , {chatId,message}));
+           const chat = data.find((chat:any) => chat.id === chatId)
            setSelectedChat(chat);
         } catch (error) {
             console.error('Error sending message:', error);

@@ -18,7 +18,7 @@ const people = [
 
 type MyCustomButtonProps = React.ComponentPropsWithoutRef<"button">;
 
-let MyCustomButton = forwardRef<HTMLButtonElement, MyCustomButtonProps>(
+const MyCustomButton = forwardRef<HTMLButtonElement, MyCustomButtonProps>(
   function MyCustomButton(props, ref) {
     return <button ref={ref} {...props} />;
   }

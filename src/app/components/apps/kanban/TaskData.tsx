@@ -52,9 +52,9 @@ const TaskData: React.FC<TaskDataProps> = ({
       )
       if (response.status === 200) {
         setEditedTask(editedTaskData)
-        let remainingTodos = todoCategories.map((item) => {
+        const remainingTodos = todoCategories.map((item) => {
           if (item.name === category.name) {
-            let updatedChild = item.child.map((task) => {
+            const updatedChild = item.child.map((task) => {
               if (task.id === editedTaskData.id) {
                 return { ...task, editedTaskData }
               }

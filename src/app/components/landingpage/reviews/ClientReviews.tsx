@@ -13,7 +13,7 @@ import { CustomizerContext } from '@/app/context/CustomizerContext'
 const ClientReviews = () => {
   const renderStars = (rating: number) => {
     const totalStars = 5
-    let stars = []
+    const stars = []
     for (let i = 1; i <= totalStars; i++) {
       stars.push(
         <Icon

@@ -42,7 +42,7 @@ const InputValidationOne = () => {
   }
 
   const validate = (formValues: any) => {
-    let error: ErrorMessage = {
+    const error: ErrorMessage = {
       name: '',
       email: '',
       password: '',

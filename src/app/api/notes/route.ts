@@ -40,7 +40,7 @@ const resetNotes = [...NotesData];
 
 // GET request to retrieve Notes data
 export async function GET(req:any){
-  let isBrowserRefreshed = req.headers.get('browserrefreshed');
+  const isBrowserRefreshed = req.headers.get('browserrefreshed');
  try{
    if(isBrowserRefreshed === "false"){
      return NextResponse.json({status:200 , msg:"Success" , data: NotesData})

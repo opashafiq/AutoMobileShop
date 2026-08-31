@@ -2,7 +2,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useState } from 'react'
 
 const BasicDialodCode = () => {
-  let [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   function open() {
     setIsOpen(true)

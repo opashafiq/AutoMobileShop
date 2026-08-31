@@ -3,7 +3,7 @@ import React, { forwardRef } from "react";
 import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
 import CardBox from "../../shared/CardBox";
 import { Icon } from "@iconify/react";
-let MyCustomButton = forwardRef(function (props: any, ref: any) {
+const MyCustomButton = forwardRef(function (props: any, ref: any) {
   return <button className="..." ref={ref} {...props} />;
 });
 

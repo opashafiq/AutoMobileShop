@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react'
 import clsx from 'clsx'
 
 const ClickTransitionCode = () => {
-  let [isShowing, setIsShowing] = useState(true)
+  const [isShowing, setIsShowing] = useState(true)
 
   return (
     <div>

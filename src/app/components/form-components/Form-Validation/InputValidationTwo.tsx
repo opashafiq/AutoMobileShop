@@ -37,7 +37,7 @@ const InputValidationTwo = () => {
     setErrorrMessages(validation(modeData))
   }
   const validation = (formValues: any) => {
-    let error: ErrorrMessage = {
+    const error: ErrorrMessage = {
       email: '',
       password: '',
     }

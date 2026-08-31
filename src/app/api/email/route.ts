@@ -496,7 +496,7 @@ export async function DELETE(req:any){
   console.log(emailId);
   const email = EmailData.find((email) => email.id === emailId); // Find the index of the email with the specified ID
   if (email) {
-    let remainingEmails = EmailData.filter((email) => email.id !== emailId);
+    const remainingEmails = EmailData.filter((email) => email.id !== emailId);
     EmailData = remainingEmails;
     console.log(EmailData, "dekh le bhai")
     return NextResponse.json({status:200 , msg:"success", data:EmailData})
@@ -506,7 +506,7 @@ export async function DELETE(req:any){
 }
 
 export async function GET(req:any){
-  let isBrowserRefreshed = req.headers.get('browserrefreshed');
+  const isBrowserRefreshed = req.headers.get('browserrefreshed');
   try{
     if(isBrowserRefreshed === "false"){
       return NextResponse.json({status:200 , msg:"Success" , data: EmailData})

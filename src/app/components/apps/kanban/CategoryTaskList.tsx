@@ -164,7 +164,7 @@ function CategoryTaskList({ id }: { id: string }) {
   const handleClearAll = () => {
     clearAllTasks(id)
     setAllTasks([])
-    let remainingTodos = todoCategories.map((item) => {
+    const remainingTodos = todoCategories.map((item) => {
       if (item.name === category.name) {
         return {
           id: item.id,
@@ -184,9 +184,9 @@ function CategoryTaskList({ id }: { id: string }) {
     setAllTasks((prevTasks: any[]) =>
       prevTasks.filter((task: { id: number }) => task.id !== taskId)
     )
-    let remainingTodos = todoCategories.map((item) => {
+    const remainingTodos = todoCategories.map((item) => {
       if (item.name === category.name) {
-        let updatedChild = item.child.filter(
+        const updatedChild = item.child.filter(
           (task: { id: number }) => task.id !== taskId
         )
         return {

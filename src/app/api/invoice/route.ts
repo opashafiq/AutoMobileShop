@@ -220,7 +220,7 @@ const resetInvoiceList = [...invoceLists]
 
 // Endpoint to get all invoice
 export async function GET(req: any) {
-    let isBrowserRefreshed = req.headers.get('browserrefreshed')
+    const isBrowserRefreshed = req.headers.get('browserrefreshed')
     try {
         if (isBrowserRefreshed === 'false') {
             return NextResponse.json({

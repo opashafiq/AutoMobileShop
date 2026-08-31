@@ -3,7 +3,7 @@ import { Tab, TabGroup, TabList, TabPanel, TabPanels } from "@headlessui/react";
 import { forwardRef } from "react";
 import CardBox from "../../shared/CardBox";
 
-let MyCustomButton = forwardRef(function (props, ref: any) {
+const MyCustomButton = forwardRef(function (props, ref: any) {
   return <button className="..." ref={ref} {...props} />;
 });
 

@@ -8,7 +8,7 @@ import {
 } from '@headlessui/react'
 
 const WithBackdropCode = () => {
-  let [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
   return (
     <div>
       <button

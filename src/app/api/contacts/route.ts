@@ -464,7 +464,7 @@ const resetContacts = [...ContactList];
 
 export async function GET(req:any){
 
-     let isBrowserRefreshed = req.headers.get('browserrefreshed');    
+     const isBrowserRefreshed = req.headers.get('browserrefreshed');    
     try{
       if(isBrowserRefreshed === "false"){
         return NextResponse.json({status:200 , msg:"Success" , data: ContactList})
@@ -479,7 +479,7 @@ export async function GET(req:any){
 
 export async function POST(req:any){
   try{
-    let newContact = await req.json();
+    const newContact = await req.json();
     newContact.id = ContactList.length + 1;
     ContactList.push(newContact);
     return NextResponse.json({status:200,msg:"success",data:ContactList});
@@ -491,7 +491,7 @@ export async function POST(req:any){
 export async function DELETE(req:any){
   try{
     const {data} = await req.json();
-    let contactId = data.contactId;
+    const contactId = data.contactId;
     const contactIndex = ContactList.findIndex(contact => contact.id === contactId);
     if (contactIndex !== -1) {
       ContactList = ContactList.filter((contact) => contact.id !== contactId);

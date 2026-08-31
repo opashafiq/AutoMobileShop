@@ -8,17 +8,19 @@ import { Card } from '@/components/ui/card'
 function DefaultImageDisplay() {
   const [allImages, setAllImages] = useState([...masonryImages])
   const loadMoreRef = useRef(null)
-  const loadCount = useRef(0)
+  const [loadCount, setLoadCount] = useState(0)
   const MAX_LOADS = 2
 
-  // Observer to detect when bottom of page is reached
+  // Observer to detect when bottom of page is reached. Re-created on each load so
+  // the intersection guard always reads the latest count (no stale closure).
   useEffect(() => {
+    if (loadCount >= MAX_LOADS) return
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && loadCount.current < MAX_LOADS) {
+        if (entries[0].isIntersecting) {
           // Append same 12 images again
           setAllImages((prev) => [...prev, ...masonryImages])
-          loadCount.current += 1
+          setLoadCount((c) => c + 1)
         }
       },
       {
@@ -33,7 +35,7 @@ function DefaultImageDisplay() {
     return () => {
       if (current) observer.unobserve(current)
     }
-  }, [])
+  }, [loadCount])
 
   return (
     <Card>
@@ -54,11 +56,11 @@ function DefaultImageDisplay() {
         </div>
 
         {/* This div triggers loading more images when in view */}
-        {loadCount.current < MAX_LOADS && (
+        {loadCount < MAX_LOADS && (
           <div ref={loadMoreRef} className='h-10' />
         )}
 
-        {loadCount.current >= MAX_LOADS && (
+        {loadCount >= MAX_LOADS && (
           <p className='text-center mt-4'>You’ve reached the end.</p>
         )}
       </div>

@@ -2,7 +2,7 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { useState } from 'react'
 
 const TransitionDialogCode = () => {
-  let [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false)
 
   return (
     <div>

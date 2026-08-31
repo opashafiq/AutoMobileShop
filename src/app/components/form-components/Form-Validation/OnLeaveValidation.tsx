@@ -41,7 +41,7 @@ const OnLeaveValidation = () => {
 
   //   Third Validate
   const validations = (formValues: any) => {
-    let error: ErrorsMessage = {
+    const error: ErrorsMessage = {
       email: "",
       password: "",
     };

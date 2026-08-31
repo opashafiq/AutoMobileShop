@@ -50,7 +50,7 @@ function StudentEnrollmentFormCode() {
       parentPhone: "",
     },
     subjects: [{ name: "" }],
-    gradeLevel: "1st Grade" as "1st Grade", // Initialize with a valid enum member
+    gradeLevel: "1st Grade" as const, // Initialize with a valid enum member
     agreeToTerms: false,
   };
   const form = useForm<any>({

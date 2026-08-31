@@ -8,7 +8,7 @@ import ContactList from "@/app/components/apps/contacts/ContactList";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 
-const index = () => {
+const ContactsIndex = () => {
   const [isOpen, setIsOpen] = useState(false);
   const handleClose = () => setIsOpen(false);
   const [isOpenContact, setIsOpenContact] = useState(false);
@@ -52,4 +52,4 @@ const index = () => {
   )
 }
 
-export default index
+export default ContactsIndex

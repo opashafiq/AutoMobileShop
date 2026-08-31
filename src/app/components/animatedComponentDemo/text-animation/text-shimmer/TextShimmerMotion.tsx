@@ -1,7 +1,14 @@
 'use client';
-import { type JSX } from 'react';
 import { motion, Transition } from 'motion/react';
 import { cn } from '@/lib/utils';
+
+// motion-wrapped elements must be created at module scope — a component created
+// during render is a new component type every render, so React resets its state.
+const MotionTags = {
+  p: motion.create('p'),
+  div: motion.create('div'),
+  span: motion.create('span'),
+} as const;
 
  type TextShimmerWaveProps = {
   children: string;
@@ -30,9 +37,10 @@ import { cn } from '@/lib/utils';
   rotateYDistance = 10,
   transition,
 }: TextShimmerWaveProps) {
-  const MotionComponent = motion.create(
-    Component as keyof JSX.IntrinsicElements
-  );
+  const MotionComponent =
+    (Component as keyof typeof MotionTags) in MotionTags
+      ? MotionTags[Component as keyof typeof MotionTags]
+      : MotionTags.p;
 
   return (
     <MotionComponent
