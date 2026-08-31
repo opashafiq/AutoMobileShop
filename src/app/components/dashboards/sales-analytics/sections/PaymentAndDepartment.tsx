@@ -1,7 +1,7 @@
 'use client'
 
 import type { QueryState } from '../useDashboardQuery'
-import type { OverviewResponse, PaymentCollectionItem } from '../types'
+import type { NameValue, OverviewResponse, PaymentCollectionItem } from '../types'
 import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
 import { ApexChart } from '../shared/ApexChart'
@@ -241,18 +241,37 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
   const theme = useChartTheme()
   // §5: bar charts read descending, largest first (display order only).
   const sorted = [...items].sort((a, b) => b.value - a.value)
-  const shares = sorted.map((i) => i.sharePercent)
+  // A tire shop tracks dozens of micro-departments; rendering them all squeezes
+  // every label below legibility (24 rows in one card ≈ 12px each). Top 8 read
+  // as bars; the rest aggregate into one "Other (N more)" row whose share is
+  // the SUM of the remaining precomputed shares — summed, not recomputed.
+  const rows: NameValue[] =
+    sorted.length <= 9
+      ? sorted
+      : [
+          ...sorted.slice(0, 8),
+          {
+            id: null,
+            name: `Other (${sorted.length - 8} more)`,
+            value: sorted.slice(8).reduce((s, i) => s + i.value, 0),
+            count: sorted.slice(8).reduce((s, i) => s + i.count, 0),
+            sharePercent: sorted.slice(8).reduce((s, i) => s + i.sharePercent, 0),
+          },
+        ]
+  const shares = rows.map((i) => i.sharePercent)
+  // Row-proportional height keeps labels full-size whatever the row count.
+  const height = Math.max(240, rows.length * 34 + 60)
 
   const options: ChartOptions = {
     chart: {
       type: 'bar',
-      height: 340,
+      height,
       toolbar: { show: false },
       fontFamily: theme.fontFamily,
       foreColor: theme.foreColor,
       animations: { enabled: true, easing: 'easeinout', speed: 650 },
     },
-    series: [{ name: 'Sales', data: sorted.map((i) => i.value) }],
+    series: [{ name: 'Sales', data: rows.map((i) => i.value) }],
     colors: ['var(--color-primary)'],
     plotOptions: {
       bar: {
@@ -268,16 +287,16 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
       formatter: (_v: number, opts: { dataPointIndex: number }) =>
         `${formatPercent(shares[opts.dataPointIndex])}`,
       offsetX: 6,
-      style: { fontSize: '11px', fontWeight: 600, colors: [theme.foreColor] },
+      style: { fontSize: '12px', fontWeight: 600, colors: [theme.foreColor] },
     },
     xaxis: {
-      categories: sorted.map((i) => i.name),
+      categories: rows.map((i) => i.name),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: { formatter: (v: number) => formatCurrencyAbbrev(v) },
     },
     yaxis: {
-      labels: { style: { colors: theme.foreColor, fontSize: '12px' } },
+      labels: { style: { colors: theme.foreColor, fontSize: '13px' } },
     },
     grid: theme.grid,
     legend: { show: false },
@@ -286,14 +305,20 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
       fillSeriesColor: false,
       y: {
         formatter: (value: number, opts: { dataPointIndex: number }) =>
-          `${formatCurrency(value)}  ·  ${formatNumber(sorted[opts.dataPointIndex]?.count)} sales`,
+          `${formatCurrency(value)}  ·  ${formatNumber(rows[opts.dataPointIndex]?.count)} sales`,
       },
     },
   }
 
   return (
-    <div role="img" aria-label="Sales by department" className="h-full">
-      <ApexChart options={options} series={options.series} type="bar" height={340} width="100%" />
+    <div
+      role="img"
+      aria-label={`Sales by department: ${rows
+        .map((i) => `${i.name} ${formatCurrency(i.value)}`)
+        .join(', ')}.`}
+      className="h-full"
+    >
+      <ApexChart options={options} series={options.series} type="bar" height={height} width="100%" />
     </div>
   )
 }

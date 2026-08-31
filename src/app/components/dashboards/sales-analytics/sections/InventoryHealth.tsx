@@ -153,7 +153,7 @@ function LowStockList({ threshold }: { threshold: number }) {
       <StockListBody
         query={query}
         emptyMessage="Nothing below this threshold — stock levels are healthy"
-        renderRows={(items) => <LowStockRows items={items} threshold={threshold} />}
+        renderRows={(items) => <LowStockRows key={threshold} items={items} threshold={threshold} />}
       />
     </div>
   )
@@ -208,7 +208,7 @@ function DeadStockList({ days }: { days: number }) {
       <StockListBody
         query={query}
         emptyMessage="Everything has moved in this window"
-        renderRows={(items) => <DeadStockRows items={items} />}
+        renderRows={(items) => <DeadStockRows key={days} items={items} />}
       />
       {flagged.length > 0 && (
         <p className="mt-3 flex items-start gap-1.5 rounded-md bg-lightwarning/60 p-2.5 text-xs leading-relaxed text-warning">
@@ -241,6 +241,42 @@ function isImplausibleStockValue(item: StockItem): boolean {
 
 /* ------------------------------ shared bits ------------------------------ */
 
+/** Rows shown before a stock list collapses behind its "Show more" toggle. */
+const INITIAL_VISIBLE = 5
+
+/**
+ * Inline "Show N more / Show less" for the stock lists. These are fixed
+ * top-20 snapshots from the API — pagination would imply depth that isn't
+ * there, so the tail reveals in place, keeping the cards compact at rest.
+ */
+function RevealToggle({
+  total,
+  expanded,
+  onToggle,
+}: {
+  total: number
+  expanded: boolean
+  onToggle: () => void
+}) {
+  if (total <= INITIAL_VISIBLE) return null
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+    >
+      {expanded ? 'Show less' : `Show ${total - INITIAL_VISIBLE} more`}
+      <Icon
+        icon={expanded ? 'solar:alt-arrow-up-outline' : 'solar:alt-arrow-down-outline'}
+        width={14}
+        height={14}
+        aria-hidden="true"
+      />
+    </button>
+  )
+}
+
 /** List-level loading / empty / error handling for the lazy stock lists. */
 function StockListBody({
   query,
@@ -268,10 +304,14 @@ function StockListBody({
  */
 function LowStockRows({ items, threshold }: { items: StockItem[]; threshold: number }) {
   const maxQty = Math.max(1, ...items.map((i) => i.quantity))
+  // Collapsed by default — first 5 rows, the tail behind "Show more".
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? items : items.slice(0, INITIAL_VISIBLE)
 
   return (
-    <ul className="space-y-3.5">
-      {items.map((item) => {
+    <div>
+      <ul className="space-y-3.5">
+        {visible.map((item) => {
         const meta = SEVERITY_META[stockSeverity(item.quantity, threshold)]
         // Keep >0 bars visible even for tiny counts (mirrors the heatmap floor).
         const width = item.quantity <= 0 ? 0 : Math.max(8, (item.quantity / maxQty) * 100)
@@ -295,14 +335,25 @@ function LowStockRows({ items, threshold }: { items: StockItem[]; threshold: num
           </li>
         )
       })}
-    </ul>
+      </ul>
+      <RevealToggle
+        total={items.length}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+      />
+    </div>
   )
 }
 
 function DeadStockRows({ items }: { items: StockItem[] }) {
+  // Collapsed by default — first 5 rows, the tail behind "Show more".
+  const [expanded, setExpanded] = useState(false)
+  const visible = expanded ? items : items.slice(0, INITIAL_VISIBLE)
+
   return (
-    <ul className="space-y-3">
-      {items.map((item) => (
+    <div>
+      <ul className="space-y-3">
+        {visible.map((item) => (
         <li
           key={`${item.itemId ?? item.description}`}
           className="flex items-center justify-between gap-3 border-b border-ld pb-2.5 last:border-0 last:pb-0"
@@ -340,7 +391,13 @@ function DeadStockRows({ items }: { items: StockItem[] }) {
           </div>
         </li>
       ))}
-    </ul>
+      </ul>
+      <RevealToggle
+        total={items.length}
+        expanded={expanded}
+        onToggle={() => setExpanded((v) => !v)}
+      />
+    </div>
   )
 }
 
