@@ -101,6 +101,13 @@ function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilt
   const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<string | null>(null)
   const [confirmDeleteCount, setConfirmDeleteCount] = useState(0)
   const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
+  // Change-password popup for a single user row (admin-initiated reset).
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [passwordTarget, setPasswordTarget] = useState<ApplicationUserType | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
+  const [passwordError, setPasswordError] = useState('')
+  const [confirmPasswordChangeOpen, setConfirmPasswordChangeOpen] = useState(false)
   const [apiLoading, setApiLoading] = useState(false)
   const [currentUser, setCurrentUser] = useState<Partial<ApplicationUserType> & { password?: string; role?: string }>({
     id: '',
@@ -276,6 +283,81 @@ function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilt
     }
   }
 
+  // --- Change password (admin-initiated) -------------------------------
+
+  const openPasswordDialog = (row: ApplicationUserType) => {
+    setPasswordTarget(row)
+    setNewPassword('')
+    setConfirmNewPassword('')
+    setPasswordError('')
+    setPasswordDialogOpen(true)
+  }
+
+  const closePasswordDialog = () => {
+    setPasswordDialogOpen(false)
+    setPasswordTarget(null)
+    setNewPassword('')
+    setConfirmNewPassword('')
+    setPasswordError('')
+  }
+
+  const handlePasswordSave = () => {
+    const password = newPassword.trim()
+    if (password.length < 6) {
+      setPasswordError('New password must be at least 6 characters.')
+      return
+    }
+    if (password.length > 128) {
+      setPasswordError('New password must not exceed 128 characters.')
+      return
+    }
+    if (confirmNewPassword.trim() !== password) {
+      setPasswordError('Passwords do not match.')
+      return
+    }
+    setPasswordError('')
+    // Same confirmation style as delete before the API call.
+    setPasswordDialogOpen(false)
+    setConfirmPasswordChangeOpen(true)
+  }
+
+  // Cancel from the confirmation step returns to the form with the typed
+  // values still in place.
+  const cancelConfirmPasswordChange = () => {
+    setConfirmPasswordChangeOpen(false)
+    setPasswordDialogOpen(true)
+  }
+
+  const handleConfirmPasswordChange = async () => {
+    if (!passwordTarget) {
+      setConfirmPasswordChangeOpen(false)
+      return
+    }
+
+    setApiLoading(true)
+    try {
+      // Admin-initiated reset: the popup only collects the new password, so
+      // currentPassword is sent empty — the logged-in admin's session token
+      // authorizes the change.
+      await postFetcher(getApiUrl('/api/ApplicationUser/changepassword'), {
+        userId: passwordTarget.id,
+        currentPassword: '',
+        newPassword: newPassword.trim(),
+      })
+      setFeedback(`Password updated for ${passwordTarget.userName}`)
+    } catch (error) {
+      console.error('Unable to change application user password', error)
+      setFeedback('Unable to change password')
+    } finally {
+      setApiLoading(false)
+      setConfirmPasswordChangeOpen(false)
+      setPasswordTarget(null)
+      setNewPassword('')
+      setConfirmNewPassword('')
+      setPasswordError('')
+    }
+  }
+
   // Create column helper for ApplicationUserType
   const columnHelper = createColumnHelper<ApplicationUserType>()
 
@@ -402,6 +484,17 @@ function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilt
                       className='me-2'
                     />
                     Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openPasswordDialog(row.original)}
+                    className='cursor-pointer'>
+                    <Icon
+                      icon='solar:key-minimalistic-square-linear'
+                      width={20}
+                      height={20}
+                      className='me-2'
+                    />
+                    Change Password
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => handleDelete(rowId)}
@@ -867,6 +960,100 @@ function ApplicationUserTable({ enableColumnFilters = true }: { enableColumnFilt
               </Button>
               <Button type='button' variant='destructive' onClick={handleConfirmDelete}>
                 Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Password Dialog */}
+        <Dialog open={passwordDialogOpen} onOpenChange={(open) => !open && closePasswordDialog()}>
+          <DialogContent className='sm:max-w-md'>
+            <DialogHeader>
+              <DialogTitle>Change Password</DialogTitle>
+              <DialogDescription>
+                Set a new password for{' '}
+                <span className='font-medium text-foreground'>
+                  {passwordTarget?.userName ?? 'this user'}
+                </span>
+                .
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className='grid gap-4 py-4'>
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>New Password</label>
+                <Input
+                  type='password'
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value)
+                    if (passwordError) setPasswordError('')
+                  }}
+                  placeholder='Enter new password'
+                  autoComplete='new-password'
+                />
+              </div>
+
+              <div className='grid gap-2'>
+                <label className='text-sm font-medium'>Confirm New Password</label>
+                <Input
+                  type='password'
+                  value={confirmNewPassword}
+                  onChange={(e) => {
+                    setConfirmNewPassword(e.target.value)
+                    if (passwordError) setPasswordError('')
+                  }}
+                  placeholder='Confirm new password'
+                  autoComplete='new-password'
+                />
+                {passwordError && <p className='text-sm text-red-600'>{passwordError}</p>}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type='button'
+                variant='secondary'
+                onClick={closePasswordDialog}
+                disabled={apiLoading}>
+                Cancel
+              </Button>
+              <Button
+                type='button'
+                variant='success'
+                onClick={handlePasswordSave}
+                disabled={apiLoading || !newPassword || !confirmNewPassword}>
+                Save
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change Password Confirmation Dialog */}
+        <Dialog
+          open={confirmPasswordChangeOpen}
+          onOpenChange={(open) => !open && cancelConfirmPasswordChange()}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirm password change</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to change the password for{' '}
+                <span className='font-medium text-foreground'>
+                  {passwordTarget?.userName ?? 'this user'}
+                </span>
+                ? The user will need this new password on their next login.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type='button' variant='secondary' onClick={cancelConfirmPasswordChange}>
+                No
+              </Button>
+              <Button
+                type='button'
+                variant='success'
+                onClick={handleConfirmPasswordChange}
+                disabled={apiLoading}>
+                {apiLoading ? 'Updating...' : 'Yes'}
               </Button>
             </DialogFooter>
           </DialogContent>

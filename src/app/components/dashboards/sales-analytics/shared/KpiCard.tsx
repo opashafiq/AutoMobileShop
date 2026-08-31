@@ -45,6 +45,13 @@ export function KpiCard({
   const isUp = delta != null && Number(delta) > 0
   const arrowIcon = delta == null || Number(delta) === 0 ? '' : isUp ? 'solar:arrow-up-right-bold' : 'solar:arrow-down-right-bold'
   const deltaColor = tone === 'good' ? 'text-success' : tone === 'bad' ? 'text-error' : 'text-muted-foreground'
+  // A positive percent change on a zero current value is mathematically
+  // meaningless (zero → zero is undefined; a genuine +100% would need a
+  // negative prior period). The backend's percent-change calc reports +100%
+  // for that case — flagged in dashboard-api-report.md §9. Rather than render
+  // a self-contradictory card, show "—" here.
+  const deltaIsMeaningless = value != null && Number(value) === 0 && delta != null && Number(delta) > 0
+  const showDelta = delta != null && Number(delta) !== 0 && !deltaIsMeaningless
 
   return (
     <Card className="h-full min-w-[220px]">
@@ -82,11 +89,22 @@ export function KpiCard({
         </div>
 
         <div>
-          <h4 className="text-2xl font-semibold text-dark dark:text-white">
-            {value == null ? NULL_TEXT : formatValue(Number(value))}
-          </h4>
+          {value == null ? (
+            // Intentional "no data" state — muted dash plus an explicit label
+            // so it reads as "nothing to report", not a rendering bug (§2).
+            <div className="flex items-baseline gap-2">
+              <h4 className="text-2xl font-semibold text-muted-foreground/60">{NULL_TEXT}</h4>
+              <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                No data
+              </span>
+            </div>
+          ) : (
+            <h4 className="text-2xl font-semibold text-dark dark:text-white">
+              {formatValue(Number(value))}
+            </h4>
+          )}
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            {delta != null && Number(delta) !== 0 && (
+            {showDelta && (
               <span
                 className={cn('inline-flex items-center gap-0.5 text-sm font-medium', deltaColor)}
               >
@@ -94,9 +112,9 @@ export function KpiCard({
                 {formatSignedPercent(delta)}
               </span>
             )}
-            {(delta == null || Number(delta) === 0) && (
+            {!showDelta && (
               <span className="text-sm text-muted-foreground">
-                {delta == null ? NULL_TEXT : formatSignedPercent(delta)}
+                {delta == null || deltaIsMeaningless ? NULL_TEXT : formatSignedPercent(delta)}
               </span>
             )}
             {sub && <span className="text-sm text-muted-foreground">{sub}</span>}

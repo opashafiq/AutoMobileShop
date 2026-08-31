@@ -2,7 +2,9 @@
  * Sales & Inventory Dashboard — helper + print styles
  *
  * Heatmap cells are scaled with `--heat-pct` (set inline from the
- * widget: 0% = no sales → transparent, 100% = period peak). Colours
+ * widget: zero cells render `.heat-cell-zero` in neutral gray, any
+ * nonzero value rides the primary ramp with a 22% floor — see the
+ * widget — so low-but-nonzero never reads as "no data"). Colours
  * follow the design-system primary token, so theme switches apply.
  * ============================================================ */
 
@@ -10,10 +12,15 @@
   background-color: color-mix(in oklab, var(--color-primary) var(--heat-pct, 0%), transparent);
 }
 
+/* True zero / no-data slot — neutral, clearly different from the lowest
+   nonzero step of the primary ramp. */
+.heat-cell-zero {
+  background-color: color-mix(in oklab, #94a3b8 16%, transparent);
+}
+
 .heat-legend {
   background: linear-gradient(
     to right,
-    color-mix(in oklab, var(--color-primary) 4%, transparent),
     color-mix(in oklab, var(--color-primary) 22%, transparent),
     color-mix(in oklab, var(--color-primary) 48%, transparent),
     color-mix(in oklab, var(--color-primary) 100%, transparent)

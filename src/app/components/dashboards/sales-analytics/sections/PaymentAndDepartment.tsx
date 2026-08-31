@@ -5,7 +5,8 @@ import type { OverviewResponse, PaymentCollectionItem } from '../types'
 import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
 import { ApexChart } from '../shared/ApexChart'
-import { useChartTheme, type ChartOptions } from '../shared/charts'
+import { EmptyState } from '../shared/EmptyState'
+import { useChartTheme, CHART_COLORS, NEUTRAL_COLOR, type ChartOptions } from '../shared/charts'
 import { formatCurrency, formatCurrencyAbbrev, formatNumber, formatPercent } from '../format'
 
 /**
@@ -28,7 +29,7 @@ export function PaymentAndDepartment({ query }: { query: QueryState<OverviewResp
             height={340}
             emptyMessage="No collections in this period"
           >
-            {(o) => <PaymentDonut items={o.paymentCollection} />}
+            {(o) => <PaymentSection items={o.paymentCollection} />}
           </WidgetState>
         </ChartCard>
       </div>
@@ -66,12 +67,101 @@ function groupPaymentMethods(items: PaymentCollectionItem[]): PaymentCollectionI
   ]
 }
 
+/**
+ * §4: donuts are reserved for 3+ meaningfully-sized segments — with 1–2 real
+ * categories a donut is decoration, so the widget falls back to horizontal
+ * bars. An all-zero period gets an explicit empty state rather than an empty
+ * ring (§2).
+ */
+function PaymentSection({ items }: { items: PaymentCollectionItem[] }) {
+  const meaningful = items.filter((i) => i.amount > 0)
+  if (meaningful.length === 0) {
+    return <EmptyState message="No collections recorded in this period" />
+  }
+  if (meaningful.length <= 2) {
+    return <PaymentBars items={items} />
+  }
+  return <PaymentDonut items={items} />
+}
+
+/** Horizontal-bars fallback for periods with 1–2 active payment methods. */
+function PaymentBars({ items }: { items: PaymentCollectionItem[] }) {
+  const theme = useChartTheme()
+  const sorted = [...items].sort((a, b) => b.amount - a.amount)
+  const height = Math.max(180, sorted.length * 64 + 60)
+
+  const options: ChartOptions = {
+    chart: {
+      type: 'bar',
+      height,
+      toolbar: { show: false },
+      fontFamily: theme.fontFamily,
+      foreColor: theme.foreColor,
+      animations: { enabled: true, easing: 'easeinout', speed: 650 },
+    },
+    series: [{ name: 'Collected', data: sorted.map((i) => Math.round(i.amount * 100) / 100) }],
+    colors: [CHART_COLORS[0]],
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        barHeight: '58%',
+        borderRadius: 5,
+        borderRadiusApplication: 'around',
+        borderRadiusWhenStacked: 'around',
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (v: number) => formatCurrencyAbbrev(v),
+      offsetX: 6,
+      style: { fontSize: '11px', fontWeight: 600, colors: [theme.foreColor] },
+    },
+    xaxis: {
+      categories: sorted.map((i) => i.paymentName),
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: { formatter: (v: number) => formatCurrencyAbbrev(v) },
+    },
+    yaxis: {
+      labels: { style: { colors: theme.foreColor, fontSize: '12px' } },
+    },
+    grid: theme.grid,
+    legend: { show: false },
+    tooltip: {
+      theme: theme.tooltipTheme,
+      fillSeriesColor: false,
+      y: {
+        formatter: (value: number, opts: { dataPointIndex: number }) => {
+          const item = sorted[opts.dataPointIndex]
+          const share = Number.isFinite(item?.sharePercent)
+            ? `  ·  ${formatPercent(item?.sharePercent)} of period`
+            : ''
+          return `${formatCurrency(value)}${share}  ·  ${formatNumber(item?.transactionCount)} transactions`
+        },
+      },
+    },
+  }
+
+  return (
+    <div
+      role="img"
+      aria-label={`Collection by payment method: ${sorted
+        .map((i) => `${i.paymentName} ${formatCurrency(i.amount)}`)
+        .join(', ')}.`}
+    >
+      <ApexChart options={options} series={options.series} type="bar" height={height} width="100%" />
+    </div>
+  )
+}
+
 function PaymentDonut({ items }: { items: PaymentCollectionItem[] }) {
   const theme = useChartTheme()
   const grouped = groupPaymentMethods(items)
   const total = grouped.reduce((sum, i) => sum + i.amount, 0)
+  // §1: one categorical sequence everywhere; the aggregated "Other" bucket
+  // sits outside it in neutral gray.
   const colors = grouped.map(
-    (_, i) => theme.palette[i % theme.palette.length],
+    (g, i) => (g.paymentName === 'Other' ? NEUTRAL_COLOR : CHART_COLORS[i % CHART_COLORS.length]),
   )
 
   const options: ChartOptions = {
@@ -149,7 +239,9 @@ function PaymentDonut({ items }: { items: PaymentCollectionItem[] }) {
 
 function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'] }) {
   const theme = useChartTheme()
-  const shares = items.map((i) => i.sharePercent)
+  // §5: bar charts read descending, largest first (display order only).
+  const sorted = [...items].sort((a, b) => b.value - a.value)
+  const shares = sorted.map((i) => i.sharePercent)
 
   const options: ChartOptions = {
     chart: {
@@ -160,7 +252,7 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
       foreColor: theme.foreColor,
       animations: { enabled: true, easing: 'easeinout', speed: 650 },
     },
-    series: [{ name: 'Sales', data: items.map((i) => i.value) }],
+    series: [{ name: 'Sales', data: sorted.map((i) => i.value) }],
     colors: ['var(--color-primary)'],
     plotOptions: {
       bar: {
@@ -179,7 +271,7 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
       style: { fontSize: '11px', fontWeight: 600, colors: [theme.foreColor] },
     },
     xaxis: {
-      categories: items.map((i) => i.name),
+      categories: sorted.map((i) => i.name),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: { formatter: (v: number) => formatCurrencyAbbrev(v) },
@@ -194,7 +286,7 @@ function DepartmentBars({ items }: { items: OverviewResponse['salesByDepartment'
       fillSeriesColor: false,
       y: {
         formatter: (value: number, opts: { dataPointIndex: number }) =>
-          `${formatCurrency(value)}  ·  ${formatNumber(items[opts.dataPointIndex]?.count)} sales`,
+          `${formatCurrency(value)}  ·  ${formatNumber(sorted[opts.dataPointIndex]?.count)} sales`,
       },
     },
   }

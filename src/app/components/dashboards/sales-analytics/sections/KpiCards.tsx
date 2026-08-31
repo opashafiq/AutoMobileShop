@@ -5,7 +5,7 @@ import type { OverviewResponse, KpiValues } from '../types'
 import { WidgetState } from '../shared/WidgetState'
 import { KpiCard } from '../shared/KpiCard'
 import { SkeletonBlock } from '../shared/SkeletonBlock'
-import { formatNumber } from '../format'
+import { formatNumber, formatPercent } from '../format'
 
 /**
  * Section B — KPI cards (§3). 8 cards, 4 across on desktop; a horizontally
@@ -42,12 +42,16 @@ function allKpiZero(k: KpiValues | undefined): boolean {
 function KpiGrid({ kpi }: { kpi: OverviewResponse['kpi'] }) {
   const { current, changePercent } = kpi
 
+  // §1: one accent treatment for the whole row — every card uses KpiCard's
+  // default light-primary chip, so the row reads as one KPI band. Icons are
+  // Tabler stroke glyphs chosen for instant recognition (dollar = sales,
+  // file-invoice = invoices, package = items, users = customers) — no
+  // duotone/filled shapes that blur into blobs at 20px.
   const cards: {
     label: string
     value: number
     delta: number | null | undefined
     icon: string
-    iconColorClass: string
     sub?: string
     tooltip?: string
     formatValue?: (v: number) => string
@@ -57,46 +61,40 @@ function KpiGrid({ kpi }: { kpi: OverviewResponse['kpi'] }) {
       label: 'Net Sales',
       value: current.netSales,
       delta: changePercent.netSales,
-      icon: 'solar:wallet-money-bold-duotone',
-      iconColorClass: 'bg-lightprimary text-primary',
+      icon: 'tabler:currency-dollar',
     },
     {
       label: 'Invoices',
       value: current.invoiceCount,
       delta: changePercent.invoiceCount,
-      icon: 'solar:receipt-2-bold-duotone',
-      iconColorClass: 'bg-lightsecondary text-secondary',
+      icon: 'tabler:file-invoice',
       formatValue: formatNumber,
     },
     {
       label: 'Avg. Invoice',
       value: current.averageInvoiceValue,
       delta: changePercent.averageInvoice,
-      icon: 'solar:bill-list-bold-duotone',
-      iconColorClass: 'bg-lightsuccess text-success',
+      icon: 'tabler:receipt-2',
     },
     {
       label: 'Collected',
       value: current.collected,
       delta: changePercent.collected,
-      icon: 'solar:card-bold-duotone',
-      iconColorClass: 'bg-lightinfo text-info',
+      icon: 'tabler:credit-card',
     },
     {
       label: 'Outstanding',
       value: current.outstanding,
       delta: changePercent.outstanding,
-      icon: 'solar:clock-circle-bold-duotone',
-      iconColorClass: 'bg-lighterror text-error',
+      icon: 'tabler:clock',
       inverted: true, // unpaid dues rising is bad → renders red
     },
     {
       label: 'Gross Profit',
       value: current.grossProfit,
       delta: changePercent.grossProfit,
-      icon: 'solar:chart-2-bold-duotone',
-      iconColorClass: 'bg-lightprimary text-primary',
-      sub: `${Number(current.marginPercent).toFixed(1)}% margin`,
+      icon: 'tabler:chart-line',
+      sub: `${formatPercent(current.marginPercent)} margin`,
       tooltip:
         'Estimated — based on current item cost, not cost at time of sale.',
     },
@@ -104,16 +102,14 @@ function KpiGrid({ kpi }: { kpi: OverviewResponse['kpi'] }) {
       label: 'Items Sold',
       value: current.itemsSold,
       delta: changePercent.itemsSold,
-      icon: 'solar:box-bold-duotone',
-      iconColorClass: 'bg-lightsecondary text-secondary',
+      icon: 'tabler:package',
       formatValue: formatNumber,
     },
     {
       label: 'Customers',
       value: current.customerCount,
       delta: changePercent.customerCount,
-      icon: 'solar:user-circle-bold-duotone',
-      iconColorClass: 'bg-lightsuccess text-success',
+      icon: 'tabler:users',
       formatValue: formatNumber,
     },
   ]

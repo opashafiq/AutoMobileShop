@@ -4,17 +4,16 @@ import { Icon } from '@iconify/react'
 
 import { useUser } from '@/app/context/UserContext'
 import React, { useContext } from 'react'
-import * as profileData from './Data'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { clearToken } from '@/app/api/auth'
 import Image from 'next/image'
-import SimpleBar from 'simplebar-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
@@ -96,9 +95,33 @@ const Profile = () => {
             ))}
           </SimpleBar> */}
 
+          {/* Change Password shortcut */}
+          <div className='px-6'>
+            <DropdownMenuItem
+              asChild
+              className='px-3 py-2.5 bg-hover cursor-pointer group/link rounded-md'>
+              <Link
+                href='/change-password'
+                className='flex items-center w-full'>
+                <div className='h-11 w-11 shrink-0 rounded-md flex justify-center items-center bg-lightprimary text-primary'>
+                  <Icon icon='tabler:lock' height={20} />
+                </div>
+                <div className='ps-4'>
+                  <h5 className='mb-0.5 text-sm font-medium group-hover/link:text-primary'>
+                    Change Password
+                  </h5>
+                  <div className='text-xs text-darklink'>
+                    Update your account password
+                  </div>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          </div>
+
           {/* Logout Button */}
 
-          <div className='pt-2 px-7'>
+          <DropdownMenuSeparator className='mt-3' />
+          <div className='pt-3 px-7'>
             <Button
               color='outlineprimary'
               className='w-full rounded-md'

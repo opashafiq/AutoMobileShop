@@ -5,7 +5,7 @@ import type { NameValue, OverviewResponse } from '../types'
 import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
 import { ApexChart } from '../shared/ApexChart'
-import { useChartTheme, type ChartOptions } from '../shared/charts'
+import { useChartTheme, CHART_COLORS, type ChartOptions } from '../shared/charts'
 import { cn } from '@/lib/utils'
 import { formatCurrency, formatCurrencyAbbrev, formatPercent } from '../format'
 
@@ -60,6 +60,8 @@ function BrandBranchGrid({ overview }: { overview: OverviewResponse }) {
 }
 
 function BrandBars({ items, theme }: { items: NameValue[]; theme: ReturnType<typeof useChartTheme> }) {
+  // §5: bars read descending, largest first (display order only).
+  const sorted = [...items].sort((a, b) => b.value - a.value)
   const options: ChartOptions = {
     chart: {
       type: 'bar',
@@ -68,12 +70,12 @@ function BrandBars({ items, theme }: { items: NameValue[]; theme: ReturnType<typ
       fontFamily: theme.fontFamily,
       foreColor: theme.foreColor,
     },
-    series: [{ name: 'Sales', data: items.map((i) => i.value) }],
-    colors: ['var(--color-secondary)'],
+    series: [{ name: 'Sales', data: sorted.map((i) => i.value) }],
+    colors: [CHART_COLORS[0]],
     plotOptions: { bar: { horizontal: true, barHeight: '58%', borderRadius: 5, borderRadiusApplication: 'around', borderRadiusWhenStacked: 'around' } },
     dataLabels: { enabled: false },
     xaxis: {
-      categories: items.map((i) => i.name),
+      categories: sorted.map((i) => i.name),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: { formatter: (v: number) => formatCurrencyAbbrev(v) },
@@ -95,6 +97,8 @@ function BrandBars({ items, theme }: { items: NameValue[]; theme: ReturnType<typ
 }
 
 function BranchBars({ items, theme }: { items: NameValue[]; theme: ReturnType<typeof useChartTheme> }) {
+  // §5: bars read descending, largest first (display order only).
+  const sorted = [...items].sort((a, b) => b.value - a.value)
   const options: ChartOptions = {
     chart: {
       type: 'bar',
@@ -103,14 +107,14 @@ function BranchBars({ items, theme }: { items: NameValue[]; theme: ReturnType<ty
       fontFamily: theme.fontFamily,
       foreColor: theme.foreColor,
     },
-    series: [{ name: 'Sales', data: items.map((i) => i.value) }],
-    colors: ['var(--color-success)'],
+    series: [{ name: 'Sales', data: sorted.map((i) => i.value) }],
+    colors: [CHART_COLORS[0]],
     plotOptions: {
       bar: { horizontal: false, columnWidth: '42%', borderRadius: 5, borderRadiusApplication: 'around', borderRadiusWhenStacked: 'around' },
     },
     dataLabels: { enabled: false },
     xaxis: {
-      categories: items.map((i) => i.name),
+      categories: sorted.map((i) => i.name),
       axisBorder: { show: false },
       axisTicks: { show: false },
       labels: { style: { colors: theme.foreColor, fontSize: '12px' } },
@@ -123,7 +127,7 @@ function BranchBars({ items, theme }: { items: NameValue[]; theme: ReturnType<ty
       fillSeriesColor: false,
       y: {
         formatter: (value: number, opts: { dataPointIndex: number }) =>
-          `${formatCurrency(value)}  ·  ${formatPercent(items[opts.dataPointIndex]?.sharePercent)} of period`,
+          `${formatCurrency(value)}  ·  ${formatPercent(sorted[opts.dataPointIndex]?.sharePercent)} of period`,
       },
     },
   }

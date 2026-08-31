@@ -6,6 +6,7 @@ import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
 import { ApexChart } from '../shared/ApexChart'
 import { useChartTheme, type ChartOptions } from '../shared/charts'
+import { Icon } from '@iconify/react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   formatCurrency,
@@ -115,11 +116,28 @@ function moneyTooltip(theme: Theme, invoiceSeriesIndex?: number) {
   }
 }
 
+/**
+ * §5: the trailing month of any period is only part-way through, so it plots
+ * as a sudden cliff that reads like a data bug. Detect it (last month below
+ * 60% of the average of up to three prior months) so the chart can annotate
+ * it. The underlying values are flagged, never altered.
+ */
+function partialMonthLabel(data: OverviewResponse['monthlySales']): string | null {
+  if (data.length < 2) return null
+  const last = data[data.length - 1]
+  const prior = data.slice(Math.max(0, data.length - 4), data.length - 1)
+  if (!prior.length) return null
+  const avg = prior.reduce((sum, m) => sum + m.netSales, 0) / prior.length
+  if (avg <= 0) return null
+  return last.netSales < avg * 0.6 ? last.label : null
+}
+
 function MonthlyChart({ data, theme }: { data: OverviewResponse['monthlySales']; theme: Theme }) {
   if (!data.length) {
     return <TrendsEmpty />
   }
   const labels = data.map((m) => m.label)
+  const partialMonth = partialMonthLabel(data)
 
   const options: ChartOptions = {
     ...baseChart(theme, 360, 'line'),
@@ -161,14 +179,47 @@ function MonthlyChart({ data, theme }: { data: OverviewResponse['monthlySales'];
       },
     ],
     tooltip: moneyTooltip(theme, 2),
+    ...(partialMonth && {
+      // Neutral dashed marker over the partial month (§5).
+      annotations: {
+        xaxis: [
+          {
+            x: partialMonth,
+            strokeDashArray: 4,
+            borderColor: '#94a3b8',
+            opacity: 0.15,
+            label: {
+              text: 'In progress',
+              position: 'top',
+              style: {
+                fontSize: '11px',
+                fontWeight: 600,
+                background: '#94a3b8',
+                color: '#fff',
+                offsetY: -6,
+              },
+            },
+          },
+        ],
+      },
+    }),
   }
 
   return (
     <div
       role="img"
-      aria-label={`Monthly sales trend: ${labels.length} months. Net sales and collected amounts, plus invoice count.`}
+      aria-label={`Monthly sales trend: ${labels.length} months. Net sales and collected amounts, plus invoice count.${partialMonth ? ` ${partialMonth} is only part-way through.` : ''}`}
     >
       <ApexChart options={options} series={options.series} type="line" height={360} width="100%" />
+      {partialMonth && (
+        <p className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground" role="note">
+          <Icon icon="solar:info-circle-bold" width={14} height={14} className="mt-px shrink-0" />
+          <span>
+            {partialMonth} is still in progress — its totals will keep rising until the month closes. The
+            drop reflects the partial period, not a sales decline.
+          </span>
+        </p>
+      )}
       <HiddenSummary
         items={data.map(
           (m) => `${m.label}: net sales ${formatCurrency(m.netSales)}, collected ${formatCurrency(m.collected)}, ${m.invoiceCount} invoices`,

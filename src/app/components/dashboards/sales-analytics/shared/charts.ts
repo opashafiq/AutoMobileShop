@@ -4,11 +4,33 @@ import { useContext } from 'react'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
 
 /**
+ * The one categorical colour sequence for every chart on the dashboard.
+ *
+ * Multi-category charts (donut, grouped series) consume it in order so the
+ * same rank always wears the same colour; single-series bar charts take the
+ * first entry. Residual/"Other" buckets sit outside the sequence — see
+ * NEUTRAL_COLOR. CSS vars so the Customizer's theme switch still applies.
+ */
+export const CHART_COLORS = [
+  'var(--color-primary)',
+  'var(--color-secondary)',
+  'var(--color-success)',
+  'var(--color-warning)',
+  'var(--color-info)',
+  'var(--color-error)',
+  // Neutral slate for 7th+ categories — mid-gray that reads on light and dark.
+  '#94a3b8',
+  '#b6bac7',
+] as const
+
+/** Colour for residual/"Other" buckets — deliberately outside the sequence. */
+export const NEUTRAL_COLOR = '#94a3b8'
+
+/**
  * Shared ApexCharts theme helpers.
  *
- * Keeps every chart in the dashboard on the design system colours (CSS vars
- * so the Customizer's theme switch applies) and matches the templates'
- * tooltip / gridline / font styling.
+ * Keeps every chart in the dashboard on the design system colours and matches
+ * the templates' tooltip / gridline / font styling.
  */
 export function useChartTheme() {
   const { activeMode } = useContext(CustomizerContext)
@@ -24,15 +46,6 @@ export function useChartTheme() {
       strokeDashArray: 3,
     },
     fontFamily: 'inherit',
-    // Convenience series palette on CSS vars.
-    palette: [
-      'var(--color-primary)',
-      'var(--color-secondary)',
-      'var(--color-success)',
-      'var(--color-warning)',
-      'var(--color-error)',
-      'var(--color-info)',
-    ],
   }
 }
 

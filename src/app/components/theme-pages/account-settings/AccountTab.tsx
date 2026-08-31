@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import ChangePassword from './ChangePassword'
 
 const AccountTab = () => {
   return (
@@ -42,32 +43,7 @@ const AccountTab = () => {
           </Card>
         </div>
         <div className='md:col-span-6 col-span-12'>
-          <Card>
-            <h5 className='card-title'>Change Password</h5>
-            <p className='card-subtitle -mt-1'>
-              To change your password please confirm here
-            </p>
-            <div className='flex flex-col gap-3 mt-3'>
-              <div>
-                <div className='mb-2 block'>
-                  <Label htmlFor='cpwd'>Current Password</Label>
-                </div>
-                <Input id='cpwd' type='password' className='form-control' />
-              </div>
-              <div>
-                <div className='mb-2 block'>
-                  <Label htmlFor='npwd'>New Password</Label>
-                </div>
-                <Input id='npwd' type='password' className='form-control' />
-              </div>
-              <div>
-                <div className='mb-2 block'>
-                  <Label htmlFor='cfpwd'>Confirm Password</Label>
-                </div>
-                <Input id='cfpwd' type='password' className='form-control' />
-              </div>
-            </div>
-          </Card>
+          <ChangePassword />
         </div>
 
         <div className='col-span-12'>

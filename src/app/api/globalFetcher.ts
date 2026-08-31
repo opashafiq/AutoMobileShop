@@ -67,7 +67,16 @@ const postFetcher = (url:string,arg:any) => {
             ;(err as any).serverMessage = serverMessage
             throw err
         }
-        return res.json()
+        // Some endpoints (e.g. ApplicationUser/changepassword) reply 200 with
+        // an empty body, on which res.json() would throw. Read the text first
+        // and only parse when there is content (same approach as putFetcher).
+        const text = await res.text()
+        if (!text) return null
+        try {
+            return JSON.parse(text)
+        } catch {
+            return text
+        }
     })
 }
 

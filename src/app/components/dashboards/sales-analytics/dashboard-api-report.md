@@ -47,3 +47,28 @@ it's up. The typed client lives in [`dashboardApi.ts`](dashboardApi.ts).
    (deliverable: client covering all 24 endpoints) but not wired to widgets —
    per §7 the dashboard must not call both the overview **and** the individual
    endpoint for the same widget.
+
+8. **Dead Stock `stockValue` audit flag (visual-polish pass, 2026-08-31)** —
+   per-SKU values like `$10,053,400.00` for a single tire look like a
+   unit-price/quantity multiplication or decimal error on the backend. The
+   dashboard **flags but never alters** the values: `InventoryHealth.tsx`
+   marks any row where `stockValue > quantity × unitCost × 10` (or a
+   seven-figure value when `unitCost` is unavailable) with an "Audit" badge,
+   and the summed header total carries a `*` while flagged rows are in the
+   page. Backend should verify how `stockValue` is computed for
+   `GET /inventory/dead-stock`.
+
+9. **KPI percent-change on zero values (visual-polish pass, 2026-08-31)** —
+   `overview.kpi.changePercent` reports `+100.0` for a metric whose current
+   value is `0` (observed on Gross Profit: `$0.00 · +100.0% · 0.0% margin`).
+   Zero-to-zero has no defined percent change, and a genuine +100% would
+   require a negative prior period — the backend is almost certainly hitting a
+   zero-divide special case (`prior == 0 → 100`, or `(current − prior) / |prior|`
+   guarded to a constant when the denominator is 0). The frontend displays
+   `changePercent` verbatim (no client-side recomputation), so it now suppresses
+   the contradictory delta — `KpiCard` renders "—" when the current value is 0
+   and the delta is positive — instead of passing the artifact through.
+   **Backend to verify**: the percent-change calculation for every KPI in
+   `kpi.changePercent` (divide-by-zero handling when the prior period is 0 or
+   null; also confirm a null prior returns `null`, which the frontend already
+   renders as "—").

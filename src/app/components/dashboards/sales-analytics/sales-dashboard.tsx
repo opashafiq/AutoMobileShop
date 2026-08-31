@@ -13,9 +13,16 @@
  */
 
 import { useEffect, useState } from 'react'
+import { format } from 'date-fns'
 import { Icon } from '@iconify/react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -128,7 +135,9 @@ function DashboardHeader({ query }: { query: QueryState<OverviewResponse> }) {
             value={filter.period}
             onValueChange={(v) => update({ period: v as Period })}
           >
-            <SelectTrigger className="h-10 w-[150px]" aria-label="Reporting period">
+            {/* whitespace-nowrap: "Custom Range" must stay on one line — a
+                wrapped label is what makes the box taller than its neighbours. */}
+            <SelectTrigger className="h-10 w-[170px] whitespace-nowrap" aria-label="Reporting period">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -144,7 +153,7 @@ function DashboardHeader({ query }: { query: QueryState<OverviewResponse> }) {
             value={branchValue}
             onValueChange={(v) => update({ locationId: v === 'all' ? undefined : Number(v) })}
           >
-            <SelectTrigger className="h-10 w-[168px]" aria-label="Branch">
+            <SelectTrigger className="h-10 w-[168px] whitespace-nowrap" aria-label="Branch">
               <SelectValue placeholder="All Branches" />
             </SelectTrigger>
             <SelectContent>
@@ -183,14 +192,19 @@ function DashboardHeader({ query }: { query: QueryState<OverviewResponse> }) {
   )
 }
 
-/** Custom-range date pickers, committed to the shared filter 400 ms after typing (§5.2). */
+/**
+ * Custom-range date pickers, committed to the shared filter 400 ms after a
+ * change (§5.2). Same look and behaviour as the transaction pages' pickers
+ * (outline button → Calendar popover, `dd/MM/yyyy` display) with the same
+ * ISO `yyyy-MM-dd` value contract — no native browser date inputs.
+ */
 function DateRangeControls() {
   const { filter, update } = useDashboardFilter()
   const custom = filter.period === 'custom'
 
-  // Drafts let the user type freely while the committed filter stays debounced.
-  // The caller keys this component by `period`, so switching to/from Custom
-  // remounts it with fresh initial drafts from the committed filter.
+  // Drafts keep the picking responsive while the committed filter stays
+  // debounced. The caller keys this component by `period`, so switching
+  // to/from Custom remounts it with fresh initial drafts.
   const [from, setFrom] = useState(filter.from ?? '')
   const [to, setTo] = useState(filter.to ?? '')
 
@@ -205,29 +219,65 @@ function DateRangeControls() {
 
   if (!custom) return null
 
-  const inputClass =
-    'h-10 w-[148px] rounded-md border border-ld bg-transparent px-3 text-sm text-ld outline-none focus:border-primary'
-
   return (
     <div className="flex items-center gap-1.5">
-      <input
-        type="date"
-        value={from}
-        onChange={(e) => setFrom(e.target.value)}
-        aria-label="From date"
-        className={inputClass}
-      />
+      <DateButton label="From date" value={from} onChange={setFrom} />
       <span className="text-muted-foreground" aria-hidden="true">
         →
       </span>
-      <input
-        type="date"
-        value={to}
-        onChange={(e) => setTo(e.target.value)}
-        aria-label="To date"
-        className={inputClass}
-      />
+      <DateButton label="To date" value={to} onChange={setTo} />
     </div>
+  )
+}
+
+function toIso(date: Date): string {
+  const yyyy = date.getFullYear()
+  const mm = String(date.getMonth() + 1).padStart(2, '0')
+  const dd = String(date.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+/** Calendar popover date button — mirrors the transaction/Layaway DateField. */
+function DateButton({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const selected = value ? new Date(`${value}T00:00:00`) : undefined
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          className="h-10 w-[148px] justify-start border-ld text-left font-normal text-ld"
+          aria-label={label}
+        >
+          {selected ? (
+            format(selected, 'dd/MM/yyyy')
+          ) : (
+            <span className="text-darklink">Pick a date</span>
+          )}
+          <Icon icon="solar:calendar-linear" width={16} height={16} className="ml-auto shrink-0 opacity-60" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <Calendar
+          mode="single"
+          selected={selected}
+          onSelect={(date) => {
+            onChange(date ? toIso(date) : '')
+            setOpen(false)
+          }}
+          initialFocus
+        />
+      </PopoverContent>
+    </Popover>
   )
 }
 
