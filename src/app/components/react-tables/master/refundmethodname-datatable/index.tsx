@@ -154,7 +154,11 @@ function RefundMethodNameTable({ enableColumnFilters = true }: { enableColumnFil
       setFeedback('Record deleted')
     } catch (error) {
       console.error('Unable to delete refund method', error)
-      setFeedback('Unable to delete record')
+      setFeedback(
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to delete record'
+      )
     } finally { setConfirmDialogOpen(false); setConfirmDeleteTargetId(null); setConfirmDeleteCount(0) }
   }
 

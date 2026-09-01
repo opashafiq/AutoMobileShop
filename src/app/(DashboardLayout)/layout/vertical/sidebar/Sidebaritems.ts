@@ -36,16 +36,16 @@ const SidebarContent: MenuItem[] = [
     heading: "Home",
     children: [
       {
-        name: "Modern",
-        icon: "solar:widget-2-linear",
+        name: "Sales Analytics",
+        icon: "solar:graph-up-linear",
         id: uniqueId(),
         url: "/",
       },
       {
-        name: "Sales Analytics",
-        icon: "solar:chart-line-linear",
+        name: "Modern",
+        icon: "solar:widget-2-linear",
         id: uniqueId(),
-        url: "/dashboards/sales-analytics",
+        url: "/dashboards/modern",
       },
       {
         name: "eCommerce",

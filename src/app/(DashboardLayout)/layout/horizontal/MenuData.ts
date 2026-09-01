@@ -8,10 +8,16 @@ const Menuitems = [
     href: '',
     children: [
       {
+        title: 'Sales Analytics',
+        icon: 'solar:graph-up-linear',
+        id: uniqueId(),
+        href: '/',
+      },
+      {
         title: 'Modern',
         icon: 'solar:widget-2-linear',
         id: uniqueId(),
-        href: '/',
+        href: '/dashboards/modern',
       },
       {
         title: 'eCommerce',

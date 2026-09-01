@@ -308,7 +308,11 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
       setFeedback('Record deleted')
     } catch (error) {
       console.error('Unable to delete item', error)
-      setFeedback('Unable to delete record')
+      setFeedback(
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to delete record'
+      )
     } finally {
       setConfirmDialogOpen(false)
       setConfirmDeleteTargetId(null)

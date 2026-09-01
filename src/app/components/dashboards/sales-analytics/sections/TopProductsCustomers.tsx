@@ -4,31 +4,57 @@ import type { QueryState } from '../useDashboardQuery'
 import type { OverviewResponse, TopCustomer, TopProduct } from '../types'
 import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
+import { ApexChart } from '../shared/ApexChart'
 import { DataTable, type Column } from '../shared/DataTable'
+import { useChartTheme, type ChartOptions } from '../shared/charts'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatDate, formatNumber, formatPercent } from '../format'
+import { formatCurrency, formatCurrencyAbbrev, formatDate, formatNumber, formatPercent } from '../format'
 
 /**
  * Section E — Top 10 Products by Value, then Top 10 Customers.
- * The stock column is the point on products: `stockOnHand` 0 → red "Out"
- * badge, 1–4 → amber "Low" badge. Customer rows with `outstanding > 0` are
- * highlighted. Both tables render full-width and stack — a 5-column table
- * needs the room (half-width cards force horizontal scroll).
+ *
+ * Products: chart-first — horizontal bars, largest first, with bar colour
+ * carrying the stock story the brief calls "the point of this widget"
+ * (primary = healthy, warning = ≤4 units, error = out of stock). A compact
+ * Chart | Table toggle in the card header switches to the sortable audit
+ * table (stockOnHand 0 → red "Out" badge, 1–4 → amber "Low" badge). Both
+ * views render full-width — long product names need the room (half-width
+ * cards squeeze labels).
+ *
+ * Customers: rows with `outstanding > 0` are highlighted.
  */
 export function TopProductsCustomers({ query }: { query: QueryState<OverviewResponse> }) {
   return (
     <div className="grid grid-cols-12 gap-6">
       <div className="col-span-12">
-        <ChartCard title="Top 10 Products by Value" subtitle="Highest-revenue items and what is left in stock">
-          <WidgetState
-            query={query}
-            isEmpty={(o) => !o.topProducts?.length}
-            height={360}
-            emptyMessage="No product sales in this period"
+        {/* Tabs wraps the whole card so the trigger can live in the header's
+            action slot while the two panels render in the body. */}
+        <Tabs defaultValue="chart">
+          <ChartCard
+            title="Top 10 Products by Value"
+            subtitle="Highest-revenue items and what is left in stock"
+            action={
+              <TabsList className="h-8">
+                <TabsTrigger value="chart" className="px-3 py-1 text-xs">
+                  Chart
+                </TabsTrigger>
+                <TabsTrigger value="table" className="px-3 py-1 text-xs">
+                  Table
+                </TabsTrigger>
+              </TabsList>
+            }
           >
-            {(o) => <ProductsTable items={o.topProducts} />}
-          </WidgetState>
-        </ChartCard>
+            <WidgetState
+              query={query}
+              isEmpty={(o) => !o.topProducts?.length}
+              height={360}
+              emptyMessage="No product sales in this period"
+            >
+              {(o) => <ProductsCard items={o.topProducts} />}
+            </WidgetState>
+          </ChartCard>
+        </Tabs>
       </div>
 
       <div className="col-span-12">
@@ -46,6 +72,145 @@ export function TopProductsCustomers({ query }: { query: QueryState<OverviewResp
     </div>
   )
 }
+
+/**
+ * The two views of the products widget. Tab state is uncontrolled (Radix), so
+ * the chosen view survives filter changes — the section never remounts.
+ */
+function ProductsCard({ items }: { items: TopProduct[] }) {
+  return (
+    <>
+      <TabsContent value="chart">
+        <ProductsChart items={items} />
+      </TabsContent>
+      <TabsContent value="table">
+        <ProductsTable items={items} />
+      </TabsContent>
+    </>
+  )
+}
+
+/* ------------------------------- chart view ------------------------------ */
+
+/** Bar colour = stock state. Semantic only: red for a genuine alert. */
+function stockBarColor(stockOnHand: number): string {
+  if (stockOnHand <= 0) return 'var(--color-error)'
+  if (stockOnHand <= 4) return 'var(--color-warning)'
+  return 'var(--color-primary)'
+}
+
+function stockText(stockOnHand: number): string {
+  if (stockOnHand <= 0) return 'Out of stock'
+  if (stockOnHand <= 4) return `Low — ${formatNumber(stockOnHand)} left`
+  return `${formatNumber(stockOnHand)} in stock`
+}
+
+/** Axis labels truncate at a word boundary; the tooltip carries the full name. */
+function truncateLabel(text: string, max = 28): string {
+  if (text.length <= max) return text
+  const cut = text.slice(0, max)
+  const space = cut.lastIndexOf(' ')
+  return `${(space > max * 0.6 ? cut.slice(0, space) : cut).trimEnd()}…`
+}
+
+/**
+ * Glance view for Top 10 Products by Value: horizontal bars, largest first
+ * (§5). `distributed: true` is what makes ApexCharts take one colour per bar
+ * from the `colors` array (a plain single-series bar paints them all alike);
+ * a single-series Apex legend can't colour per bar either, so the stock key
+ * above the plot is plain HTML.
+ */
+function ProductsChart({ items }: { items: TopProduct[] }) {
+  const theme = useChartTheme()
+  // §5: bars read descending, largest first (display order only).
+  const rows = [...items].sort((a, b) => b.revenue - a.revenue)
+  // Row-proportional height keeps labels full-size whatever the row count.
+  const height = Math.max(280, rows.length * 34 + 60)
+
+  const options: ChartOptions = {
+    chart: {
+      type: 'bar',
+      height,
+      toolbar: { show: false },
+      fontFamily: theme.fontFamily,
+      foreColor: theme.foreColor,
+      animations: { enabled: true, easing: 'easeinout', speed: 650 },
+    },
+    series: [{ name: 'Revenue', data: rows.map((i) => Math.round(i.revenue * 100) / 100) }],
+    colors: rows.map((i) => stockBarColor(i.stockOnHand)),
+    plotOptions: {
+      bar: {
+        horizontal: true,
+        distributed: true,
+        barHeight: '58%',
+        borderRadius: 5,
+        borderRadiusApplication: 'around',
+        borderRadiusWhenStacked: 'around',
+      },
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (v: number) => formatCurrencyAbbrev(v),
+      offsetX: 6,
+      style: { fontSize: '12px', fontWeight: 600, colors: [theme.foreColor] },
+    },
+    xaxis: {
+      categories: rows.map((i) => truncateLabel(i.description)),
+      axisBorder: { show: false },
+      axisTicks: { show: false },
+      labels: { formatter: (v: number) => formatCurrencyAbbrev(v) },
+    },
+    yaxis: {
+      labels: { style: { colors: theme.foreColor, fontSize: '13px' } },
+    },
+    grid: theme.grid,
+    legend: { show: false },
+    tooltip: {
+      theme: theme.tooltipTheme,
+      fillSeriesColor: false,
+      // The axis shows the truncated name — the tooltip title gets the full one.
+      x: {
+        formatter: (_val: string, opts: { dataPointIndex: number }) =>
+          rows[opts.dataPointIndex]?.description ?? '',
+      },
+      y: {
+        formatter: (value: number, opts: { dataPointIndex: number }) => {
+          const r = rows[opts.dataPointIndex]
+          if (!r) return formatCurrency(value)
+          return `${formatCurrency(value)}  ·  ${formatNumber(r.quantity)} sold  ·  ${formatPercent(
+            r.sharePercent,
+          )} of period  ·  ${stockText(r.stockOnHand)}`
+        },
+      },
+    },
+  }
+
+  return (
+    <div>
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-primary" aria-hidden="true" /> In stock
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-warning" aria-hidden="true" /> Low (≤ 4 units)
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-error" aria-hidden="true" /> Out of stock
+        </span>
+      </div>
+      <div
+        role="img"
+        aria-label={`Top products by revenue: ${rows
+          .map((i) => `${i.description} ${formatCurrency(i.revenue)} (${stockText(i.stockOnHand)})`)
+          .join(', ')}.`}
+      >
+        <ApexChart options={options} series={options.series} type="bar" height={height} width="100%" />
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------- table view ------------------------------ */
 
 function StockBadge({ stockOnHand }: { stockOnHand: number }) {
   if (stockOnHand <= 0) {
@@ -151,6 +316,8 @@ function ProductsTable({ items }: { items: TopProduct[] }) {
     />
   )
 }
+
+/* ------------------------------ customers -------------------------------- */
 
 function CustomersTable({ items }: { items: TopCustomer[] }) {
   // Phone lives in the row-detail expansion (§3). Fixed column widths — the

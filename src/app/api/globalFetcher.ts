@@ -136,14 +136,58 @@ const deleteFetcher = (url:string, arg?: any) => {
     }
 
     return fetch(url, options).then(async (res) => {
-        if(!res.ok){
-            throw new Error("Failed to delete data")
+        // Read the body once, then reuse it: the backend DELETE endpoints
+        // return an empty body on success (204 / 200 with no content), so
+        // res.json() would throw "Unexpected end of JSON input".
+        let body: any = null
+        let serverMessage = ''
+        try {
+            const text = await res.text()
+            if (text) {
+                try {
+                    const parsed = JSON.parse(text)
+                    body = parsed
+                    // Same extraction as postFetcher so the real cause
+                    // (e.g. "record is referenced by..." on a 400/409) is
+                    // available to the caller.
+                    serverMessage =
+                        parsed?.msg ||
+                        parsed?.message ||
+                        parsed?.detail ||   // ProblemDetails.detail
+                        parsed?.error?.message ||
+                        parsed?.error ||
+                        parsed?.title ||    // ProblemDetails.title
+                        (typeof parsed === 'string' ? parsed : '') ||
+                        ''
+                } catch {
+                    // Non-JSON response (e.g. plain text).
+                    body = text
+                    serverMessage = text
+                }
+            }
+        } catch {
+            // Response body could not be read; fall back to status text.
         }
-        // The backend DELETE endpoint returns an empty body (204 / 200 with no content).
-        // res.json() would throw "Unexpected end of JSON input" on an empty body,
-        // which would abort the caller before it can update local state.
-        const text = await res.text()
-        return text ? JSON.parse(text) : null
+
+        // The backend also reports failures inside an HTTP 200 body using the
+        // project's response convention { status: 400 | 404, msg } — treat a
+        // 4xx/5xx status field as a failure even when the HTTP status is 200.
+        const bodyStatus = typeof body?.status === 'number' ? body.status : undefined
+        const bodyIndicatesFailure = bodyStatus !== undefined && bodyStatus >= 400
+
+        if (!res.ok || bodyIndicatesFailure) {
+            const err = new Error(
+                serverMessage
+                    ? serverMessage
+                    : `Failed to delete data (HTTP ${res.status}: ${res.statusText})`
+            )
+            // Attach metadata for callers that want to inspect it directly.
+            ;(err as any).status = bodyIndicatesFailure ? bodyStatus : res.status
+            ;(err as any).serverMessage = serverMessage
+            throw err
+        }
+
+        return body
     })
 }
 
