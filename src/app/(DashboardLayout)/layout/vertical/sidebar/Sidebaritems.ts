@@ -161,6 +161,12 @@ const SidebarContent: MenuItem[] = [
         url: "/react-tables/master/item-master",
       },
       {
+        name: "Trash Items",
+        icon: "solar:trash-bin-trash-linear",
+        id: uniqueId(),
+        url: "/react-tables/master/trash-items",
+      },
+      {
         name: "Location Details",
         icon: "solar:map-point-linear",
         id: uniqueId(),

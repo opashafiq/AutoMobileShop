@@ -94,11 +94,63 @@ const putFetcher = async (url:string, arg:any) => {
     })
 
     if (!res.ok) {
-        throw new Error("Failed to update data")
+        // Surface the server-provided error message instead of a generic
+        // "Failed to update data" (same extraction as deleteFetcher).
+        let serverMessage = ''
+        try {
+            const text = await res.text()
+            if (text) {
+                try {
+                    const parsed = JSON.parse(text)
+                    serverMessage =
+                        parsed?.msg ||
+                        parsed?.message ||
+                        parsed?.detail ||   // ProblemDetails.detail
+                        parsed?.error?.message ||
+                        parsed?.error ||
+                        parsed?.title ||    // ProblemDetails.title
+                        (typeof parsed === 'string' ? parsed : '') ||
+                        ''
+                } catch {
+                    serverMessage = text
+                }
+            }
+        } catch {
+            // Response body could not be read; ignore and use status text.
+        }
+        const err = new Error(
+            serverMessage
+                ? serverMessage
+                : `Failed to update data (HTTP ${res.status}: ${res.statusText})`
+        )
+        ;(err as any).status = res.status
+        ;(err as any).serverMessage = serverMessage
+        throw err
     }
 
-    const text = await res.text()
-    return text ? JSON.parse(text) : null
+    // The backend can also report a failed update inside an HTTP 200 body
+    // using the project's response convention { status: 400 | 404, msg } —
+    // treat that as an error so callers don't mistake it for success.
+    let successBody: any = null
+    try {
+        const text = await res.text()
+        if (text) {
+            try { successBody = JSON.parse(text) } catch { successBody = text }
+        }
+    } catch {
+        // Response body could not be read; treat as empty success.
+    }
+
+    const bodyStatus = typeof successBody?.status === 'number' ? successBody.status : undefined
+    if (bodyStatus !== undefined && bodyStatus >= 400) {
+        const msg = successBody?.msg || successBody?.message || ''
+        const err = new Error(msg ? msg : `Failed to update data (HTTP ${res.status})`)
+        ;(err as any).status = bodyStatus
+        ;(err as any).serverMessage = msg
+        throw err
+    }
+
+    return successBody
 }
 
 const patchFetcher = async (url:string, arg:any) => {

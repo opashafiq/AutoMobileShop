@@ -21,7 +21,6 @@ import {
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import {
@@ -49,26 +48,35 @@ import {
 } from '@/app/components/animatedComponents/AnimatedTable'
 import { toast, ToastContainer } from 'react-toastify'
 import { CustomizerContext } from '@/app/context/CustomizerContext'
-import useSWR, { mutate } from 'swr'
-import { getApiUrl, getFetcher, postFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
+import useSWR from 'swr'
+import { getApiUrl, getFetcher, putFetcher, deleteFetcher } from '@/app/api/globalFetcher'
 import { getUserName } from '@/app/api/auth'
 import { getLocalISO } from '@/lib/time'
 import ColumnFilterInput from '@/app/components/react-tables/shared/ColumnFilterInput'
 import { applyColumnFilters, ColumnFilterValue, FilterType } from '@/app/components/react-tables/shared/columnFilterUtils'
-import ItemBulkImportModal from '@/app/components/react-tables/master/itemmaster-import-modal'
 
-function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
+// Trash Items — a restricted view over the trashed items returned by
+// GET /api/ItemMaster/get-trash-items. It offers just two row actions:
+// Change Category (re-file the item via PUT /api/ItemMaster/{id}) and Delete
+// (permanently remove it via DELETE /api/ItemMaster/{id}). There is no
+// Create/Import — items arrive here through the Archive action on Item Master.
+function TrashItemsTable({ enableColumnFilters = true }: { enableColumnFilters?: boolean }) {
   const { activeMode } = useContext(CustomizerContext)
 
   const [itemData, setItemData] = useState<ItemMasterType[]>([])
 
-  // SWR fetch from API
-  const API_URL = getApiUrl('/api/ItemMaster')
-  const { data } = useSWR(API_URL, getFetcher)
+  // SWR fetch — dedicated endpoint that returns only the trashed items.
+  const LIST_URL = getApiUrl('/api/ItemMaster/get-trash-items')
+  const { data } = useSWR(LIST_URL, getFetcher)
 
-  // Fetch dropdown data
+  // Base ItemMaster URL used by the row actions (PUT / DELETE by id).
+  const API_URL = getApiUrl('/api/ItemMaster')
+
+  // Fetch categories for the Change Category dialog
   const DEPARTMENTS_API_URL = getApiUrl('/api/Departments')
   const { data: departmentsData } = useSWR(DEPARTMENTS_API_URL, getFetcher)
+  // Distributors / Locations are shown read-only in the dialog but still need
+  // their option lists so the disabled Selects can resolve display labels.
   const DISTRIBUTORS_API_URL = getApiUrl('/api/Distributors')
   const { data: distributorsData } = useSWR(DISTRIBUTORS_API_URL, getFetcher)
   const LOCATIONS_API_URL = getApiUrl('/api/LocationDetails')
@@ -82,9 +90,6 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
 
   const [sorting, setSorting] = useState<SortingState>([])
   const [globalFilter, setGlobalFilter] = useState('')
-  const [rowSelection, setRowSelection] = useState({})
-  const [editingRowId, setEditingRowId] = useState<number | null>(null)
-  const [showSearch, setShowSearch] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [columnVisibility, setColumnVisibility] = useState<Record<string, boolean>>({
     id: true,
@@ -105,39 +110,29 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
     locationName: true,
   })
   const [columnFilters, setColumnFilters] = useState<Record<string, ColumnFilterValue>>({})
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit'>('create')
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
-  const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<number | string | null>(null)
-  const [confirmDeleteCount, setConfirmDeleteCount] = useState(0)
-  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
+  const [showSearch, setShowSearch] = useState(false)
   const [apiLoading, setApiLoading] = useState(false)
-  // Row currently being archived (move-to-thrash) — guards double submits.
-  const [archivingId, setArchivingId] = useState<number | string | null>(null)
-  const [importModalOpen, setImportModalOpen] = useState(false)
-  const [currentItem, setCurrentItem] = useState<Partial<ItemMasterType>>({
-    id: 0,
-    tbim_ItemCategoryId: 0,
-    tbim_Size: '',
-    tbim_Brand: '',
-    tbim_Series: '',
-    tbim_Bolt: '',
-    tbim_HoleS: '',
-    tbim_Zone: '',
-    tbim_Qty: 0,
-    tbim_QtyOp: 0,
-    tbim_Code: 0,
-    tbim_CodeTOT: 0,
-    tbim_DistributorId: 0,
-    tbim_OURP: 0,
-    tbim_LocationId: 0,
-    tbim_ThrashDate: '',
-  })
 
-  // Build dropdown option maps
-  const departmentOptions = useMemo(() => {
+  // Change Category dialog state — shows the full ItemMaster edit form with
+  // only Category, Qty, Code and OURP editable; everything else is read-only.
+  const [categoryDialogOpen, setCategoryDialogOpen] = useState(false)
+  const [categoryRow, setCategoryRow] = useState<ItemMasterType | null>(null)
+  const [currentItem, setCurrentItem] = useState<Partial<ItemMasterType>>({})
+  const [newCategoryId, setNewCategoryId] = useState(0)
+  const [categoryError, setCategoryError] = useState('')
+
+  // Delete confirmation state
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
+  const [confirmDeleteTargetId, setConfirmDeleteTargetId] = useState<number | null>(null)
+  const [confirmDeleteMessage, setConfirmDeleteMessage] = useState('')
+
+  // Categories for the dialog — "Trash" itself is excluded so an item can
+  // only be re-filed into a real category from this page.
+  const categoryOptions = useMemo(() => {
     if (!Array.isArray(departmentsData)) return []
-    return departmentsData as DepartmentType[]
+    return (departmentsData as DepartmentType[]).filter(
+      (opt) => (opt.tbid_DepartmentName ?? '').trim().toLowerCase() !== 'trash'
+    )
   }, [departmentsData])
 
   const distributorOptions = useMemo(() => {
@@ -150,46 +145,6 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
     return locationsData as LocationDetailsType[]
   }, [locationsData])
 
-  const resetCurrentItem = () => {
-    setCurrentItem({
-      id: 0,
-      tbim_ItemCategoryId: 0,
-      tbim_Size: '',
-      tbim_Brand: '',
-      tbim_Series: '',
-      tbim_Bolt: '',
-      tbim_HoleS: '',
-      tbim_Zone: '',
-      tbim_Qty: 0,
-      tbim_QtyOp: 0,
-      tbim_Code: 0,
-      tbim_CodeTOT: 0,
-      tbim_DistributorId: 0,
-      tbim_OURP: 0,
-      tbim_LocationId: 0,
-      tbim_ThrashDate: '',
-    })
-  }
-
-  const openCreateDialog = () => {
-    resetCurrentItem()
-    setDialogMode('create')
-    setEditingRowId(null)
-    setIsDialogOpen(true)
-  }
-
-  const openEditDialog = (row: ItemMasterType) => {
-    setDialogMode('edit')
-    setEditingRowId(row.id)
-    setCurrentItem({ ...row })
-    setIsDialogOpen(true)
-  }
-
-  const closeDialog = () => {
-    setIsDialogOpen(false)
-    setEditingRowId(null)
-  }
-
   const handleColumnFilterChange = (columnKey: string, value: ColumnFilterValue) => {
     setColumnFilters((prev) => ({
       ...prev,
@@ -201,40 +156,33 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
     setColumnFilters({})
   }
 
-  const handleDepartmentChange = (value: string) => {
-    const id = Number(value)
-    setCurrentItem((prev) => ({
-      ...prev,
-      tbim_ItemCategoryId: id,
-      departmentName: departmentOptions.find((opt) => opt.id === id)?.tbid_DepartmentName ?? '',
-    }))
+  const openChangeCategoryDialog = (row: ItemMasterType) => {
+    setCategoryRow(row)
+    setCurrentItem({ ...row })
+    // The row's current category is "Trash", which is not offered in the
+    // dropdown, so start from 0 and force an explicit selection.
+    setNewCategoryId(0)
+    setCategoryError('')
+    setCategoryDialogOpen(true)
   }
 
-  const handleDistributorChange = (value: string) => {
-    const id = Number(value)
-    setCurrentItem((prev) => ({
-      ...prev,
-      tbim_DistributorId: id,
-      distributorName: distributorOptions.find((opt) => opt.id === id)?.name ?? '',
-    }))
-  }
+  const handleCategorySave = async () => {
+    if (!categoryRow) {
+      setCategoryDialogOpen(false)
+      return
+    }
+    if (newCategoryId === 0) {
+      setCategoryError('Please select a category')
+      return
+    }
 
-  const handleLocationChange = (value: string) => {
-    const id = Number(value)
-    setCurrentItem((prev) => ({
-      ...prev,
-      tbim_LocationId: id,
-      locationName: locationOptions.find((opt) => opt.id === id)?.tbld_LocationName ?? '',
-    }))
-  }
-
-  const handleSave = async () => {
     setApiLoading(true)
-
     try {
+      // Same payload shape as the ItemMaster edit form: every field is sent
+      // so the PUT keeps the read-only fields exactly as they are.
       const payload: Partial<ItemMasterType> = {
-        id: dialogMode === 'create' ? 0 : editingRowId ?? 0,
-        tbim_ItemCategoryId: currentItem.tbim_ItemCategoryId ?? 0,
+        id: categoryRow.id,
+        tbim_ItemCategoryId: newCategoryId,
         tbim_Size: currentItem.tbim_Size ?? '',
         tbim_Brand: currentItem.tbim_Brand ?? '',
         tbim_Series: currentItem.tbim_Series ?? '',
@@ -253,52 +201,33 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
         setDate: getLocalISO(),
       }
 
-      if (dialogMode === 'create') {
-        const response = await postFetcher(API_URL, payload)
-        setItemData((prev) => [response as ItemMasterType, ...prev])
-        setFeedback('Item Master created')
-      } else if (editingRowId !== null) {
-        const updatedItem = (await putFetcher(`${API_URL}/${editingRowId}`, payload)) as ItemMasterType | null
-        setItemData((prev) =>
-          prev.map((item) =>
-            item.id === editingRowId ? (updatedItem ?? { ...item, ...payload }) : item
-          )
-        )
-        setFeedback('Item Master updated')
-      }
-
-      closeDialog()
+      await putFetcher(`${API_URL}/${categoryRow.id}`, payload)
+      // The item left the "Trash" category, so it no longer belongs in
+      // this list — remove the row.
+      setItemData((prev) => prev.filter((item) => item.id !== categoryRow.id))
+      setFeedback('Item category updated')
+      setCategoryDialogOpen(false)
     } catch (error) {
-      console.error('Unable to save item master', error)
-      setFeedback('Unable to save Item Master')
+      console.error('Unable to change category', error)
+      setFeedback(
+        error instanceof Error && error.message
+          ? error.message
+          : 'Unable to change category'
+      )
     } finally {
       setApiLoading(false)
     }
   }
 
-  const openDeleteConfirm = (rowId: number | string) => {
+  const openDeleteConfirm = (rowId: number) => {
     setConfirmDeleteTargetId(rowId)
-    setConfirmDeleteCount(1)
     setConfirmDeleteMessage(
-      'Are you sure you want to delete this Item? This action cannot be undone.'
+      'Are you sure you want to permanently delete this Trash Item? This action cannot be undone.'
     )
     setConfirmDialogOpen(true)
   }
 
-  const handleDelete = (rowId: number | string) => {
-    openDeleteConfirm(rowId)
-  }
-
   const handleConfirmDelete = async () => {
-    if (confirmDeleteCount > 1) {
-      const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
-      setItemData((prev) => prev.filter((item) => !selectedIds.includes(item.id)))
-      table.resetRowSelection()
-      setFeedback(`Deleted ${selectedIds.length} record(s)`)
-      setConfirmDialogOpen(false)
-      return
-    }
-
     if (confirmDeleteTargetId === null) {
       setConfirmDialogOpen(false)
       return
@@ -318,29 +247,6 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
     } finally {
       setConfirmDialogOpen(false)
       setConfirmDeleteTargetId(null)
-      setConfirmDeleteCount(0)
-    }
-  }
-
-  // Archive (soft delete): POST /api/ItemMaster/move-to-thrash/{id}. The
-  // backend stamps the item's Trash Date (tbim_ThrashDate) and returns the
-  // updated ItemMaster; only after success is the row removed from the table.
-  const handleArchive = async (rowId: number | string) => {
-    if (archivingId !== null) return
-    setArchivingId(rowId)
-    try {
-      await postFetcher(`${API_URL}/move-to-thrash/${rowId}`, undefined)
-      setItemData((prev) => prev.filter((item) => item.id !== rowId))
-      setFeedback('Item archived')
-    } catch (error) {
-      console.error('Unable to archive item', error)
-      setFeedback(
-        error instanceof Error && error.message
-          ? error.message
-          : 'Unable to archive item'
-      )
-    } finally {
-      setArchivingId(null)
     }
   }
 
@@ -351,25 +257,6 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const allColumns = useMemo(
     () =>
       [
-        columnHelper.display({
-          id: 'select',
-          enableSorting: false,
-          header: ({ table }) => (
-            <Checkbox
-              checked={table.getIsAllPageRowsSelected()}
-              onCheckedChange={(checked) =>
-                table.toggleAllPageRowsSelected(checked === true)
-              }
-            />
-          ),
-          cell: ({ row }) => (
-            <Checkbox
-              checked={!!row.getIsSelected()}
-              onCheckedChange={(checked) => row.toggleSelected(checked === true)}
-            />
-          ),
-        }),
-
         columnHelper.accessor('tbim_Size', {
           header: 'Size',
           cell: (info) => <p className='text-sm'>{info.getValue() || '-'}</p>,
@@ -465,29 +352,18 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                 </DropdownMenuTrigger>
                 <DropdownMenuContent className='shadow dark:shadow-white/20'>
                   <DropdownMenuItem
-                    onClick={() => openEditDialog(row.original)}
+                    onClick={() => openChangeCategoryDialog(row.original)}
                     className='cursor-pointer'>
                     <Icon
-                      icon='solar:pen-2-linear'
+                      icon='solar:tag-linear'
                       width={20}
                       height={20}
                       className='me-2'
                     />
-                    Edit
+                    Change Category
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={() => handleArchive(rowId)}
-                    className='cursor-pointer'>
-                    <Icon
-                      icon='solar:archive-linear'
-                      width={20}
-                      height={20}
-                      className='me-2'
-                    />
-                    Archive
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => handleDelete(rowId)}
+                    onClick={() => openDeleteConfirm(rowId)}
                     className="cursor-pointer text-red-600 focus:text-red-700">
                     <Icon
                       icon='solar:trash-bin-2-outline'
@@ -503,6 +379,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
           },
         }),
       ] as ColumnDef<ItemMasterType>[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 
@@ -510,11 +387,9 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const visibleColumns = useMemo(
     () =>
       allColumns.filter((col) => {
-        if (col.id === 'select') return true
         if ('accessorKey' in col && typeof col.accessorKey === 'string') {
           return columnVisibility[col.accessorKey]
         }
-        if (col.id === 'actions') return true
         return true
       }),
     [allColumns, columnVisibility]
@@ -532,10 +407,9 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const table = useReactTable({
     data: filteredData,
     columns: visibleColumns,
-    state: { sorting, globalFilter, rowSelection },
+    state: { sorting, globalFilter },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
-    onRowSelectionChange: setRowSelection,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -546,7 +420,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const visibleExportKeys = useMemo(
     () =>
       visibleColumns
-        .filter((col) => (col as any).accessorKey && col.id !== 'select' && col.id !== 'actions')
+        .filter((col) => (col as any).accessorKey && col.id !== 'actions')
         .map((col) => (col as any).accessorKey as keyof ItemMasterType),
     [visibleColumns]
   )
@@ -554,7 +428,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   const exportHeaders = useMemo(
     () =>
       visibleColumns
-        .filter((col) => (col as any).accessorKey && col.id !== 'select' && col.id !== 'actions')
+        .filter((col) => (col as any).accessorKey && col.id !== 'actions')
         .map((col) =>
           typeof (col as any).header === 'string' ? (col as any).header : (col as any).accessorKey
         ),
@@ -573,22 +447,11 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', 'item-master.csv')
+    link.setAttribute('download', 'trash-items.csv')
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
   }, [filteredData, visibleExportKeys, exportHeaders])
-
-  const handleBulkDelete = useCallback(() => {
-    const selectedIds = table.getSelectedRowModel().rows.map((r) => r.original.id)
-    if (selectedIds.length === 0) return
-    setConfirmDeleteTargetId(null)
-    setConfirmDeleteCount(selectedIds.length)
-    setConfirmDeleteMessage(
-      `Are you sure you want to delete ${selectedIds.length} selected record(s)? This action cannot be undone.`
-    )
-    setConfirmDialogOpen(true)
-  }, [table])
 
   useEffect(() => {
     if (!feedback) return
@@ -609,6 +472,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
         theme: toastColor,
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedback])
 
   return (
@@ -616,7 +480,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
       <div>
         <div className='flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-5'>
           <h3 className='text-lg font-semibold text-dark dark:text-white mb-4 md:mb-0'>
-            Manage Item Master
+            Manage Trash Items
           </h3>
           <div className='flex flex-wrap items-center gap-1 md:gap-2'>
             {!showSearch ? (
@@ -630,7 +494,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                 value={globalFilter ?? ''}
                 onChange={(e) => setGlobalFilter(e.target.value)}
                 onBlur={() => { if (!globalFilter) setShowSearch(false) }}
-                aria-label='Search items'
+                aria-label='Search trash items'
               />
             )}
             <DropdownMenu>
@@ -658,67 +522,55 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
             <Button variant='ghostprimary' onClick={handleExportCSV} shape='pill' aria-label='Download CSV'>
               <Icon icon='solar:download-minimalistic-line-duotone' width={18} height={18} />
             </Button>
-            {table.getSelectedRowModel().rows.length > 0 && (
-              <Button variant='error' onClick={handleBulkDelete}>
-                <Icon icon='solar:trash-bin-2-outline' width={18} height={18} />
-              </Button>
-            )}
             {enableColumnFilters && Object.keys(columnFilters).length > 0 && (
               <Button variant='secondary' onClick={handleClearAllFilters} size='sm' className='text-xs'>
                 <Icon icon='solar:close-circle-outline' width={16} height={16} className='me-1' />
                 Clear Filters
               </Button>
             )}
-            <Button variant='lightprimary' shape='pill' onClick={openCreateDialog} aria-label='Create Item'>
-              Create Item
-            </Button>
-            <Button variant='lightprimary' shape='pill' onClick={() => setImportModalOpen(true)} aria-label='Import from Excel'>
-              <Icon icon='solar:upload-minimalistic-line-duotone' width={18} height={18} className='me-1' />
-              Import
-            </Button>
           </div>
         </div>
 
-        {/* Create/Edit Dialog */}
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {/* Change Category Dialog — full ItemMaster edit form, editable only
+            for Category, Qty, Code and OURP; everything else is read-only */}
+        <Dialog open={categoryDialogOpen} onOpenChange={setCategoryDialogOpen}>
           <DialogContent className='sm:max-w-xl'>
             <DialogHeader>
-              <DialogTitle>{dialogMode === 'create' ? 'Create Item' : 'Edit Item'}</DialogTitle>
+              <DialogTitle>Change Category</DialogTitle>
               <DialogDescription>
-                {dialogMode === 'create'
-                  ? 'Enter new item information and save to the database.'
-                  : 'Update the item record and save your changes.'}
+                Select a new category to move this item out of Trash. Only Category, Qty, Code and
+                OURP can be edited — all other fields are read-only.
               </DialogDescription>
             </DialogHeader>
             <div className='grid gap-4 py-4'>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Size</label>
-                  <Input value={currentItem.tbim_Size ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_Size: e.target.value }))} placeholder='Size' />
+                  <Input value={currentItem.tbim_Size ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Size' />
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Brand</label>
-                  <Input value={currentItem.tbim_Brand ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_Brand: e.target.value }))} placeholder='Brand' />
+                  <Input value={currentItem.tbim_Brand ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Brand' />
                 </div>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Series</label>
-                  <Input value={currentItem.tbim_Series ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_Series: e.target.value }))} placeholder='Series' />
+                  <Input value={currentItem.tbim_Series ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Series' />
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Bolt</label>
-                  <Input value={currentItem.tbim_Bolt ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_Bolt: e.target.value }))} placeholder='Bolt' />
+                  <Input value={currentItem.tbim_Bolt ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Bolt' />
                 </div>
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>HoleS</label>
-                  <Input value={currentItem.tbim_HoleS ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_HoleS: e.target.value }))} placeholder='HoleS' />
+                  <Input value={currentItem.tbim_HoleS ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='HoleS' />
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Zone</label>
-                  <Input value={currentItem.tbim_Zone ?? ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_Zone: e.target.value }))} placeholder='Zone' />
+                  <Input value={currentItem.tbim_Zone ?? ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Zone' />
                 </div>
               </div>
               <div className='grid grid-cols-2 gap-4'>
@@ -728,7 +580,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Qty Op</label>
-                  <Input type='number' value={currentItem.tbim_QtyOp ?? 0} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_QtyOp: Number(e.target.value) }))} placeholder='Qty Op' />
+                  <Input type='number' value={currentItem.tbim_QtyOp ?? 0} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Qty Op' />
                 </div>
               </div>
               <div className='grid grid-cols-2 gap-4'>
@@ -738,7 +590,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Code TOT</label>
-                  <Input type='number' value={currentItem.tbim_CodeTOT ?? 0} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_CodeTOT: Number(e.target.value) }))} placeholder='Code TOT' />
+                  <Input type='number' value={currentItem.tbim_CodeTOT ?? 0} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Code TOT' />
                 </div>
               </div>
               <div className='grid gap-2'>
@@ -747,28 +599,30 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
               </div>
               <div className='grid gap-2'>
                 <label className='text-sm font-medium'>Trash Date</label>
-                <Input type='date' value={currentItem.tbim_ThrashDate ? currentItem.tbim_ThrashDate.slice(0, 10) : ''} onChange={(e) => setCurrentItem((p) => ({ ...p, tbim_ThrashDate: e.target.value }))} placeholder='Trash Date' />
+                <Input type='date' value={currentItem.tbim_ThrashDate ? currentItem.tbim_ThrashDate.slice(0, 10) : ''} readOnly className='bg-lightgray dark:bg-darkmuted cursor-not-allowed' placeholder='Trash Date' />
               </div>
               <div className='grid grid-cols-2 gap-4'>
                 <div className='grid gap-2'>
-                  <label className='text-sm font-medium'>Department</label>
+                  <label className='text-sm font-medium'>Category</label>
                   <Select
-                    value={String(currentItem.tbim_ItemCategoryId ?? 0)}
-                    onValueChange={handleDepartmentChange}>
-                    <SelectTrigger><SelectValue placeholder='Select department' /></SelectTrigger>
+                    value={String(newCategoryId)}
+                    onValueChange={(value) => {
+                      setNewCategoryId(Number(value))
+                      setCategoryError('')
+                    }}>
+                    <SelectTrigger><SelectValue placeholder='Select category' /></SelectTrigger>
                     <SelectContent>
-                      {departmentOptions.map((opt) => (
+                      {categoryOptions.map((opt) => (
                         <SelectItem key={opt.id} value={String(opt.id)}>{opt.tbid_DepartmentName}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                  {categoryError && <p className='text-sm text-red-600'>{categoryError}</p>}
                 </div>
                 <div className='grid gap-2'>
                   <label className='text-sm font-medium'>Distributor</label>
-                  <Select
-                    value={String(currentItem.tbim_DistributorId ?? 0)}
-                    onValueChange={handleDistributorChange}>
-                    <SelectTrigger><SelectValue placeholder='Select distributor' /></SelectTrigger>
+                  <Select value={String(currentItem.tbim_DistributorId ?? 0)} disabled>
+                    <SelectTrigger><SelectValue placeholder='Distributor' /></SelectTrigger>
                     <SelectContent>
                       {distributorOptions.map((opt) => (
                         <SelectItem key={opt.id} value={String(opt.id)}>{opt.name}</SelectItem>
@@ -779,10 +633,8 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
               </div>
               <div className='grid gap-2'>
                 <label className='text-sm font-medium'>Location</label>
-                <Select
-                  value={String(currentItem.tbim_LocationId ?? 0)}
-                  onValueChange={handleLocationChange}>
-                  <SelectTrigger><SelectValue placeholder='Select location' /></SelectTrigger>
+                <Select value={String(currentItem.tbim_LocationId ?? 0)} disabled>
+                  <SelectTrigger><SelectValue placeholder='Location' /></SelectTrigger>
                   <SelectContent>
                     {locationOptions.map((opt) => (
                       <SelectItem key={opt.id} value={String(opt.id)}>{opt.tbld_LocationName}</SelectItem>
@@ -792,11 +644,9 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
               </div>
             </div>
             <DialogFooter>
-              <Button type='button' variant='secondary' onClick={closeDialog} disabled={apiLoading}>Cancel</Button>
-              <Button type='button' variant='success' onClick={handleSave} disabled={apiLoading}>
-                {apiLoading
-                  ? dialogMode === 'create' ? 'Creating...' : 'Saving...'
-                  : dialogMode === 'create' ? 'Create' : 'Save'}
+              <Button type='button' variant='secondary' onClick={() => setCategoryDialogOpen(false)} disabled={apiLoading}>Cancel</Button>
+              <Button type='button' variant='success' onClick={handleCategorySave} disabled={apiLoading}>
+                {apiLoading ? 'Saving...' : 'Save'}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -815,13 +665,6 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
             </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        {/* Bulk Import Modal */}
-        <ItemBulkImportModal
-          open={importModalOpen}
-          onOpenChange={setImportModalOpen}
-          onImportComplete={() => mutate(API_URL)}
-        />
 
         {feedback && <ToastContainer />}
 
@@ -878,7 +721,7 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
                 </thead>
                 <AnimatedTableBody>
                   {table.getRowModel().rows.length === 0 ? (
-                    <tr><td colSpan={visibleColumns.length} className='text-center py-4'>No items found.</td></tr>
+                    <tr><td colSpan={visibleColumns.length} className='text-center py-4'>No trash items found.</td></tr>
                   ) : (
                     table.getRowModel().rows.map((row, index) => (
                       <React.Fragment key={row.id}>
@@ -942,4 +785,4 @@ function ItemMasterTable({ enableColumnFilters = true }: { enableColumnFilters?:
   )
 }
 
-export default ItemMasterTable
+export default TrashItemsTable
