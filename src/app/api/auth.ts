@@ -5,6 +5,15 @@ const TOKEN_KEY = 'NEXT_AUTH_TOKEN'
 const USERNAME_KEY = 'NEXT_AUTH_USER'
 const USER_KEY = 'NEXT_AUTH_USER_SESSION'
 
+// One-time migration: auth used to be stored in localStorage, which survives a
+// browser restart. Purge it so a previously-logged-in session can't outlive a
+// browser close after this change ships.
+if (typeof window !== 'undefined') {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USERNAME_KEY)
+  localStorage.removeItem(USER_KEY)
+}
+
 // Logged-in user details, fetched once after a successful login and held
 // for the duration of the session. Cleared together with the token on logout.
 export interface UserSession {
@@ -24,29 +33,29 @@ export interface UserSession {
 export const setToken = (token: string | null) => {
   if (typeof window === 'undefined') return
   if (token === null) {
-    localStorage.removeItem(TOKEN_KEY)
+    sessionStorage.removeItem(TOKEN_KEY)
   } else {
-    localStorage.setItem(TOKEN_KEY, token)
+    sessionStorage.setItem(TOKEN_KEY, token)
   }
 }
 
 export const getToken = (): string | null => {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(TOKEN_KEY)
+  return sessionStorage.getItem(TOKEN_KEY)
 }
 
 export const setUserName = (userName: string | null) => {
   if (typeof window === 'undefined') return
   if (userName === null) {
-    localStorage.removeItem(USERNAME_KEY)
+    sessionStorage.removeItem(USERNAME_KEY)
   } else {
-    localStorage.setItem(USERNAME_KEY, userName)
+    sessionStorage.setItem(USERNAME_KEY, userName)
   }
 }
 
 export const getUserName = (): string | null => {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem(USERNAME_KEY)
+  return sessionStorage.getItem(USERNAME_KEY)
 }
 
 // Persist/restore the full user session object so it survives page refresh
@@ -54,15 +63,15 @@ export const getUserName = (): string | null => {
 export const setUserSession = (user: UserSession | null) => {
   if (typeof window === 'undefined') return
   if (user === null) {
-    localStorage.removeItem(USER_KEY)
+    sessionStorage.removeItem(USER_KEY)
   } else {
-    localStorage.setItem(USER_KEY, JSON.stringify(user))
+    sessionStorage.setItem(USER_KEY, JSON.stringify(user))
   }
 }
 
 export const getUserSession = (): UserSession | null => {
   if (typeof window === 'undefined') return null
-  const raw = localStorage.getItem(USER_KEY)
+  const raw = sessionStorage.getItem(USER_KEY)
   if (!raw) return null
   try {
     return JSON.parse(raw) as UserSession

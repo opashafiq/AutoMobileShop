@@ -74,7 +74,7 @@ export function DataTable<T>({
   columns: Column<T>[]
   rows: T[]
   keyField: (row: T) => string | number
-  rowClassName?: (row: T) => string
+  rowClassName?: (row: T) => string | undefined
   mobileTitle?: (row: T) => ReactNode
   mobileSubtitle?: (row: T) => ReactNode
   detail?: (row: T) => ReactNode

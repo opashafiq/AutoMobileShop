@@ -41,72 +41,72 @@ const SidebarContent: MenuItem[] = [
         id: uniqueId(),
         url: "/",
       },
-      {
-        name: "Modern",
-        icon: "solar:widget-2-linear",
-        id: uniqueId(),
-        url: "/dashboards/modern",
-      },
-      {
-        name: "eCommerce",
-        icon: "solar:bag-5-linear",
-        id: uniqueId(),
-        url: "/dashboards/eCommerce",
-      },
-      {
-        name: "Music",
-        icon: "solar:music-note-linear",
-        id: uniqueId(),
-        url: "/dashboards/music",
-      },
-      {
-        name: "General",
-        icon: "solar:chart-linear",
-        id: uniqueId(),
-        url: "/dashboards/general",
-      },
-      {
-        name: "Front Pages",
-        id: uniqueId(),
-        icon: "solar:document-linear",
-        children: [
-          {
-            id: uniqueId(),
-            name: "Homepage",
-            url: "/frontend-pages/homepage",
-          },
-          {
-            id: uniqueId(),
-            name: "About Us",
-            url: "/frontend-pages/about",
-          },
-          {
-            id: uniqueId(),
-            name: "Blog",
-            url: "/frontend-pages/blog/post",
-          },
-          {
-            id: uniqueId(),
-            name: "Blog Details",
-            url: "frontend-pages/blog/detail/as-yen-tumbles-gadget-loving-japan-goes-for-secondhand-iphones-",
-          },
-          {
-            id: uniqueId(),
-            name: "Portfolio",
-            url: "/frontend-pages/portfolio",
-          },
-          {
-            id: uniqueId(),
-            name: "Pricing",
-            url: "/frontend-pages/pricing",
-          },
-          {
-            id: uniqueId(),
-            name: "Contact Us",
-            url: "/frontend-pages/contact",
-          },
-        ],
-      },
+      // {
+      //   name: "Modern",
+      //   icon: "solar:widget-2-linear",
+      //   id: uniqueId(),
+      //   url: "/dashboards/modern",
+      // },
+      // {
+      //   name: "eCommerce",
+      //   icon: "solar:bag-5-linear",
+      //   id: uniqueId(),
+      //   url: "/dashboards/eCommerce",
+      // },
+      // {
+      //   name: "Music",
+      //   icon: "solar:music-note-linear",
+      //   id: uniqueId(),
+      //   url: "/dashboards/music",
+      // },
+      // {
+      //   name: "General",
+      //   icon: "solar:chart-linear",
+      //   id: uniqueId(),
+      //   url: "/dashboards/general",
+      // },
+      // {
+      //   name: "Front Pages",
+      //   id: uniqueId(),
+      //   icon: "solar:document-linear",
+      //   children: [
+      //     {
+      //       id: uniqueId(),
+      //       name: "Homepage",
+      //       url: "/frontend-pages/homepage",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "About Us",
+      //       url: "/frontend-pages/about",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "Blog",
+      //       url: "/frontend-pages/blog/post",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "Blog Details",
+      //       url: "frontend-pages/blog/detail/as-yen-tumbles-gadget-loving-japan-goes-for-secondhand-iphones-",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "Portfolio",
+      //       url: "/frontend-pages/portfolio",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "Pricing",
+      //       url: "/frontend-pages/pricing",
+      //     },
+      //     {
+      //       id: uniqueId(),
+      //       name: "Contact Us",
+      //       url: "/frontend-pages/contact",
+      //     },
+      //   ],
+      // },
     ],
   },
   {
@@ -120,7 +120,7 @@ const SidebarContent: MenuItem[] = [
       },
       {
         name: "Daily Expense",
-        icon: "solar:card-money-linear",
+        icon: "solar:graph-down-linear",
         id: uniqueId(),
         url: "/react-tables/master/daily-expense",
       },
@@ -215,7 +215,7 @@ const SidebarContent: MenuItem[] = [
       },
       {
         name: "Collect Invoice Amount",
-        icon: "solar:card-money-linear",
+        icon: "solar:banknote-2-linear",
         id: uniqueId(),
         url: "/react-tables/transaction/invoice-collect",
       },

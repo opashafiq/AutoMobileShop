@@ -21,7 +21,6 @@ import type {
   NameValue,
   OverviewResponse,
   PaymentCollectionItem,
-  Period,
   SalesHeatmapCell,
   StockItem,
   TirePositions,
@@ -39,6 +38,11 @@ const LOGIN_PATH = '/auth/auth1/login'
 export interface ApiError extends Error {
   status: number
   serverMessage: string
+}
+
+/** Builds a typed error carrying the HTTP status and the server's message. */
+function apiError(message: string, status: number, serverMessage: string): ApiError {
+  return Object.assign(new Error(message), { status, serverMessage })
 }
 
 /** Serialisable query params (undefined / null are omitted from the URL). */
@@ -64,7 +68,7 @@ function buildHeaders(): Record<string, string> {
     'Content-Type': 'application/json',
   }
   if (typeof window !== 'undefined') {
-    const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+    const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
     if (token) headers.Authorization = `Bearer ${token}`
   }
   return headers
@@ -101,10 +105,7 @@ function handleUnauthorized(): never {
     // Full navigation so the DashboardLayout auth guard picks it up cleanly.
     window.location.replace(LOGIN_PATH)
   }
-  throw Object.assign(new Error('Session expired — please log in again.'), {
-    status: 401,
-    serverMessage: 'Unauthorized',
-  } satisfies ApiError)
+  throw apiError('Session expired — please log in again.', 401, 'Unauthorized')
 }
 
 interface RequestOptions {
@@ -124,15 +125,13 @@ async function request<T>(path: string, options?: RequestOptions): Promise<T> {
   }
   if (!res.ok) {
     const serverMessage = await readErrorMessage(res)
-    const err = Object.assign(
-      new Error(
-        serverMessage
-          ? `Server error ${res.status}: ${serverMessage}`
-          : `Failed to load data (HTTP ${res.status}: ${res.statusText})`,
-      ),
-      { status: res.status, serverMessage } satisfies ApiError,
+    throw apiError(
+      serverMessage
+        ? `Server error ${res.status}: ${serverMessage}`
+        : `Failed to load data (HTTP ${res.status}: ${res.statusText})`,
+      res.status,
+      serverMessage,
     )
-    throw err
   }
 
   const text = await res.text()
@@ -145,12 +144,7 @@ async function request<T>(path: string, options?: RequestOptions): Promise<T> {
  * Builds the single shared query string from §2.1.
  * When `period` is anything other than `custom`, `from`/`to` are never sent.
  */
-export function sharedQuery(params: {
-  period: Period
-  from?: string
-  to?: string
-  locationId?: number | null
-}): QueryParams {
+export function sharedQuery(params: DashboardQuery): QueryParams {
   const q: QueryParams = { period: params.period }
   if (params.period === 'custom') {
     if (params.from) q.from = params.from

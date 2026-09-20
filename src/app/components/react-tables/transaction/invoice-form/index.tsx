@@ -344,7 +344,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
     try {
       const res = await fetch(getApiUrl(`/api/TaxId/${id}`), {
         headers: {
-          Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('NEXT_AUTH_TOKEN') ?? '' : ''}`,
+          Authorization: `Bearer ${typeof window !== 'undefined' ? sessionStorage.getItem('NEXT_AUTH_TOKEN') ?? '' : ''}`,
         },
       }).then((r) => r.json())
       setMasterField('taxCompanyName', res?.tbti_ComName ?? '')
@@ -384,7 +384,7 @@ export default function InvoiceForm({ mode, invoiceId, reorderId }: InvoiceFormP
       try {
         const detail = await fetch(getApiUrl(`/api/ItemMaster/${id}`), {
           headers: {
-            Authorization: `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('NEXT_AUTH_TOKEN') ?? '' : ''}`,
+            Authorization: `Bearer ${typeof window !== 'undefined' ? sessionStorage.getItem('NEXT_AUTH_TOKEN') ?? '' : ''}`,
           },
         }).then((r) => r.json())
         setDraftItem((prev) => ({ ...prev, tbid_UnitPrice: Number(detail?.tbim_Code) || 0 }))

@@ -178,7 +178,7 @@ export default function ItemBulkImportModal({ open, onOpenChange, onImportComple
   React.useEffect(() => {
     if (!open) return
     fetch(`${getApiUrl('/api/Departments')}`, {
-      headers: (() => { const h: Record<string, string> = {}; const t = localStorage.getItem('NEXT_AUTH_TOKEN'); if (t) h['Authorization'] = `Bearer ${t}`; return h })()
+      headers: (() => { const h: Record<string, string> = {}; const t = sessionStorage.getItem('NEXT_AUTH_TOKEN'); if (t) h['Authorization'] = `Bearer ${t}`; return h })()
     }).then(r => r.ok ? r.json() : []).then((d: unknown) => {
       if (Array.isArray(d)) {
         setCategories(d.map((c: any) => ({ id: c.id, name: c.tbid_DepartmentName })))

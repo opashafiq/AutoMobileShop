@@ -8,7 +8,7 @@ const getApiUrl = (endpoint: string) =>
 const getFetcher = (url:any) => {
     const headers: Record<string,string> = {'browserrefreshed':'false'}
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 
@@ -24,7 +24,7 @@ const getFetcher = (url:any) => {
 const postFetcher = (url:string,arg:any) => {
     const headers: Record<string,string> = {'Content-Type':'application/json'}
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 
@@ -83,7 +83,7 @@ const postFetcher = (url:string,arg:any) => {
 const putFetcher = async (url:string, arg:any) => {
     const headers: Record<string,string> = {'Content-Type':'application/json'}
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 
@@ -156,7 +156,7 @@ const putFetcher = async (url:string, arg:any) => {
 const patchFetcher = async (url:string, arg:any) => {
     const headers: Record<string,string> = {'Content-Type':'application/json'}
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 
@@ -177,7 +177,7 @@ const patchFetcher = async (url:string, arg:any) => {
 const deleteFetcher = (url:string, arg?: any) => {
     const headers: Record<string,string> = {'Content-Type':'application/json'}
     if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('NEXT_AUTH_TOKEN')
+        const token = sessionStorage.getItem('NEXT_AUTH_TOKEN')
         if (token) headers['Authorization'] = `Bearer ${token}`
     }
 

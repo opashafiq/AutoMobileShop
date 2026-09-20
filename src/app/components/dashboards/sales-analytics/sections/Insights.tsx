@@ -390,7 +390,7 @@ function MixRow({
 function VehicleMakesCard() {
   const { filter, filterKey, refreshKey } = useDashboardFilter()
   const query = useDashboardQuery({
-    fetcher: (signal) => dashboardApi.getTopVehicleMakes({ top: 10, ...filter }, signal),
+    fetcher: (signal) => dashboardApi.getTopVehicleMakes(filter, { top: 10 }, signal),
     deps: [filterKey, refreshKey],
   })
 
