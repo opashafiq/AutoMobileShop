@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <html lang='en' suppressHydrationWarning>
       <head>
-        <link rel='icon' href='/favicon.svg' type='image/svg+xml' />
+        <link rel='icon' href='/logo_tire_inventory.jpeg' type='image/svg+xml' />
       </head>
       <body className={`${dmSans.className}`}>
         <NextTopLoader color='#5d87ff' showSpinner={false} />
