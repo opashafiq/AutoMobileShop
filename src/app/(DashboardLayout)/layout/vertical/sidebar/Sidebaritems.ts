@@ -234,6 +234,17 @@ const SidebarContent: MenuItem[] = [
     ],
   },
   {
+    heading: "Audit",
+    children: [
+      {
+        name: "Audit Trail",
+        icon: "solar:history-linear",
+        id: uniqueId(),
+        url: "/react-tables/audit-trail",
+      },
+    ],
+  },
+  {
     heading: "Report",
     children: [
       {

@@ -1,0 +1,92 @@
+# Requirement
+## 1. I want to design a page that will show the user activities in a datagrid.
+## 2. The datagrid source data will be received from Api.
+
+# Required Endpoints:
+## 1. Audit Trails:
+  https://localhost:7184/api/AuditTrail?pageNumber=1&pageSize=10
+  Optional parameters:
+  Event string
+  EventType int32
+  entityName string
+  performedById string
+  performedByName string
+  ipAddress  string
+  startDate string($date-time)
+  endDate string($date-time)
+
+  Sample response:
+  {
+  "items": [
+    {
+      "id": 1,
+      "event": "Create DailyExpense",
+      "eventType": 1,
+      "eventTypeName": "Create",
+      "entityName": "DailyExpense",
+      "entityId": "15",
+      "changes": "{\"New\":{\"Id\":15,\"ExpenseHeadId\":4,\"ExpenseDate\":\"2026-10-01T13:01:23.439Z\",\"Amount\":99910,\"CheckNo\":\"12345\",\"PayType\":\"Cash\",\"UserName\":\"Admin1\",\"SetDate\":\"2026-10-01T13:01:23.439Z\",\"LocationDetailsId\":1,\"ExpenseHeadName\":\"string\",\"LocationDetailsName\":\"string\"}}",
+      "description": "Created DailyExpense Id=15",
+      "performedById": "Admin1",
+      "performedByName": "Admin1",
+      "performedAt": "2026-10-01T13:02:13.3916648+00:00",
+      "ipAddress": "::1",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36 Edg/154.0.0.0",
+      "correlationId": null,
+      "isSuccess": true,
+      "metadata": "{\"ExpenseHeadId\":4,\"Amount\":99910,\"ExpenseDate\":\"2026-10-01T13:01:23.439Z\",\"LocationDetailsId\":1,\"RequestPath\":{\"Value\":\"/api/DailyExpense\",\"HasValue\":true},\"CorrelationId\":\"\"}"
+    }
+  ],
+  "totalCount": 1,
+  "pageNumber": 1,
+  "totalPages": 1
+}
+## 2. EventType Key Value:
+   https://localhost:7184/api/AuditTrail/EventTypes
+   Response:
+   [
+  {
+    "key": 1,
+    "value": "Create"
+  },
+  {
+    "key": 2,
+    "value": "Read"
+  },
+  {
+    "key": 3,
+    "value": "Update"
+  },
+  {
+    "key": 4,
+    "value": "Delete"
+  },
+  {
+    "key": 10,
+    "value": "Login"
+  },
+  {
+    "key": 11,
+    "value": "Logout"
+  },
+  {
+    "key": 20,
+    "value": "PermissionChange"
+  },
+  {
+    "key": 99,
+    "value": "Other"
+  }
+]
+
+# Design Pattern:
+## 1. The Form will follow the same design pattern in Transaction->Invoice except there will be 
+      no Create Button. The filters will be shown on clicking the filter button as in the 
+      Invoice form
+## 2. Show filters for the query parameters and select the input types depending on their
+      Types.
+## 3. follow the same datepicker type in in Invoice form.
+## 4. Show the eventtype in a combo box using the key-value mentioned above.
+
+Please write down what you are doing in a seperate file so that it can be used in future.
+
