@@ -492,24 +492,46 @@ function TirePositionsCard() {
 
 function TireDiagram({ positions }: { positions: TirePositions }) {
   // §5: a proper top-down car-outline SVG with explicit front/rear/left/right
-  // labels (front of the vehicle at the top). Tire fill intensity follows each
-  // position's share of the best-selling corner; a zero position stays neutral
-  // so it can't be mistaken for a low-but-real count.
-  const max = Math.max(1, positions.leftFront, positions.rightFront, positions.leftRear, positions.rightRear)
+  // labels (front of the vehicle at the top). Each tire is a bottom-anchored
+  // meter — neutral track + primary fill whose height = share of the
+  // best-selling corner — because the counts are usually a near-tie: an
+  // opacity ramp cannot separate 2,858 from 3,098 (95% vs 100% alpha reads
+  // identical), a height difference can. A zero position stays an empty
+  // track so it can't be mistaken for a low-but-real count.
+  const entries = TIRE_LABELS.map(({ key, side, short }) => ({
+    key,
+    side,
+    short,
+    value: positions[key] ?? 0,
+  }))
+  const max = Math.max(0, ...entries.map((e) => e.value))
+  const leader = entries.reduce((best, e) => (e.value > best.value ? e : best), entries[0])
+  const frontTotal = (positions.leftFront ?? 0) + (positions.rightFront ?? 0)
+  const rearTotal = (positions.leftRear ?? 0) + (positions.rightRear ?? 0)
 
-  const tires: {
-    key: TireKey
-    short: string
-    x: number
-    y: number
-    labelX: number
-    labelAnchor: 'end' | 'start'
-  }[] = [
-    { key: 'leftFront', short: 'LF', x: 76, y: 52, labelX: 68, labelAnchor: 'end' },
-    { key: 'rightFront', short: 'RF', x: 210, y: 52, labelX: 252, labelAnchor: 'start' },
-    { key: 'leftRear', short: 'LR', x: 76, y: 152, labelX: 68, labelAnchor: 'end' },
-    { key: 'rightRear', short: 'RR', x: 210, y: 152, labelX: 252, labelAnchor: 'start' },
-  ]
+  // State the insight, don't repeat the per-tire numbers (they already sit
+  // beside each tire); the value-based sentences keep it a one-liner so it
+  // never wraps out of the card.
+  let caption = 'No tire sales in this period'
+  if (leader.value > 0) {
+    caption = `${leader.side} is the busiest corner at ${formatNumber(leader.value)} units`
+    if (frontTotal > 0 && rearTotal > 0 && frontTotal !== rearTotal) {
+      const stronger = frontTotal > rearTotal ? 'Front' : 'Rear'
+      const weaker = stronger === 'Front' ? 'rear' : 'front'
+      const skew = (Math.abs(frontTotal - rearTotal) / Math.min(frontTotal, rearTotal)) * 100
+      caption += ` — ${stronger.toLowerCase()} corners outsell ${weaker.toLowerCase()} by ${formatPercent(skew)}`
+    }
+  }
+
+  const tireGeometry: Record<
+    TireKey,
+    { x: number; y: number; labelX: number; labelAnchor: 'end' | 'start' }
+  > = {
+    leftFront: { x: 76, y: 52, labelX: 68, labelAnchor: 'end' },
+    rightFront: { x: 210, y: 52, labelX: 252, labelAnchor: 'start' },
+    leftRear: { x: 76, y: 152, labelX: 68, labelAnchor: 'end' },
+    rightRear: { x: 210, y: 152, labelX: 252, labelAnchor: 'start' },
+  }
 
   return (
     <div>
@@ -521,6 +543,16 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
         ).join(', ')}.`}
       >
         <svg viewBox="0 0 320 252" className="h-auto w-full">
+          <defs>
+            {entries.map(({ key }) => {
+              const geo = tireGeometry[key]
+              return (
+                <clipPath key={key} id={`tire-clip-${key}`}>
+                  <rect x={geo.x} y={geo.y} width={34} height={56} rx={9} />
+                </clipPath>
+              )
+            })}
+          </defs>
           {/* Direction cue — front of the vehicle at the top. */}
           <text
             x="160"
@@ -571,25 +603,40 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
             Rear
           </text>
 
-          {tires.map(({ key, short, x, y, labelX, labelAnchor }) => {
-            const value = positions[key]
+          {entries.map(({ key, short, value }) => {
+            const { x, y, labelX, labelAnchor } = tireGeometry[key]
             const isZero = !(value > 0)
             const centerY = y + 28
+            const fillH = isZero || max <= 0 ? 0 : 56 * (value / max)
             return (
               <g key={key}>
                 <title>{`${short} (${key === 'leftFront' || key === 'leftRear' ? 'left' : 'right'}): ${formatNumber(value)} units sold`}</title>
+                {/* Track: same pill in every state so the meter is additive. */}
                 <rect
                   x={x}
                   y={y}
                   width={34}
                   height={56}
                   rx={9}
-                  className={cn('fill-current', isZero ? 'text-muted-foreground' : 'text-primary')}
-                  fillOpacity={isZero ? 0.2 : 0.35 + 0.65 * (value / max)}
+                  className="fill-current text-muted-foreground"
+                  fillOpacity={0.12}
                   stroke="currentColor"
-                  strokeOpacity={isZero ? 0.6 : 1}
+                  strokeOpacity={0.35}
                   strokeWidth={1.5}
                 />
+                {/* Bottom-anchored fill, clipped to the pill's rounded corners. */}
+                {fillH > 0 && (
+                  <g clipPath={`url(#tire-clip-${key})`}>
+                    <rect
+                      x={x}
+                      y={y + 56 - fillH}
+                      width={34}
+                      height={fillH}
+                      className="fill-current text-primary"
+                      fillOpacity={0.55}
+                    />
+                  </g>
+                )}
                 <text
                   x={labelX}
                   y={centerY - 4}
@@ -602,20 +649,30 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
                   x={labelX}
                   y={centerY + 13}
                   textAnchor={labelAnchor}
-                  className="fill-current text-sm font-bold tabular-nums text-dark dark:text-white"
+                  className={cn(
+                    'fill-current text-sm font-bold tabular-nums',
+                    key === leader.key && value > 0 ? 'text-primary' : 'text-dark dark:text-white',
+                  )}
                 >
                   {formatNumber(value)}
                 </text>
+                {key === leader.key && value > 0 && (
+                  <text
+                    x={labelX}
+                    y={centerY + 26}
+                    textAnchor={labelAnchor}
+                    className="fill-current text-[9px] font-semibold uppercase tracking-wide text-primary"
+                  >
+                    Top seller
+                  </text>
+                )}
               </g>
             )
           })}
         </svg>
       </div>
 
-      <p className="mt-1 text-center text-xs text-muted-foreground">
-        Top-down view · fill intensity = share of the top-selling position ·{' '}
-        {TIRE_LABELS.map(({ key, side }) => `${side} ${formatNumber(positions[key])}`).join(' · ')}
-      </p>
+      <p className="mt-1 text-center text-xs text-muted-foreground">{caption}</p>
     </div>
   )
 }
