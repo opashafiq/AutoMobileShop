@@ -15,6 +15,7 @@
 import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 import { Icon } from '@iconify/react'
+import Image from 'next/image'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -111,9 +112,17 @@ function DashboardHeader({ query }: { query: QueryState<OverviewResponse> }) {
     <Card className="no-print">
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-lightprimary text-primary">
-            <Icon icon="solar:chart-line-bold-duotone" width={22} height={22} />
-          </span>
+          {/* Brand mark — the business logo (wide wordmark) instead of a tinted
+              icon tile; it renders regardless of whether Iconify's icon data
+              loads and gives the header a real identity. */}
+          <Image
+            src="/logo_tire_inventory.jpeg"
+            alt="Apollo Tire & Wheel logo"
+            width={120}
+            height={40}
+            priority
+            className="h-10 w-auto rounded-md"
+          />
           <div>
             <h4 className="text-xl font-semibold text-dark dark:text-white">
               {user?.locationName || 'Sales & Inventory'}

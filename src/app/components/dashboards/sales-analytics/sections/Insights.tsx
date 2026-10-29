@@ -15,7 +15,8 @@ import type {
   TirePositions,
 } from '../types'
 import { dashboardApi } from '../dashboardApi'
-import { useDashboardQuery } from '../useDashboardQuery'
+import { previousPeriodQuery } from '../prior-period'
+import { useDashboardQuery, type QueryState } from '../useDashboardQuery'
 import { useDashboardFilter } from '../filter-context'
 import { WidgetState } from '../shared/WidgetState'
 import { ChartCard } from '../shared/ChartCard'
@@ -481,60 +482,98 @@ function TirePositionsCard() {
     deps: [filterKey, refreshKey],
   })
 
+  // Second fetch for the symmetric previous period — it only feeds the tooltip
+  // trend lines, so it never holds the widget open: the diagram renders as soon
+  // as the current period lands, and a failed/slow prior fetch degrades the
+  // trend text to "no previous-period data" instead of an error card.
+  const prior = previousPeriodQuery(filter)
+  const priorQuery = useDashboardQuery({
+    fetcher: (signal) =>
+      prior
+        ? dashboardApi.getTirePositions(prior, signal)
+        : Promise.resolve<TirePositions | undefined>(undefined),
+    deps: [filterKey, refreshKey],
+  })
+
+  // Merge into one WidgetState: the diagram gates on the CURRENT fetch only.
+  const merged: QueryState<TirePositions> = {
+    data: query.data,
+    isLoading: query.isLoading,
+    isError: query.isError,
+    error: query.error,
+    loadedAt: query.loadedAt,
+    reload: query.reload,
+  }
+
   return (
     <ChartCard title="Tire Positions" subtitle="Sold units by wheel position">
-      <WidgetState query={query} height={260} emptyMessage="No tire sales in this period">
-        {(positions) => <TireDiagram positions={positions} />}
+      <WidgetState query={merged} height={260} emptyMessage="No tire sales in this period">
+        {(positions) => <TireDiagram positions={positions} previous={priorQuery.data} />}
       </WidgetState>
     </ChartCard>
   )
 }
 
-function TireDiagram({ positions }: { positions: TirePositions }) {
-  // §5: a proper top-down car-outline SVG with explicit front/rear/left/right
-  // labels (front of the vehicle at the top). Each tire is a bottom-anchored
-  // meter — neutral track + primary fill whose height = share of the
-  // best-selling corner — because the counts are usually a near-tie: an
-  // opacity ramp cannot separate 2,858 from 3,098 (95% vs 100% alpha reads
-  // identical), a height difference can. A zero position stays an empty
-  // track so it can't be mistaken for a low-but-real count.
+function TireDiagram({
+  positions,
+  previous,
+}: {
+  positions: TirePositions
+  previous?: TirePositions
+}) {
+  // §5: top-down car outline, front at the top. Each tire is a bottom-anchored
+  // meter whose fill height is that position's share of the period total —
+  // anchored at zero, so it never exaggerates a near-tie the way a min-max
+  // normalization would. A zero position stays an empty track so it can't be
+  // mistaken for a low-but-real count.
   const entries = TIRE_LABELS.map(({ key, side, short }) => ({
     key,
     side,
     short,
     value: positions[key] ?? 0,
   }))
-  const max = Math.max(0, ...entries.map((e) => e.value))
+  const total = entries.reduce((sum, e) => sum + e.value, 0)
+  const average = total / 4
   const leader = entries.reduce((best, e) => (e.value > best.value ? e : best), entries[0])
+  const leaderGap = average > 0 ? ((leader.value - average) / average) * 100 : 0
   const frontTotal = (positions.leftFront ?? 0) + (positions.rightFront ?? 0)
   const rearTotal = (positions.leftRear ?? 0) + (positions.rightRear ?? 0)
+  const leftTotal = (positions.leftFront ?? 0) + (positions.leftRear ?? 0)
+  const rightTotal = (positions.rightFront ?? 0) + (positions.rightRear ?? 0)
 
-  // State the insight, don't repeat the per-tire numbers (they already sit
-  // beside each tire); the value-based sentences keep it a one-liner so it
-  // never wraps out of the card.
+  // Insight above repetition — the per-position numbers already sit beside
+  // each tire; this line carries only the spread and the axle story.
   let caption = 'No tire sales in this period'
-  if (leader.value > 0) {
-    caption = `${leader.side} is the busiest corner at ${formatNumber(leader.value)} units`
+  if (total > 0) {
+    const parts = [`${leader.side} is the busiest corner at ${formatNumber(leader.value)} units`]
+    parts.push(
+      leaderGap >= 0.1
+        ? `top seller runs ${formatPercent(leaderGap)} above the position average`
+        : 'sales are evenly spread across positions',
+    )
     if (frontTotal > 0 && rearTotal > 0 && frontTotal !== rearTotal) {
       const stronger = frontTotal > rearTotal ? 'Front' : 'Rear'
       const weaker = stronger === 'Front' ? 'rear' : 'front'
       const skew = (Math.abs(frontTotal - rearTotal) / Math.min(frontTotal, rearTotal)) * 100
-      caption += ` — ${stronger.toLowerCase()} corners outsell ${weaker.toLowerCase()} by ${formatPercent(skew)}`
+      parts.push(
+        `${stronger.toLowerCase()} corners outsell ${weaker.toLowerCase()} by ${formatPercent(skew)}`,
+      )
     }
+    caption = parts.join(' · ')
   }
 
   const tireGeometry: Record<
     TireKey,
-    { x: number; y: number; labelX: number; labelAnchor: 'end' | 'start' }
+    { x: number; y: number; cx: number; labelX: number; labelAnchor: 'end' | 'start' }
   > = {
-    leftFront: { x: 76, y: 52, labelX: 68, labelAnchor: 'end' },
-    rightFront: { x: 210, y: 52, labelX: 252, labelAnchor: 'start' },
-    leftRear: { x: 76, y: 152, labelX: 68, labelAnchor: 'end' },
-    rightRear: { x: 210, y: 152, labelX: 252, labelAnchor: 'start' },
+    leftFront: { x: 68, cx: 66, y: 52, labelX: 60, labelAnchor: 'end' },
+    rightFront: { x: 218, cx: 254, y: 52, labelX: 260, labelAnchor: 'start' },
+    leftRear: { x: 68, cx: 66, y: 152, labelX: 60, labelAnchor: 'end' },
+    rightRear: { x: 218, cx: 254, y: 152, labelX: 260, labelAnchor: 'start' },
   }
 
   return (
-    <div>
+    <div className="pb-1">
       <div
         className="mx-auto w-full max-w-lg"
         role="img"
@@ -553,15 +592,8 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
               )
             })}
           </defs>
-          {/* Direction cue — front of the vehicle at the top. */}
-          <text
-            x="160"
-            y="14"
-            textAnchor="middle"
-            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
-          >
-            Front
-          </text>
+
+          {/* Direction cue + axle total — front of the vehicle at the top. */}
           <path
             d="M160 34 L160 24 M155 29 L160 24 L165 29"
             fill="none"
@@ -570,48 +602,110 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
             strokeLinecap="round"
             className="text-muted-foreground"
           />
+          <text
+            x="160"
+            y="14"
+            textAnchor="middle"
+            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground tabular-nums"
+          >
+            {`Front · ${formatNumber(frontTotal)}`}
+          </text>
 
-          {/* Car body + cabin glass, viewed from above. */}
-          <rect x="110" y="38" width="100" height="192" rx="30" className="fill-muted stroke-ld" fillOpacity={0.35} strokeWidth="1.5" />
-          <line x1="120" y1="118" x2="200" y2="118" strokeDasharray="4 4" className="stroke-ld" strokeWidth="1" />
-          <line x1="120" y1="142" x2="200" y2="142" strokeDasharray="4 4" className="stroke-ld" strokeWidth="1" />
+          {/* Car body viewed from above; solid axle lines join each wheel pair. */}
+          <rect
+            x="110"
+            y="38"
+            width="100"
+            height="192"
+            rx="30"
+            className="fill-muted stroke-ld"
+            fillOpacity={0.3}
+            strokeWidth="1.5"
+          />
+          <line
+            x1="102"
+            y1="80"
+            x2="218"
+            y2="80"
+            stroke="currentColor"
+            strokeOpacity={0.5}
+            strokeWidth="1.25"
+            className="text-muted-foreground"
+          />
+          <line
+            x1="102"
+            y1="180"
+            x2="218"
+            y2="180"
+            stroke="currentColor"
+            strokeOpacity={0.5}
+            strokeWidth="1.25"
+            className="text-muted-foreground"
+          />
 
+          {/* Side totals (the rotated L/R labels double as side aggregates);
+              front/rear direction cues carry the axle totals. */}
           <text
             x="14"
             y="130"
             textAnchor="middle"
             transform="rotate(-90 14 130)"
-            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground tabular-nums"
           >
-            Left
+            {`Left · ${formatNumber(leftTotal)}`}
           </text>
           <text
             x="306"
             y="130"
             textAnchor="middle"
             transform="rotate(90 306 130)"
-            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground tabular-nums"
           >
-            Right
+            {`Right · ${formatNumber(rightTotal)}`}
           </text>
           <text
             x="160"
             y="250"
             textAnchor="middle"
-            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground"
+            className="fill-current text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground tabular-nums"
           >
-            Rear
+            {`Rear · ${formatNumber(rearTotal)}`}
           </text>
 
-          {entries.map(({ key, short, value }) => {
-            const { x, y, labelX, labelAnchor } = tireGeometry[key]
-            const isZero = !(value > 0)
-            const centerY = y + 28
-            const fillH = isZero || max <= 0 ? 0 : 56 * (value / max)
+          {entries.map(({ key, side, short, value }) => {
+            const { x, cx, y, labelX, labelAnchor } = tireGeometry[key]
+            const share = total > 0 ? (value / total) * 100 : 0
+            const fillH = total > 0 ? 56 * (value / total) : 0
+            const isLeader = key === leader.key && leaderGap >= 0.1
+
+            // Trend vs the symmetric previous period, only when that data landed.
+            const prevValue = previous?.[key]
+            const delta = typeof prevValue === 'number' ? value - prevValue : undefined
+            const deltaPct =
+              typeof prevValue === 'number' && prevValue > 0
+                ? ((value - prevValue) / prevValue) * 100
+                : undefined
+            const trendText =
+              delta === undefined
+                ? ' · no previous-period data'
+                : ` · vs previous period: ${delta >= 0 ? '+' : ''}${formatNumber(delta)} (${
+                    deltaPct === undefined
+                      ? 'n/a'
+                      : `${deltaPct >= 0 ? '+' : ''}${formatPercent(deltaPct)}`
+                  })`
+
+            // Top-seller gap badge — the gap is quantified (+X% vs the average)
+            // so a small edge never reads as a meaningful one. White-on-primary
+            // for contrast. Only when there is an actual spread to show.
+            const badgeText = `+${formatPercent(leaderGap)} vs avg`
+            const badgeWidth = badgeText.length * 4.9 + 12
+            const badgeY = y === 52 ? 113 : 213
+
             return (
               <g key={key}>
-                <title>{`${short} (${key === 'leftFront' || key === 'leftRear' ? 'left' : 'right'}): ${formatNumber(value)} units sold`}</title>
-                {/* Track: same pill in every state so the meter is additive. */}
+                <title>{`${side}: ${formatNumber(value)} units, ${formatPercent(share)} of the period total${trendText}`}</title>
+                {/* Track: borderless in every state — the outline was rendering
+                    as a thin artifact line across the top of each tire. */}
                 <rect
                   x={x}
                   y={y}
@@ -619,12 +713,10 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
                   height={56}
                   rx={9}
                   className="fill-current text-muted-foreground"
-                  fillOpacity={0.12}
-                  stroke="currentColor"
-                  strokeOpacity={0.35}
-                  strokeWidth={1.5}
+                  fillOpacity={0.15}
                 />
-                {/* Bottom-anchored fill, clipped to the pill's rounded corners. */}
+                {/* Bottom-anchored fill = share of the period total, clipped to
+                    the pill's rounded corners. */}
                 {fillH > 0 && (
                   <g clipPath={`url(#tire-clip-${key})`}>
                     <rect
@@ -633,13 +725,13 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
                       width={34}
                       height={fillH}
                       className="fill-current text-primary"
-                      fillOpacity={0.55}
+                      fillOpacity={0.8}
                     />
                   </g>
                 )}
                 <text
                   x={labelX}
-                  y={centerY - 4}
+                  y={y + 24}
                   textAnchor={labelAnchor}
                   className="fill-current text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
                 >
@@ -647,24 +739,40 @@ function TireDiagram({ positions }: { positions: TirePositions }) {
                 </text>
                 <text
                   x={labelX}
-                  y={centerY + 13}
+                  y={y + 41}
                   textAnchor={labelAnchor}
-                  className={cn(
-                    'fill-current text-sm font-bold tabular-nums',
-                    key === leader.key && value > 0 ? 'text-primary' : 'text-dark dark:text-white',
-                  )}
+                  className="fill-current text-sm font-bold tabular-nums text-dark dark:text-white"
                 >
                   {formatNumber(value)}
                 </text>
-                {key === leader.key && value > 0 && (
-                  <text
-                    x={labelX}
-                    y={centerY + 26}
-                    textAnchor={labelAnchor}
-                    className="fill-current text-[9px] font-semibold uppercase tracking-wide text-primary"
-                  >
-                    Top seller
-                  </text>
+                {/* The position's share of the period total beneath the count. */}
+                <text
+                  x={labelX}
+                  y={y + 55}
+                  textAnchor={labelAnchor}
+                  className="fill-current text-[10px] font-medium tabular-nums text-muted-foreground"
+                >
+                  {formatPercent(share)}
+                </text>
+                {isLeader && (
+                  <g>
+                    <rect
+                      x={cx - badgeWidth / 2}
+                      y={badgeY}
+                      width={badgeWidth}
+                      height={15}
+                      rx={7.5}
+                      className="fill-current text-primary"
+                    />
+                    <text
+                      x={cx}
+                      y={badgeY + 11}
+                      textAnchor="middle"
+                      className="fill-white text-[9px] font-semibold uppercase tracking-wide"
+                    >
+                      {badgeText}
+                    </text>
+                  </g>
                 )}
               </g>
             )
