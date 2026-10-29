@@ -88,6 +88,17 @@ export interface DailySale {
   invoiceCount: number
 }
 
+export interface WeeklySale {
+  /** ISO week bounds, e.g. "2024-12-30T00:00:00" / "2025-01-05T00:00:00". */
+  weekStart: string
+  weekEnd: string
+  /** Pre-formatted label, e.g. "Week of Dec 30, 2024". Use it as-is. */
+  label: string
+  netSales: number
+  collected: number
+  invoiceCount: number
+}
+
 /* --------------------------------- Top lists -------------------------------- */
 
 export interface TopProduct {
@@ -215,6 +226,7 @@ export interface OverviewResponse {
   kpi: KpiSection
   yearlySales: YearlySale[]
   monthlySales: MonthlySale[]
+  weeklySales: WeeklySale[]
   dailySales: DailySale[]
   topProducts: TopProduct[]
   topCustomers: TopCustomer[]

@@ -69,9 +69,12 @@ components/dashboards/sales-analytics/
 
 ## Notes
 
-- Trends tabs (Monthly / Yearly / Daily) read from `overview.monthlySales`,
-  `overview.yearlySales` and `overview.dailySales` (see
+- Trends tabs (Monthly / Weekly / Yearly / Daily) read from `overview.monthlySales`,
+  `overview.weeklySales`, `overview.yearlySales` and `overview.dailySales` (see
   [`dashboard-api-report.md`](dashboard-api-report.md) for the shape notes).
+  `weeklySales[].label` ("Week of Dec 30, 2024") is used verbatim in tooltips;
+  the axis thins it to a short date, and the trailing in-progress week gets
+  the same "In progress" annotation as the monthly chart.
 - `sharePercent` is used exactly as the API precomputes it — the dashboard never
   re-sorts or re-aggregates response arrays (the only client-side aggregate is
   the "Other" bucket on the payment donut).

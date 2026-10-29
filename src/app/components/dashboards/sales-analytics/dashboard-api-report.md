@@ -19,6 +19,11 @@ it's up. The typed client lives in [`dashboardApi.ts`](dashboardApi.ts).
    the overview payload for the tabs and the `months`/`years` parameters are not
    exercised. `MonthlySale.label` is used verbatim as the axis category (as
    documented: pre-formatted, e.g. `"Mar 2026"`).
+   **Added by the backend (2026-10)**: `overview.weeklySales` — a `WeeklySale[]`
+   (`weekStart`, `weekEnd`, `label` like `"Week of Dec 30, 2024"`,
+   `netSales`, `collected`, `invoiceCount`). It powers the Weekly tab; the axis
+   thins `label` to a short date while tooltips and the sr-only summary keep
+   the full label.
 
 3. **`GET /api/dashboard/vehicles/top-makes`** returns `NameValue[]` —
    `value` is rendered as the bar height and treated as the vehicle count
