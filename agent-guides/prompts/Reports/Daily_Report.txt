@@ -1,0 +1,67 @@
+#Required Endpoints with sample output
+## 1. Company information: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Daily Report: https://localhost:44352/api/Reports/GetdailyReport?StartDate=03-Oct-2026
+Query Parameter: StartDate Nullable
+[
+  {
+    "date": "10.03.2026",
+    "categoryName": "Accessories",
+    "totalAmount": 0,
+    "paydate": null
+  },
+  {
+    "date": "10.03.2026",
+    "categoryName": "Accessories(S.TAX EXEMPTED)",
+    "totalAmount": 0,
+    "paydate": null
+  },
+  {
+    "date": "10.03.2026",
+    "categoryName": "Adapters",
+    "totalAmount": 0,
+    "paydate": null
+  },]
+
+
+
+# BRS
+1. Under Left Menu Report link, there will be a submenu name Transaction Reports.
+2. Clicking the submenu will open a page to show the Transaction Reports. Existing page header is in \agent-guides\prompts\Reports\Daily_Reports_Header.JPG. But you have the full liberty to design following the industry standard.
+3. If you see the screenshot, there are 6 radio boxes. Selecting each of the radio box will call a separate end point.
+4. First radio button will be selected by default. Lets do the work for first radio button (Daily Report) first. Gradually we will work for other radio buttons one by one. So please design in such way to accommodate other reports later.
+   For Daily Report, there will be option for selecting only one date. please use the datepicker format as in other reports or forms in the project.
+5. Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter following the same design pattern.
+6. There will be three buttons:
+   Show,Download PDF, Export to Excel.
+7. Clicking Show will view report that will be Download as PDF and user can print from that page as well. It will use the end point given in ## 2.
+   Existing PDF Report has been attached herewith \agent-guides\prompts\Reports\Daily_Reports\DailyReport.pdf for your reference.But you have the full liberty to design following the industry standard.
+8. On top of the PDF, there is company information. You will get the information from the api mentioned in 1 above. Use the fields:
+   tbbiBusinessName,tbbi_Address1,tbbi_Address2
+   As this information will be used in all of the reports, please keep it as a common component so that I can attach it to each of the reports. 
+   For your information, I beleive this is already in place (common component), you will get the information from the \agent-guides\prompts\Reports folder.
+   Please follow the other reports to check the format to follow.
+9. Please keep track of everything you are doing in a separate file for future reference.    
+
+
+
+
+
+

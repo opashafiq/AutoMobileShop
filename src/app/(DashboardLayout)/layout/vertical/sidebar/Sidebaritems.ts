@@ -248,6 +248,12 @@ const SidebarContent: MenuItem[] = [
     heading: "Report",
     children: [
       {
+        name: "Transaction Reports",
+        icon: "solar:document-text-linear",
+        id: uniqueId(),
+        url: "/react-tables/report/transaction-reports",
+      },
+      {
         name: "OURP By Category",
         icon: "solar:chart-square-linear",
         id: uniqueId(),
