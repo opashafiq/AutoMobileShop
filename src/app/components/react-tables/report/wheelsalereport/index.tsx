@@ -3,8 +3,10 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
-import { sliceTallImageIntoPdfPages } from '@/app/components/react-tables/shared/pdfPageSlicing'
-import { toPng } from 'html-to-image'
+import {
+  buildVectorReportPdf,
+  specFromTable,
+} from '@/app/components/react-tables/shared/vectorReportPdf'
 import {
   ColumnDef,
   createColumnHelper,
@@ -285,51 +287,28 @@ export default function WheelSaleReport() {
 
   /* ═══════════════════════════════════════════════════════════
      PDF HELPERS
+
+     Vector PDF generation (shared `buildVectorReportPdf`): the
+     hidden print table is parsed into a table spec and drawn
+     with native jsPDF text/lines, so exports stay fast and
+     razor-sharp no matter how many rows the report carries
+     (no more full-report bitmap + page slicing).
      ═══════════════════════════════════════════════════════════ */
 
   const buildPdf = async (): Promise<jsPDF | null> => {
-    const node = printRef.current
-    if (!node) return null
-
-    const PAGE_WIDTH_PX = 816
-
-    const wrapper = document.createElement('div')
-    wrapper.style.position = 'fixed'
-    wrapper.style.left = '-99999px'
-    wrapper.style.top = '0'
-    wrapper.style.width = `${PAGE_WIDTH_PX}px`
-    wrapper.style.background = '#ffffff'
-    document.body.appendChild(wrapper)
-
-    const clone = node.cloneNode(true) as HTMLDivElement
-    clone.style.width = `${PAGE_WIDTH_PX}px`
-    clone.style.maxWidth = `${PAGE_WIDTH_PX}px`
-    clone.style.minWidth = `${PAGE_WIDTH_PX}px`
-    clone.style.boxSizing = 'border-box'
-    wrapper.appendChild(clone)
-
-    try {
-      const dataUrl = await toPng(clone, {
-        quality: 1.0,
-        pixelRatio: 1,
-        backgroundColor: '#ffffff',
-        width: PAGE_WIDTH_PX,
-        height: clone.scrollHeight,
-        cacheBust: true,
-      })
-
-      const pdf = new jsPDF({ unit: 'in', format: 'letter', orientation: 'portrait' })
-      /* Slice into pages via the shared helper: single-page images pass
-         through whole; multi-page cuts align to table-row boundaries so
-         no row is cropped in half between pages. */
-      await sliceTallImageIntoPdfPages(pdf, dataUrl, clone)
-      return pdf
-    } catch (err) {
-      console.error('PDF generation failed:', err)
-      return null
-    } finally {
-      document.body.removeChild(wrapper)
-    }
+    const tableNode = printRef.current?.querySelector('table')
+    if (!tableNode) return null
+    return buildVectorReportPdf({
+      title: 'Wheel Sale Report',
+      subtitle:
+        [
+          query?.from ? `From: ${toApiDate(query.from)}` : '',
+          query?.to ? `To: ${toApiDate(query.to)}` : '',
+        ]
+          .filter(Boolean)
+          .join(' | ') || undefined,
+      table: specFromTable(tableNode),
+    })
   }
 
   const handlePrint = async () => {

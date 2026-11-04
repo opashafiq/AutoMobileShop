@@ -644,10 +644,10 @@ export default function TransactionReports() {
   const PDF_BOLD_SUB: Partial<Styles> = { fontStyle: 'bold', fillColor: [248, 250, 252] } // slate-50
   const PDF_BOLD_RIGHT: Partial<Styles> = { fontStyle: 'bold', halign: 'right' }
 
-  /** From/To (or single Date) line printed under the title. */
+  /** From/To (or single Date) detail line printed under the title (centered, muted). */
   const pdfDateLine = query && activeReport.dateMode !== 'none' && (query.from || query.to)
     ? activeReport.dateMode === 'range'
-      ? `From: ${query.from ? toLongDate(query.from) : '—'}   To: ${query.to ? toLongDate(query.to) : '—'}`
+      ? `From: ${query.from ? toLongDate(query.from) : '—'} | To: ${query.to ? toLongDate(query.to) : '—'}`
       : `Date: ${toLongDate(query.from)}`
     : ''
 
@@ -791,7 +791,7 @@ export default function TransactionReports() {
           ? buildInvoiceDataTable()
           : buildGenericTable()
 
-    return buildVectorReportPdf({ title: activeReport.pdfTitle ?? activeReport.label, dateLine: pdfDateLine, table })
+    return buildVectorReportPdf({ title: activeReport.pdfTitle ?? activeReport.label, subtitle: pdfDateLine, table })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeReport, query, pdfCheckGroups, pdfInvoiceRows, filteredData, activeColumns])
 

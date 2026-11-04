@@ -134,3 +134,12 @@ same layout data (per-day groups, day totals + grand total, invoice detail
 rows, On Credit totals footer) in via `VectorPdfTableSpec`. Smoke test: ~870
 rows ? 29 pages in ~400ms at 373KB. Excel/CSV export untouched; the hidden
 print node remains only for browser Ctrl+P printing.
+
+Rollout note: the same migration now covers the list report pages — Tire Sale,
+Wheel Sale, Sale Summary, Total OURP, OURP By Category and Customer Details.
+Their `buildPdf` parses the hidden print `<table>` into a spec via
+`buildVectorReportPdf` + `specFromTable` (shared/vectorReportPdf.ts), which
+reads cell text, spans, bold/align/fill and column widths from the live node,
+so each page was a ~20-line change. `pdfPageSlicing.ts` + `html-to-image`
+remain only for the single-invoice print views (invoice-print, layaway-print,
+Invoice-detail), which render short documents.

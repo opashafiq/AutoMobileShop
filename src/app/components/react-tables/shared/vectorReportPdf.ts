@@ -18,7 +18,7 @@
    ═══════════════════════════════════════════════════════════ */
 
 import jsPDF from 'jspdf'
-import { autoTable, RowInput, Styles } from 'jspdf-autotable'
+import { autoTable, CellDef, Color, RowInput, Styles } from 'jspdf-autotable'
 import { getApiUrl, getFetcher } from '@/app/api/globalFetcher'
 import { format as formatDateFn } from 'date-fns'
 
@@ -66,8 +66,8 @@ export interface VectorPdfTableSpec {
 export interface VectorPdfOptions {
   /** Report title, printed centered under the company block (e.g. "CHECK REGISTER") */
   title: string
-  /** Pre-built date line, e.g. "From: October 01, 2025    To: November 04, 2026" */
-  dateLine?: string
+  /** Italic-ish detail line under the title, e.g. "From: 2025-10-01 | To: 2026-11-04 | Category: allgemein" */
+  subtitle?: string
   table: VectorPdfTableSpec
 }
 
@@ -174,12 +174,14 @@ export async function buildVectorReportPdf(options: VectorPdfOptions): Promise<j
   pdf.setTextColor(INK[0], INK[1], INK[2])
   pdf.text(options.title.toUpperCase(), MARGIN_X + CONTENT_W / 2, y, { align: 'center' })
 
-  /* ── Date line (From / To or single Date) ── */
-  if (options.dateLine) {
-    y += 24
-    pdf.setFont('helvetica', 'bold')
-    pdf.setFontSize(10.5)
-    pdf.text(options.dateLine, MARGIN_X, y)
+  /* ── Subtitle line (From / To, category, etc.) ── */
+  if (options.subtitle) {
+    y += 20
+    pdf.setFont('helvetica', 'normal')
+    pdf.setFontSize(9.5)
+    pdf.setTextColor(MUTED[0], MUTED[1], MUTED[2])
+    pdf.text(options.subtitle, MARGIN_X + CONTENT_W / 2, y, { align: 'center' })
+    y += 6
   }
   y += 18
 
@@ -223,4 +225,110 @@ export async function buildVectorReportPdf(options: VectorPdfOptions): Promise<j
   })
 
   return pdf
+}
+
+/* ═══════════════════════════════════════════════════════════
+   DOM TABLE → SPEC CONVERTER
+
+   Most report pages already render a hidden print `<table>`
+   (the same node the browser Ctrl+P path uses). This converter
+   reads that live node — cell text, col/row spans, bold weight,
+   right/left alignment, slate row fills and per-column widths —
+   so a report page can migrate to vector PDFs without
+   re-describing its layout, and the PDF always matches what
+   the print view would produce. `getComputedStyle`/rects work
+   on the offscreen node because it is laid out (absolutely
+   positioned, not `display: none`).
+   ═══════════════════════════════════════════════════════════ */
+
+/**
+ * `rgb(241, 245, 249)`-style computed color → autotable fill
+ * (white/transparent skipped). Transparent cells compute as
+ * `rgba(0, 0, 0, 0)` — the alpha MUST be read, otherwise every
+ * unfilled cell would be painted black. Semi-transparent fills
+ * are blended against the white page so e.g. `bg-white/60`
+ * doesn't come out too dark.
+ */
+function fillFromComputedColor(color: string): Color | undefined {
+  const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:\s*,\s*([\d.]+))?\)/)
+  if (!match) return undefined
+  const r = Number(match[1])
+  const g = Number(match[2])
+  const b = Number(match[3])
+  const alpha = match[4] === undefined ? 1 : Number(match[4])
+  if (alpha < 0.05) return undefined // fully transparent (the default background)
+  if (r > 250 && g > 250 && b > 250) return undefined // white / nearly white
+  if (alpha < 1) {
+    /* Blend onto the white page: c' = c·a + 255·(1−a) */
+    const blend = (c: number): number => Math.round(c * alpha + 255 * (1 - alpha))
+    return [blend(r), blend(g), blend(b)]
+  }
+  return [r, g, b]
+}
+
+/** Read one `<td>`/`<th>` into an autotable cell (text, spans, style) */
+function cellToDef(cell: HTMLTableCellElement): CellDef {
+  const computed = getComputedStyle(cell)
+
+  /* Block children (meta/notes divs) preserve their line breaks */
+  const blocks = Array.from(cell.children)
+  const text = blocks.length
+    ? blocks.map((el) => el.textContent?.replace(/\u00a0/g, ' ').trim() ?? '').filter(Boolean).join('\n')
+    : cell.textContent?.replace(/\u00a0/g, ' ').trim() ?? ''
+
+  const styles: Partial<Styles> = {
+    halign:
+      computed.textAlign === 'right' || computed.textAlign === 'end'
+        ? 'right'
+        : computed.textAlign === 'center'
+          ? 'center'
+          : 'left',
+  }
+
+  /* font-bold / font-semibold (≥600) render bold; font-medium stays normal */
+  const weight = Number(computed.fontWeight) || 400
+  if (weight >= 600) styles.fontStyle = 'bold'
+
+  const fill = fillFromComputedColor(computed.backgroundColor)
+  if (fill) styles.fillColor = fill
+
+  return {
+    content: text,
+    colSpan: cell.colSpan > 1 ? cell.colSpan : undefined,
+    rowSpan: cell.rowSpan > 1 ? cell.rowSpan : undefined,
+    styles,
+  }
+}
+
+/**
+ * Convert a hidden print `<table>` into a `VectorPdfTableSpec`.
+ * Column widths are measured from the first row (816px-wide node)
+ * and scaled onto the PDF content width so proportions match.
+ */
+export function specFromTable(table: HTMLTableElement): VectorPdfTableSpec {
+  const head = table.tHead ? Array.from(table.tHead.rows).map((row) => Array.from(row.cells).map(cellToDef)) : []
+  const body = Array.from(table.tBodies)
+    .flatMap((tbody) => Array.from(tbody.rows))
+    .map((row) => Array.from(row.cells).map(cellToDef))
+  /* Totals footers append after the body so they print on the final page */
+  const foot = table.tFoot ? Array.from(table.tFoot.rows).map((row) => Array.from(row.cells).map(cellToDef)) : []
+
+  const columnStyles: VectorPdfTableSpec['columnStyles'] = {}
+  const firstRow = table.rows.item(0)
+  if (firstRow) {
+    /* Spread any colspanning measure cell equally across its columns */
+    const widthsPx: number[] = []
+    Array.from(firstRow.cells).forEach((cell) => {
+      const share = cell.getBoundingClientRect().width / cell.colSpan
+      for (let i = 0; i < cell.colSpan; i++) widthsPx.push(share)
+    })
+    const totalPx = widthsPx.reduce((sum, w) => sum + w, 0)
+    if (totalPx > 0 && widthsPx.length > 0) {
+      widthsPx.forEach((wPx, i) => {
+        columnStyles[i] = { cellWidth: Math.max((wPx / totalPx) * CONTENT_W, 4) }
+      })
+    }
+  }
+
+  return { head, body: [...body, ...foot], columnStyles }
 }
