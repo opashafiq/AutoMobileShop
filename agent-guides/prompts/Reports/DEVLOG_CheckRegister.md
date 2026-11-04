@@ -115,3 +115,22 @@ company header / `Print Date & Time` footer all mirror it.
 ## Remaining (future phases)
 - Invoice Data, On Credit â€” still "(soon)" placeholders, following the same
   registry + column config + endpoint branch pattern.
+
+---
+
+## 2026-11-04 — PDF export migrated from raster to vector
+
+Show PDF / PDF Export no longer screenshot the hidden print DOM (`toPng` +
+`sliceTallImageIntoPdfPages`). A full Check Register (~870 rows ˜ 25-30 pages)
+made the old pipeline render one giant 816px PNG and re-encode every page
+slice, so exports took seconds and the text was only screen resolution (blurry
+when zoomed).
+
+Now `src/app/components/react-tables/shared/vectorReportPdf.ts` builds native
+jsPDF output via `jspdf-autotable` (new dependency): company header block,
+title, date line, auto-paginated table with repeated header rows and a Print
+Date & Time footer on every page. `transactionreports/index.tsx` feeds the
+same layout data (per-day groups, day totals + grand total, invoice detail
+rows, On Credit totals footer) in via `VectorPdfTableSpec`. Smoke test: ~870
+rows ? 29 pages in ~400ms at 373KB. Excel/CSV export untouched; the hidden
+print node remains only for browser Ctrl+P printing.

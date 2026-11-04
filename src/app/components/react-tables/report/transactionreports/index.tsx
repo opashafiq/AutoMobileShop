@@ -3,9 +3,12 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
-import { sliceTallImageIntoPdfPages } from '@/app/components/react-tables/shared/pdfPageSlicing'
 import { format as formatDateFn } from 'date-fns'
-import { toPng } from 'html-to-image'
+import {
+  buildVectorReportPdf,
+  VectorPdfTableSpec,
+} from '@/app/components/react-tables/shared/vectorReportPdf'
+import type { Styles } from 'jspdf-autotable'
 import {
   ColumnDef,
   createColumnHelper,
@@ -625,55 +628,172 @@ export default function TransactionReports() {
 
   /* ═══════════════════════════════════════════════════════════
      PDF HELPERS
+
+     Vector PDF generation (shared `buildVectorReportPdf`): every
+     page is drawn with jsPDF text/lines instead of a DOM
+     screenshot, so exports stay fast and razor-sharp no matter
+     how many rows the report carries (~870 in a full Check
+     Register range). Each report key describes its table via a
+     `VectorPdfTableSpec` — rows, colspan cells and per-column
+     alignment/width — while the shared helper draws the company
+     header block, title, date line and pagination.
      ═══════════════════════════════════════════════════════════ */
 
-  const buildPdf = async (): Promise<jsPDF | null> => {
-    const node = printRef.current
-    if (!node) return null
+  const PDF_RIGHT: Partial<Styles> = { halign: 'right' }
+  const PDF_BOLD_HEAD: Partial<Styles> = { fontStyle: 'bold', fillColor: [241, 245, 249] } // slate-100
+  const PDF_BOLD_SUB: Partial<Styles> = { fontStyle: 'bold', fillColor: [248, 250, 252] } // slate-50
+  const PDF_BOLD_RIGHT: Partial<Styles> = { fontStyle: 'bold', halign: 'right' }
 
-    const PAGE_WIDTH_PX = 816
+  /** From/To (or single Date) line printed under the title. */
+  const pdfDateLine = query && activeReport.dateMode !== 'none' && (query.from || query.to)
+    ? activeReport.dateMode === 'range'
+      ? `From: ${query.from ? toLongDate(query.from) : '—'}   To: ${query.to ? toLongDate(query.to) : '—'}`
+      : `Date: ${toLongDate(query.from)}`
+    : ''
 
-    const wrapper = document.createElement('div')
-    wrapper.style.position = 'fixed'
-    wrapper.style.left = '-99999px'
-    wrapper.style.top = '0'
-    wrapper.style.width = `${PAGE_WIDTH_PX}px`
-    wrapper.style.background = '#ffffff'
-    document.body.appendChild(wrapper)
+  /** One cell of a vector PDF row: plain value or a wrapped colspan/style cell */
+  type PdfCell = string | number | { content: string; colSpan?: number; styles?: Partial<Styles> }
 
-    const clone = node.cloneNode(true) as HTMLDivElement
-    clone.style.width = `${PAGE_WIDTH_PX}px`
-    clone.style.maxWidth = `${PAGE_WIDTH_PX}px`
-    clone.style.minWidth = `${PAGE_WIDTH_PX}px`
-    clone.style.boxSizing = 'border-box'
-    wrapper.appendChild(clone)
-
-    try {
-      const dataUrl = await toPng(clone, {
-        quality: 1.0,
-        pixelRatio: 1,
-        backgroundColor: '#ffffff',
-        width: PAGE_WIDTH_PX,
-        height: clone.scrollHeight,
-        cacheBust: true,
-      })
-
-      const pdf = new jsPDF({ unit: 'in', format: 'letter', orientation: 'portrait' })
-
-      /* Slice into pages via the shared helper: single-page images pass
-         through whole; multi-page cuts align to table-row boundaries so
-         no row is cropped in half between pages (group-header and detail
-         rows are protected via the `pdf-group-header` / `pdf-detail-row`
-         classes used by the Check Register / Invoice Data print tables). */
-      await sliceTallImageIntoPdfPages(pdf, dataUrl, clone)
-      return pdf
-    } catch (err) {
-      console.error('PDF generation failed:', err)
-      return null
-    } finally {
-      document.body.removeChild(wrapper)
+  /* ── Check Register: rows grouped per date with day totals + grand total ── */
+  const buildCheckRegisterTable = (): VectorPdfTableSpec => {
+    const body: PdfCell[][] = []
+    pdfCheckGroups?.groups.forEach((group) => {
+      /* Date banner spans both columns */
+      body.push([
+        {
+          content: `DATE : ${formatReportDate(group.date)}`,
+          colSpan: 2,
+          styles: PDF_BOLD_HEAD,
+        },
+      ])
+      group.rows.forEach((r) =>
+        body.push([r.name, { content: formatMoney(r.amount), styles: PDF_RIGHT }])
+      )
+      /* Per-day total closes the group */
+      body.push([
+        { content: 'Total', styles: PDF_BOLD_SUB },
+        { content: formatMoney(group.total), styles: PDF_BOLD_RIGHT },
+      ])
+    })
+    body.push([
+      { content: 'GRAND TOTAL', styles: PDF_BOLD_HEAD },
+      { content: formatMoney(pdfCheckGroups?.grandTotal ?? 0), styles: PDF_BOLD_RIGHT },
+    ])
+    return {
+      head: [['Description of Transaction', 'Amount']],
+      body,
+      columnStyles: { 1: { cellWidth: 100, halign: 'right' } },
     }
   }
+
+  /* ── Invoice Data: chronological rows plus a detail line per invoice ── */
+  const buildInvoiceDataTable = (): VectorPdfTableSpec => {
+    const body: PdfCell[][] = []
+    pdfInvoiceRows.forEach((row) => {
+      const meta = [
+        row.vehicle || row.model || row.year
+          ? `Vehicle: ${[row.vehicle, row.model, row.year].filter(Boolean).join(' ')}`
+          : '',
+        row.companyName ? `Company: ${row.companyName}` : '',
+        row.taxNumber ? `Tax ID: ${row.taxNumber}` : '',
+        row.license ? `License: ${row.license}` : '',
+        row.odometer ? `Odometer: ${row.odometer}` : '',
+        row.treadDepth ? `Tread Depth: ${row.treadDepth}` : '',
+        row.address ? `Address: ${row.address}` : '',
+      ]
+        .filter(Boolean)
+        .join('   •   ')
+      body.push([
+        String(row.invoiceId ?? '') || '—',
+        formatReportDate(row.invoiceDate) || '—',
+        row.name || '—',
+        row.phone || '—',
+        row.tbip_Paymentname || '—',
+        typeof row.total === 'number' ? formatMoney(row.total) : '—',
+      ])
+      if (meta || row.notes) {
+        body.push([
+          {
+            content: [meta, row.notes].filter(Boolean).join('\n'),
+            colSpan: 6,
+            styles: { fillColor: PDF_BOLD_SUB.fillColor },
+          },
+        ])
+      }
+    })
+    return {
+      head: [['Transaction ID', 'Date', 'Customer Name', 'Phone', 'Payment Type', 'Amount']],
+      body,
+    }
+  }
+
+  /* ── Default: one column per `activeColumns` entry (+ On Credit totals footer) ── */
+  const buildGenericTable = (): VectorPdfTableSpec => {
+    const body: PdfCell[][] = []
+    filteredData.forEach((row) => {
+      body.push(
+        activeColumns.map((c): PdfCell => {
+          const value = row[c.key]
+          const isNumeric = c.type !== 'text' && c.type !== 'date'
+          const text = c.type === 'date'
+            ? formatReportDate(value) || '—'
+            : c.type === 'text'
+              ? String(value ?? '') || '—'
+              : typeof value === 'number'
+                ? formatMoney(value)
+                : '—'
+          return { content: text, styles: isNumeric ? PDF_RIGHT : undefined }
+        })
+      )
+    })
+
+    if (activeReport.key === 'onCredit' && filteredData.length > 0) {
+      /* Pending Amount totals footer: summarize the amount columns */
+      body.push([
+        {
+          content: `Totals (${filteredData.length} records)`,
+          colSpan: 5,
+          styles: PDF_BOLD_HEAD,
+        },
+        ...(['tbim_Total', 'tbim_PaidAmt', 'pendingAmount', 'payInfo'] as const).map(
+          (key): PdfCell => ({
+            content:
+              activeColumns.find((c) => c.key === key)?.type === 'currency'
+                ? formatMoney(filteredData.reduce((sum, row) => sum + numOrZero(row[key]), 0))
+                : '',
+            styles: PDF_BOLD_RIGHT,
+          })
+        ),
+      ])
+    }
+
+    return {
+      head: [activeColumns.map((c) => c.header)],
+      body,
+      /* Numeric columns hug the right edge like the print table */
+      columnStyles: Object.fromEntries(
+        activeColumns.map((c, i) => [
+          i,
+          c.type !== 'text' && c.type !== 'date'
+            ? { halign: 'right', cellWidth: 70 }
+            : {},
+        ])
+      ),
+    }
+  }
+
+  const buildPdf = useCallback(async (): Promise<jsPDF | null> => {
+    if (!activeReport.implemented) return null
+    const table =
+      activeReport.key === 'checkRegister' && pdfCheckGroups
+        ? buildCheckRegisterTable()
+        : activeReport.key === 'invoiceData'
+          ? buildInvoiceDataTable()
+          : buildGenericTable()
+
+    return buildVectorReportPdf({ title: activeReport.pdfTitle ?? activeReport.label, dateLine: pdfDateLine, table })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeReport, query, pdfCheckGroups, pdfInvoiceRows, filteredData, activeColumns])
 
   const handlePrint = async () => {
     const pdf = await buildPdf()
