@@ -37,7 +37,7 @@ const PostDate = () => {
               )}
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {publishDate ? format(publishDate, "PPP") : <span>Pick a date</span>}
+              {publishDate ? format(publishDate, "MM-dd-yyyy") : <span>Pick a date</span>}
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-auto p-0" align="start">

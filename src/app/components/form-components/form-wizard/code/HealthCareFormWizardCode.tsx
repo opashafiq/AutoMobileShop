@@ -231,7 +231,7 @@ function HealthCareFormWizardCode() {
                               )}
                             >
                               {field.value ? (
-                                format(field.value, "PPP")
+                                format(field.value, "MM-dd-yyyy")
                               ) : (
                                 <span>Pick a date</span>
                               )}
@@ -247,7 +247,6 @@ function HealthCareFormWizardCode() {
                             disabled={(date) =>
                               date > new Date() || date < new Date("1900-01-01")
                             }
-                            captionLayout="dropdown"
                             fromYear={1900}
                             toYear={new Date().getFullYear()}
                             initialFocus

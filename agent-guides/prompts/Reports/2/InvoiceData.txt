@@ -1,0 +1,80 @@
+#Required Endpoints with sample output
+## 1. Company information: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Invoice Data Report: api/Reports/GetInvoiceData?StartDate=01-Jan-2025&EndDate=31-Jan-2025
+Query Parameter: StartDate Nullable,EndDate Nullable
+[
+{
+    "tbip_Paymentname": "CC Amex",
+    "invoiceId": 7294735964,
+    "name": "MICHAEL LANDY HAILE ",
+    "invoiceDate": "01.02.2025",
+    "total": 751.26,
+    "companyName": null,
+    "taxNumber": null,
+    "phone": "281-797-2051",
+    "address": null,
+    "vehicle": "TOYOTA",
+    "model": "TUNDRA",
+    "year": "2019",
+    "odometer": "116049",
+    "treadDepth": null,
+    "license": "LTM 2118",
+    "notes": null
+  },
+  {
+    "tbip_Paymentname": "Debit Card",
+    "invoiceId": 83923179119,
+    "name": "VICENTE ARGUETA",
+    "invoiceDate": "01.02.2025",
+    "total": 74.15,
+    "companyName": null,
+    "taxNumber": null,
+    "phone": "832-473-1581",
+    "address": null,
+    "vehicle": null,
+    "model": null,
+    "year": null,
+    "odometer": null,
+    "treadDepth": null,
+    "license": null,
+    "notes": "CARRY OUT"
+  },]
+
+
+
+# BRS
+1. Under Left Menu Report link, there is a submenu name Transaction Reports already developed by you. You will work on 5th radio button (Invoice Data) here.
+2. For This radio button, there will be option for selecting From And To Date. please use the datepicker format as in the report already.
+3. Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter following the same design pattern.
+4. There are search and show button, and Export ComboBox already. Use them as you did for the first radio button already
+5. the end point for search,show,download functionality is given in ## 2.
+   Existing PDF Report has been attached herewith \agent-guides\prompts\Reports\InvoiceData.pdf for your reference.But you have the full liberty to design following the industry standard.
+6. On top of the PDF, there is company information. You will get the information from the api mentioned in 1 above. Use the fields:
+   tbbiBusinessName,tbbi_Address1,tbbi_Address2
+   You can follow the actions you did in the daily report for generating this header.
+   Please follow the other reports to check the format to follow.
+7. Please keep track of everything you are doing in a separate file for future reference.    
+
+
+
+
+
+

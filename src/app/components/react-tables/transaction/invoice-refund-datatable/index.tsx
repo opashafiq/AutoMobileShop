@@ -576,7 +576,7 @@ export default function InvoiceRefundDatatable() {
                       variant='outline'
                       className='h-10 w-full justify-start text-left font-normal text-ld border-ld'
                     >
-                      {startDate ? format(startDate, 'dd/MM/yyyy') : <span className='text-darklink'>Pick date</span>}
+                      {startDate ? format(startDate, 'MM-dd-yyyy') : <span className='text-darklink'>Pick date</span>}
                       <Icon icon='solar:calendar-linear' width={16} height={16} className='ml-auto shrink-0 opacity-60' />
                     </Button>
                   </PopoverTrigger>
@@ -598,7 +598,7 @@ export default function InvoiceRefundDatatable() {
                       variant='outline'
                       className='h-10 w-full justify-start text-left font-normal text-ld border-ld'
                     >
-                      {endDate ? format(endDate, 'dd/MM/yyyy') : <span className='text-darklink'>Pick date</span>}
+                      {endDate ? format(endDate, 'MM-dd-yyyy') : <span className='text-darklink'>Pick date</span>}
                       <Icon icon='solar:calendar-linear' width={16} height={16} className='ml-auto shrink-0 opacity-60' />
                     </Button>
                   </PopoverTrigger>

@@ -1,5 +1,37 @@
 # Development Log — Transaction Reports / Daily Report
 
+## Date: 2026-11-03 (rev. 5 — multi-page slice cropped rows at page breaks)
+
+> **Rev. 5 note:** with multi-page reports, the last table row on a page was
+> cropped in half (screenshot evidence: "Mag Lugs" row cut at the bottom of
+> page 1). Root cause: the canvas-slice paginator cut the tall screenshot at a
+> fixed page height, which can land mid-row. Fix in `buildPdf()`:
+> - Table-row bottoms of the still-mounted print clone are measured
+>   (`tr.getBoundingClientRect()`) before slicing; CSS px map 1:1 to screenshot
+>   px because `pixelRatio` is 1.
+> - Each page cut (except the final page) is pulled up to the nearest row bottom,
+>   so a slice always ends exactly after a complete row (≥ 40 px of content kept).
+> - Two orphan guards: a cut never leaves a `DATE :` group-header row alone at
+>   the bottom of a Check Register page (rows marked `pdf-group-header`), and
+>   never separates an Invoice Data main row from its detail row (rows marked
+>   `pdf-detail-row`).
+> - Effect: pages end slightly earlier than the theoretical full height, leaving
+>   a small white margin at the bottom — standard pagination behaviour.
+> Applies to every report (Daily, Daily Range, Weekly, Check Register, Pending
+> Amount, Invoice Data) since they share the same `buildPdf()` pipeline.
+>
+> **Rev. 5 extension (same date):** the row-boundary logic was extracted into the
+> shared helper `src/app/components/react-tables/shared/pdfPageSlicing.ts`
+> (`sliceTallImageIntoPdfPages(pdf, dataUrl, clone)`) and applied repo-wide —
+> the same mid-row cropping bug existed in 8 more copies of the slice loop:
+> - `report/tiresalereport`, `report/wheelsalereport`, `report/ourpbycategory`,
+>   `report/salesummaryreport`, `report/totalourpreport`, `report/customerdetails`
+>   (legacy report pages)
+> - `transaction/layaway-print` and `transaction/invoice-print` (print views)
+> Each file's inline single/multi-page branch was replaced with a call to the
+> `transactionreports` fix + orphan guards. Validation across all 10 touched
+> files: `npx tsc --noEmit` passes; eslint 0 errors (warnings all pre-existing).
+
 ## Date: 2026-11-01 (rev. 4 — fixed blank pages 2+ in multi-page PDF)
 
 > **Rev. 4 note:** with enough rows to exceed one PDF page, pages 2+ rendered blank.
@@ -85,6 +117,10 @@ can be added one by one later.
 - Radio options other than Daily Report show a "(soon)" label and a notice; they are selected but
   render a placeholder until their endpoints and column configs are added
 - Date-Range mode (`dateMode: 'range'`) already renders From/To pickers, kept for the date-range reports
+
+> **Update 2026-11-03:** the second radio option, **Daily Report (Date Range)**, is now
+> implemented — see `DEVLOG_Daily_Report_Range.md`. Remaining "(soon)" options are
+> Weekly/Monthly, Check Register, Invoice Data and On Credit.
 
 ## Response Shape (Daily Report)
 ```

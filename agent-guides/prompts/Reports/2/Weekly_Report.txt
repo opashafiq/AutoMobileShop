@@ -1,0 +1,70 @@
+#Required Endpoints with sample output
+## 1. Company information: api/CompanyInfo/WOLogo
+
+{
+  "id": 1,
+  "tbbiBusinessName": "Apollo Tire & Wheel",
+  "tbbi_Address1": "3722 NASA ROAD 1 (NASA PKWY)\r\n",
+  "tbbi_Address2": "SEABROOK TEXAS 77586",
+  "tbbi_City": null,
+  "tbbi_State": null,
+  "tbbi_ZipCode": null,
+  "tbbi_Country": null,
+  "tbbi_Phone": null,
+  "tbbi_Fax": null,
+  "tbbi_Email": "test@yahoo.com",
+  "userName": "emp111",
+  "setDate": "2016-12-20T20:41:00"
+}
+      
+	  
+## 2. Weekly Report: api/Reports/GetdailyWeeklyReport?StartDate=01-Jan-2025&EndDate=31-Jan-2025
+Query Parameter: StartDate Nullable,EndDate Nullable
+[
+{
+    "date": "01.02.2025",
+    "credit": 0,
+    "cash": 122.98,
+    "creditCardVisa": 132.79,
+    "debitcard": 3201.81,
+    "checkElectReg": 0,
+    "creditCardMaster": 15,
+    "creditCardDisc": 0,
+    "creditCardAmex": 1855.41,
+    "crestFinance": 0,
+    "progFinance": 0
+  },
+  {
+    "date": "01.03.2025",
+    "credit": 0,
+    "cash": 0,
+    "creditCardVisa": 499.95,
+    "debitcard": 1190.83,
+    "checkElectReg": 0,
+    "creditCardMaster": 16.24,
+    "creditCardDisc": 28,
+    "creditCardAmex": 0,
+    "crestFinance": 0,
+    "progFinance": 0
+  },]
+
+
+
+# BRS
+1. Under Left Menu Report link, there is a submenu name Transaction Reports already developed by you. You will work on 3rd radio button (Weekly/Monthly Report) here.
+2. For This radio button, there will be option for selecting From And To Date. please use the datepicker format as in the report already.
+3. Data will be shown in a datatable. the datatable will be as like all other datatable used in this project with funnel filter following the same design pattern.
+4. There are search and show button, and Export ComboBox already. Use them as you did for the first radio button already
+5. the end point for search,show,download functionality is given in ## 2.
+   Existing PDF Report has been attached herewith \agent-guides\prompts\Reports\WeeklyReport.pdf for your reference.But you have the full liberty to design following the industry standard.
+6. On top of the PDF, there is company information. You will get the information from the api mentioned in 1 above. Use the fields:
+   tbbiBusinessName,tbbi_Address1,tbbi_Address2
+   You can follow the actions you did in the daily report for generating this header.
+   Please follow the other reports to check the format to follow.
+7. Please keep track of everything you are doing in a separate file for future reference.    
+
+
+
+
+
+

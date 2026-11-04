@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useState, useRef } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
+import { sliceTallImageIntoPdfPages } from '@/app/components/react-tables/shared/pdfPageSlicing'
 import { toPng } from 'html-to-image'
 import {
   ColumnDef,
@@ -264,43 +265,10 @@ export default function CustomerDetailsReport() {
       })
 
       const pdf = new jsPDF({ unit: 'in', format: 'letter', orientation: 'portrait' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgProps = pdf.getImageProperties(dataUrl)
-      const pdfHeight = (imgProps.height / imgProps.width) * pageWidth
-
-      if (pdfHeight <= pageHeight) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pdfHeight)
-      } else {
-        /* Multi-page: slice the tall screenshot into per-page canvases.
-           jsPDF does not reliably render images with negative y offsets
-           (slices beyond page 1 come out blank), so each page gets its
-           own slice drawn at 0,0. */
-        const img = new Image()
-        img.src = dataUrl
-        await img.decode()
-
-        const sliceHeightPx = Math.floor(pageHeight * (imgProps.width / pageWidth))
-        let rendered = 0
-        let isFirstPage = true
-        while (rendered < imgProps.height) {
-          const sliceH = Math.min(sliceHeightPx, imgProps.height - rendered)
-          const sliceCanvas = document.createElement('canvas')
-          sliceCanvas.width = imgProps.width
-          sliceCanvas.height = sliceH
-          const ctx = sliceCanvas.getContext('2d')
-          if (!ctx) break
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
-          ctx.drawImage(img, 0, rendered, imgProps.width, sliceH, 0, 0, imgProps.width, sliceH)
-
-          if (!isFirstPage) pdf.addPage()
-          const slicePdfHeight = (sliceH / imgProps.width) * pageWidth
-          pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, slicePdfHeight)
-          rendered += sliceH
-          isFirstPage = false
-        }
-      }
+      /* Slice into pages via the shared helper: single-page images pass
+         through whole; multi-page cuts align to table-row boundaries so
+         no row is cropped in half between pages. */
+      await sliceTallImageIntoPdfPages(pdf, dataUrl, clone)
       return pdf
     } catch (err) {
       console.error('PDF generation failed:', err)

@@ -3,6 +3,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import jsPDF from 'jspdf'
+import { sliceTallImageIntoPdfPages } from '@/app/components/react-tables/shared/pdfPageSlicing'
 import { format as formatDateFn } from 'date-fns'
 import { toPng } from 'html-to-image'
 import {
@@ -85,32 +86,42 @@ const REPORTS: ReportDef[] = [
   {
     key: 'dailyRange',
     label: 'Daily Report (Date Range)',
-    implemented: false,
+    implemented: true,
     dateMode: 'range',
+    pdfTitle: 'Daily Report (Date Range)',
+    fileBase: 'Daily_Report_Range',
   },
   {
     key: 'weeklyMonthly',
     label: 'Weekly/Monthly Report',
-    implemented: false,
+    implemented: true,
     dateMode: 'range',
+    pdfTitle: 'Weekly/Monthly Report',
+    fileBase: 'Weekly_Report',
   },
   {
     key: 'checkRegister',
     label: 'Check Register',
-    implemented: false,
+    implemented: true,
     dateMode: 'range',
+    pdfTitle: 'Check Register',
+    fileBase: 'Check_Register',
   },
   {
     key: 'invoiceData',
     label: 'Invoice Data',
-    implemented: false,
+    implemented: true,
     dateMode: 'range',
+    pdfTitle: 'Invoice Data',
+    fileBase: 'Invoice_Data',
   },
   {
     key: 'onCredit',
     label: 'On Credit',
-    implemented: false,
+    implemented: true,
     dateMode: 'range',
+    pdfTitle: 'Pending Amount Report',
+    fileBase: 'Pending_Amount',
   },
 ]
 
@@ -119,7 +130,7 @@ const REPORTS: ReportDef[] = [
 interface ColumnConfig {
   key: string
   header: string
-  type: 'text' | 'number' | 'currency'
+  type: 'text' | 'number' | 'currency' | 'date'
   /** Show the funnel column filter in the table header */
   filterable?: boolean
   /** Minimum width in pixels for the cell */
@@ -128,8 +139,95 @@ interface ColumnConfig {
 
 const DAILY_COLUMNS: ColumnConfig[] = [
   { key: 'categoryName', header: 'Description', type: 'text', filterable: true, minWidth: 250 },
-  { key: 'totalAmount', header: 'Amount', type: 'currency', filterable: true },
+  { key: 'totalAmount', header: 'Amount', type: 'currency', filterable: true, minWidth: 120 },
   { key: 'paydate', header: 'Pay Date', type: 'text', filterable: true },
+]
+
+/* Same layout as the Daily Report: the selected date range is printed in the
+   report header (and summary chips) instead of being repeated on every row. */
+const DAILY_RANGE_COLUMNS: ColumnConfig[] = [
+  { key: 'categoryName', header: 'Description', type: 'text', filterable: true, minWidth: 250 },
+  { key: 'totalAmount', header: 'Amount', type: 'currency', filterable: true, minWidth: 120 },
+  { key: 'paydate', header: 'Pay Date', type: 'text', filterable: true },
+]
+
+/* Weekly/Monthly Report — one row per day, one amount column per payment method.
+   `Grand Total` is not returned by the API; it is computed client-side as the sum
+   of the ten amount columns (WEEKLY_AMOUNT_KEYS) during data normalization. */
+const WEEKLY_COLUMNS: ColumnConfig[] = [
+  { key: 'date', header: 'Date', type: 'date', filterable: true, minWidth: 110 },
+  { key: 'credit', header: 'Credit', type: 'currency', filterable: true },
+  { key: 'cash', header: 'Cash', type: 'currency', filterable: true },
+  { key: 'creditCardVisa', header: 'CreditCard Visa', type: 'currency', filterable: true, minWidth: 110 },
+  { key: 'debitcard', header: 'DEBIT CARD', type: 'currency', filterable: true, minWidth: 105 },
+  { key: 'checkElectReg', header: 'CHECKElect Reg', type: 'currency', filterable: true, minWidth: 115 },
+  { key: 'creditCardMaster', header: 'CreditCard Master', type: 'currency', filterable: true, minWidth: 125 },
+  { key: 'creditCardDisc', header: 'CreditCard Disc', type: 'currency', filterable: true, minWidth: 120 },
+  { key: 'creditCardAmex', header: 'CreditCard Amex', type: 'currency', filterable: true, minWidth: 118 },
+  { key: 'crestFinance', header: 'Finance 1-K', type: 'currency', filterable: true, minWidth: 95 },
+  { key: 'progFinance', header: 'Finance 1-P', type: 'currency', filterable: true, minWidth: 95 },
+  { key: 'grandTotal', header: 'Grand Total', type: 'currency', filterable: true, minWidth: 100 },
+]
+
+const WEEKLY_AMOUNT_KEYS = [
+  'credit',
+  'cash',
+  'creditCardVisa',
+  'debitcard',
+  'checkElectReg',
+  'creditCardMaster',
+  'creditCardDisc',
+  'creditCardAmex',
+  'crestFinance',
+  'progFinance',
+] as const
+
+/* Check Register — one flat row per payment (date + payment name + amount).
+   The datatable shows these flat rows; the PDF groups them per date with a
+   per-day subtotal, following the legacy CheckRegister.pdf layout. */
+const CHECK_REGISTER_COLUMNS: ColumnConfig[] = [
+  { key: 'tbip_Date', header: 'Date', type: 'date', filterable: true, minWidth: 110 },
+  { key: 'tbpn_PaymentName', header: 'Description', type: 'text', filterable: true, minWidth: 220 },
+  { key: 'tbip_PayAmt', header: 'Amount', type: 'currency', filterable: true, minWidth: 120 },
+]
+
+/* On Credit (Pending Amount Report) — one row per pending / partially paid invoice.
+   `pendingAmount` (Total − Paid Amount) is not returned by the API; it is derived
+   during data normalization, like the Weekly report's Grand Total. There is no
+   legacy PDF for this report, so it renders the shared striped table with a
+   totals footer row. */
+const PENDING_COLUMNS: ColumnConfig[] = [
+  { key: 'tbim_InvDate', header: 'Invoice Date', type: 'date', filterable: true, minWidth: 110 },
+  { key: 'tbim_InvoiceIdRad', header: 'Invoice No', type: 'text', filterable: true, minWidth: 100 },
+  { key: 'tbim_Name', header: 'Customer', type: 'text', filterable: true, minWidth: 150 },
+  { key: 'tbti_ComName', header: 'Company', type: 'text', filterable: true, minWidth: 140 },
+  { key: 'tbip_Paymentname', header: 'Payment Method(s)', type: 'text', filterable: true, minWidth: 150 },
+  { key: 'tbim_Total', header: 'Total', type: 'currency', filterable: true, minWidth: 110 },
+  { key: 'tbim_PaidAmt', header: 'Paid Amount', type: 'currency', filterable: true, minWidth: 110 },
+  { key: 'pendingAmount', header: 'Pending Amount', type: 'currency', filterable: true, minWidth: 120 },
+  { key: 'payInfo', header: 'Status', type: 'text', filterable: true },
+]
+
+/* Invoice Data — one row per invoice with customer, vehicle and payment details.
+   Wide table with horizontal scroll; the PDF renders a legacy-style card layout
+   (main row + vehicle / notes detail row) instead of this flat table. */
+const INVOICE_DATA_COLUMNS: ColumnConfig[] = [
+  { key: 'invoiceDate', header: 'Date', type: 'date', filterable: true, minWidth: 105 },
+  { key: 'invoiceId', header: 'Transaction ID', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'name', header: 'Customer Name', type: 'text', filterable: true, minWidth: 150 },
+  { key: 'total', header: 'Amount', type: 'currency', filterable: true, minWidth: 100 },
+  { key: 'tbip_Paymentname', header: 'Payment Type', type: 'text', filterable: true, minWidth: 130 },
+  { key: 'companyName', header: 'Company Name', type: 'text', filterable: true, minWidth: 130 },
+  { key: 'vehicle', header: 'Vehicle Make', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'model', header: 'Model', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'year', header: 'Year', type: 'text', filterable: true },
+  { key: 'license', header: 'License', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'phone', header: 'Phone', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'address', header: 'Address', type: 'text', filterable: true, minWidth: 140 },
+  { key: 'odometer', header: 'Odometer', type: 'text', filterable: true, minWidth: 90 },
+  { key: 'taxNumber', header: 'Tax Id', type: 'text', filterable: true, minWidth: 110 },
+  { key: 'treadDepth', header: 'Tread Depth', type: 'text', filterable: true, minWidth: 90 },
+  { key: 'notes', header: 'Note', type: 'text', filterable: true, minWidth: 220 },
 ]
 
 /* ── Types ── */
@@ -156,6 +254,43 @@ function toLongDate(isoDate: string): string {
   return formatDateFn(date, 'MMMM dd, yyyy')
 }
 
+/** Backend dotted date → ISO (`yyyy-mm-dd`) so sorting works.
+ *  Auto-detects `dd.mm.yyyy` vs `mm.dd.yyyy`: when one component exceeds 12 it
+ *  must be the day. `mode` resolves ambiguous dates (both ≤ 12): Daily/Weekly
+ *  endpoints use `dd.mm.yyyy`; the Check Register / Pending Amount report
+ *  responses are proven `mm.dd.yyyy` (e.g. `06.21.2025`, `04.13.2017`). */
+function apiDottedDateToIso(
+  value: string,
+  mode: 'dmy' | 'mdy' = 'dmy'
+): string {
+  const parts = value.split('.')
+  if (parts.length === 3 && parts.every((p) => /^\d+$/.test(p))) {
+    const [a, b, yyyy] = parts
+    if (parseInt(a, 10) > 12) {
+      return `${yyyy}-${b.padStart(2, '0')}-${a.padStart(2, '0')}` // a = day
+    }
+    if (parseInt(b, 10) > 12) {
+      return `${yyyy}-${a.padStart(2, '0')}-${b.padStart(2, '0')}` // b = day
+    }
+    return mode === 'mdy'
+      ? `${yyyy}-${a.padStart(2, '0')}-${b.padStart(2, '0')}`
+      : `${yyyy}-${b.padStart(2, '0')}-${a.padStart(2, '0')}`
+  }
+  return value
+}
+
+/** Coerce an API numeric cell to a usable number. */
+function numOrZero(value: string | number): number {
+  return typeof value === 'number' ? value : Number(value ?? 0) || 0
+}
+
+/** ISO date → `dd-MMM-yyyy` (the format used in the legacy report PDFs). */
+function formatReportDate(value: string | number): string {
+  const s = String(value ?? '')
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s
+  return formatDateFn(new Date(`${s}T00:00:00`), 'dd-MMM-yyyy')
+}
+
 function toInputDate(date: Date): string {
   const yyyy = date.getFullYear()
   const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -165,6 +300,15 @@ function toInputDate(date: Date): string {
 
 function formatMoney(value: number): string {
   return value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+}
+
+/** Filename suffix for a report: single date or `from_to` for a date range. */
+function fileSuffix(report: ReportDef, from: string, to: string): string {
+  if (report.dateMode === 'range') {
+    const parts = [from, to].filter(Boolean).map(toApiDate)
+    return parts.length > 0 ? `_${parts.join('_')}` : ''
+  }
+  return from ? `_${toApiDate(from)}` : ''
 }
 
 const dash = <span className='text-gray-300 dark:text-gray-600'>—</span>
@@ -181,7 +325,24 @@ export default function TransactionReports() {
     [activeKey]
   )
   const activeColumns = useMemo(
-    () => (activeReport.key === 'daily' ? DAILY_COLUMNS : []),
+    () => {
+      switch (activeReport.key) {
+        case 'daily':
+          return DAILY_COLUMNS
+        case 'dailyRange':
+          return DAILY_RANGE_COLUMNS
+        case 'weeklyMonthly':
+          return WEEKLY_COLUMNS
+        case 'checkRegister':
+          return CHECK_REGISTER_COLUMNS
+        case 'onCredit':
+          return PENDING_COLUMNS
+        case 'invoiceData':
+          return INVOICE_DATA_COLUMNS
+        default:
+          return []
+      }
+    },
     [activeReport]
   )
 
@@ -212,6 +373,46 @@ export default function TransactionReports() {
         const base = getApiUrl('/api/Reports/GetdailyReport')
         return query.from ? `${base}?StartDate=${toApiDate(query.from)}` : base
       }
+      case 'dailyRange': {
+        const base = getApiUrl('/api/Reports/GetdailyReportRange')
+        const params = new URLSearchParams()
+        if (query.from) params.set('StartDate', toApiDate(query.from))
+        if (query.to) params.set('EndDate', toApiDate(query.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+      }
+      case 'weeklyMonthly': {
+        const base = getApiUrl('/api/Reports/GetdailyWeeklyReport')
+        const params = new URLSearchParams()
+        if (query.from) params.set('StartDate', toApiDate(query.from))
+        if (query.to) params.set('EndDate', toApiDate(query.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+      }
+      case 'checkRegister': {
+        const base = getApiUrl('/api/Reports/GetCheckRegisterReport')
+        const params = new URLSearchParams()
+        if (query.from) params.set('StartDate', toApiDate(query.from))
+        if (query.to) params.set('EndDate', toApiDate(query.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+      }
+      case 'onCredit': {
+        const base = getApiUrl('/api/Reports/GetPendingAmount')
+        const params = new URLSearchParams()
+        if (query.from) params.set('StartDate', toApiDate(query.from))
+        if (query.to) params.set('EndDate', toApiDate(query.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+      }
+      case 'invoiceData': {
+        const base = getApiUrl('/api/Reports/GetInvoiceData')
+        const params = new URLSearchParams()
+        if (query.from) params.set('StartDate', toApiDate(query.from))
+        if (query.to) params.set('EndDate', toApiDate(query.to))
+        const qs = params.toString()
+        return qs ? `${base}?${qs}` : base
+      }
       default:
         return null
     }
@@ -224,10 +425,49 @@ export default function TransactionReports() {
     { refreshInterval: 0 }
   )
 
-  const reportData = useMemo(
-    () => (Array.isArray(rawReportData) ? rawReportData : []),
-    [rawReportData]
-  )
+  const reportData = useMemo(() => {
+    if (!Array.isArray(rawReportData)) return []
+    if (activeReport.key === 'weeklyMonthly') {
+      /* Normalize the Weekly Report rows: backend `dd.mm.yyyy` dates become
+         ISO (sortable / displayable) and the per-row Grand Total is derived
+         by summing the ten payment-method amounts. */
+      return rawReportData.map((row) => {
+        const grandTotal = WEEKLY_AMOUNT_KEYS.reduce(
+          (sum, key) => sum + (typeof row[key] === 'number' ? (row[key] as number) : Number(row[key] ?? 0)),
+          0
+        )
+        return { ...row, date: apiDottedDateToIso(String(row.date ?? '')), grandTotal }
+      }) as ReportRow[]
+    }
+    if (activeReport.key === 'checkRegister') {
+      /* Normalize the Check Register rows: backend `mm.dd.yyyy` dates (e.g.
+         `06.21.2025`) become ISO so the date column sorts and prints correctly. */
+      return rawReportData.map((row) => ({
+        ...row,
+        tbip_Date: apiDottedDateToIso(String(row.tbip_Date ?? ''), 'mdy'),
+      })) as ReportRow[]
+    }
+    if (activeReport.key === 'onCredit') {
+      /* Normalize the Pending Amount rows: backend `mm.dd.yyyy` invoice dates
+         (e.g. `04.13.2017`) become ISO, and the pending amount is derived as
+         Total − Paid Amount (not returned by the API). */
+      return rawReportData.map((row) => ({
+        ...row,
+        tbim_InvDate: apiDottedDateToIso(String(row.tbim_InvDate ?? ''), 'mdy'),
+        pendingAmount: numOrZero(row.tbim_Total) - numOrZero(row.tbim_PaidAmt),
+      })) as ReportRow[]
+    }
+    if (activeReport.key === 'invoiceData') {
+      /* Normalize the Invoice Data rows: backend `mm.dd.yyyy` invoice dates
+         (e.g. `01.02.2025` = January 02 with `StartDate=01-Jan-2025`) become
+         ISO so the date column sorts and prints correctly. */
+      return rawReportData.map((row) => ({
+        ...row,
+        invoiceDate: apiDottedDateToIso(String(row.invoiceDate ?? ''), 'mdy'),
+      })) as ReportRow[]
+    }
+    return rawReportData
+  }, [rawReportData, activeReport])
 
   /* ── Table state ── */
   const [sorting, setSorting] = useState<SortingState>([])
@@ -262,6 +502,9 @@ export default function TransactionReports() {
             const value = info.getValue()
             if (cfg.type === 'text') {
               return <p className='text-sm'>{dashIfEmpty(value)}</p>
+            }
+            if (cfg.type === 'date') {
+              return <p className='text-sm'>{dashIfEmpty(formatReportDate(value))}</p>
             }
             if (cfg.type === 'number') {
               return <p className='text-sm text-right font-medium'>{dashIfEmpty(value)}</p>
@@ -300,6 +543,48 @@ export default function TransactionReports() {
     [reportData, columnFilters]
   )
 
+  /* ── Check Register PDF groups: filtered rows grouped per date (ascending)
+     with a per-day subtotal, following the legacy CheckRegister.pdf layout. ── */
+  const pdfCheckGroups = useMemo(() => {
+    if (activeReport.key !== 'checkRegister') return null
+    const byDate = new Map<string, ReportRow[]>()
+    filteredData.forEach((row) => {
+      const key = String(row.tbip_Date ?? '')
+      if (!byDate.has(key)) byDate.set(key, [])
+      byDate.get(key)?.push(row)
+    })
+    let grandTotal = 0
+    const groups = Array.from(byDate.keys())
+      .sort()
+      .map((date) => {
+        const rows = (byDate.get(date) ?? [])
+          .map((row) => ({
+            name: String(row.tbpn_PaymentName ?? ''),
+            amount:
+              typeof row.tbip_PayAmt === 'number'
+                ? (row.tbip_PayAmt as number)
+                : Number(row.tbip_PayAmt ?? 0),
+          }))
+          .sort((x, y) => x.name.localeCompare(y.name))
+        const total = rows.reduce((sum, r) => sum + r.amount, 0)
+        grandTotal += total
+        return { date, rows, total }
+      })
+    return { groups, grandTotal }
+  }, [filteredData, activeReport])
+
+  /* ── Invoice Data PDF rows: filtered rows sorted per date (then ID) for the
+     legacy-style chronological card layout. ── */
+  const pdfInvoiceRows = useMemo(() => {
+    if (activeReport.key !== 'invoiceData') return []
+    return [...filteredData].sort((x, y) => {
+      const dx = String(x.invoiceDate ?? '')
+      const dy = String(y.invoiceDate ?? '')
+      if (dx !== dy) return dx < dy ? -1 : 1
+      return String(x.invoiceId ?? '').localeCompare(String(y.invoiceId ?? ''))
+    })
+  }, [filteredData, activeReport])
+
   /* ── Table instance ── */
   const table = useReactTable({
     data: filteredData,
@@ -327,7 +612,15 @@ export default function TransactionReports() {
 
   /* ── Search: apply the draft inputs to the query and fetch ── */
   const handleShow = () => {
-    setQuery({ from: inputFrom, to: inputTo })
+    let from = inputFrom
+    let to = inputTo
+    /* Guard against an inverted range coming from the two pickers */
+    if (from && to && from > to) {
+      ;[from, to] = [to, from]
+      setInputFrom(from)
+      setInputTo(to)
+    }
+    setQuery({ from, to })
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -366,43 +659,13 @@ export default function TransactionReports() {
       })
 
       const pdf = new jsPDF({ unit: 'in', format: 'letter', orientation: 'portrait' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgProps = pdf.getImageProperties(dataUrl)
-      const pdfHeight = (imgProps.height / imgProps.width) * pageWidth
 
-      if (pdfHeight <= pageHeight) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pageWidth, pdfHeight)
-      } else {
-        /* Multi-page: slice the tall screenshot into per-page canvases.
-           jsPDF does not reliably render images with negative y offsets
-           (slices beyond page 1 come out blank), so each page gets its
-           own slice drawn at 0,0. */
-        const img = new Image()
-        img.src = dataUrl
-        await img.decode()
-
-        const sliceHeightPx = Math.floor(pageHeight * (imgProps.width / pageWidth))
-        let rendered = 0
-        let isFirstPage = true
-        while (rendered < imgProps.height) {
-          const sliceH = Math.min(sliceHeightPx, imgProps.height - rendered)
-          const sliceCanvas = document.createElement('canvas')
-          sliceCanvas.width = imgProps.width
-          sliceCanvas.height = sliceH
-          const ctx = sliceCanvas.getContext('2d')
-          if (!ctx) break
-          ctx.fillStyle = '#ffffff'
-          ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height)
-          ctx.drawImage(img, 0, rendered, imgProps.width, sliceH, 0, 0, imgProps.width, sliceH)
-
-          if (!isFirstPage) pdf.addPage()
-          const slicePdfHeight = (sliceH / imgProps.width) * pageWidth
-          pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', 0, 0, pageWidth, slicePdfHeight)
-          rendered += sliceH
-          isFirstPage = false
-        }
-      }
+      /* Slice into pages via the shared helper: single-page images pass
+         through whole; multi-page cuts align to table-row boundaries so
+         no row is cropped in half between pages (group-header and detail
+         rows are protected via the `pdf-group-header` / `pdf-detail-row`
+         classes used by the Check Register / Invoice Data print tables). */
+      await sliceTallImageIntoPdfPages(pdf, dataUrl, clone)
       return pdf
     } catch (err) {
       console.error('PDF generation failed:', err)
@@ -422,7 +685,7 @@ export default function TransactionReports() {
   const handleDownloadPdf = async () => {
     const pdf = await buildPdf()
     if (!pdf) return
-    const suffix = query?.from ? `_${toApiDate(query.from)}` : ''
+    const suffix = query ? fileSuffix(activeReport, query.from, query.to) : ''
     pdf.save(`${activeReport.fileBase ?? 'Report'}${suffix}.pdf`)
   }
 
@@ -435,14 +698,32 @@ export default function TransactionReports() {
     const rows = filteredData.map((row) =>
       activeColumns.map((c) => {
         const value = row[c.key]
+        if (c.type === 'date') return formatReportDate(value)
+        /* Large numeric IDs exceed Excel's 11-digit display limit and render
+           as scientific notation (e.g. 1.00939E+11). Export the Invoice Data
+           Transaction ID as a text-formula cell so Excel shows it verbatim. */
+        if (activeReport.key === 'invoiceData' && c.key === 'invoiceId') {
+          return `="${String(value ?? '').replace(/"/g, '""')}"`
+        }
         return typeof value === 'number' ? value : String(value ?? '')
       })
     )
+
+    /* Range reports open with a header block carrying the selected period,
+       mirroring the From/To line printed on their PDFs. */
+    const headerLines: string[] = []
+    if (activeReport.dateMode === 'range' && query) {
+      headerLines.push(`"${activeReport.pdfTitle ?? activeReport.label}"`)
+      if (query.from) headerLines.push(`"From","${toApiDate(query.from)}"`)
+      if (query.to) headerLines.push(`"To","${toApiDate(query.to)}"`)
+      headerLines.push('')
+    }
 
     const BOM = '﻿'
     const csvContent =
       BOM +
       [
+        ...headerLines,
         headers.join(','),
         ...rows.map((r) =>
           r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')
@@ -453,7 +734,7 @@ export default function TransactionReports() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    const suffix = query?.from ? `_${toApiDate(query.from)}` : ''
+    const suffix = query ? fileSuffix(activeReport, query.from, query.to) : ''
     link.setAttribute('download', `${activeReport.fileBase ?? 'Report'}${suffix}.csv`)
     document.body.appendChild(link)
     link.click()
@@ -567,8 +848,7 @@ export default function TransactionReports() {
               <div className='flex items-center gap-2 rounded-md border border-dashed border-ld bg-white/60 dark:bg-dark/40 px-4 py-3'>
                 <Icon icon='solar:info-circle-linear' width={20} height={20} className='text-primary shrink-0' />
                 <p className='text-sm text-muted dark:text-lightgray'>
-                  {activeReport.label} will be available in a future phase — the Daily Report is
-                  implemented first.
+                  {activeReport.label} will be available in a future phase.
                 </p>
               </div>
             ) : (
@@ -637,7 +917,13 @@ export default function TransactionReports() {
                     </span>
                     {query?.from && (
                       <span className='rounded-md bg-white border border-ld px-3 py-1 dark:bg-dark/40'>
-                        Date: <strong className='text-dark dark:text-white'>{toLongDate(query.from)}</strong>
+                        {activeReport.dateMode === 'range' ? 'From' : 'Date'}:{' '}
+                        <strong className='text-dark dark:text-white'>{toLongDate(query.from)}</strong>
+                      </span>
+                    )}
+                    {activeReport.dateMode === 'range' && query?.to && (
+                      <span className='rounded-md bg-white border border-ld px-3 py-1 dark:bg-dark/40'>
+                        To: <strong className='text-dark dark:text-white'>{toLongDate(query.to)}</strong>
                       </span>
                     )}
                   </div>
@@ -668,9 +954,10 @@ export default function TransactionReports() {
                               columnKey && filterableColumns.includes(columnKey)
                             /* Numeric columns right-align the header so the
                                sort/filter icons and label hug the same edge
-                               as the right-aligned cell values */
-                            const isNumericHeader =
-                              activeColumns.find((c) => c.key === columnKey)?.type !== 'text'
+                               as the right-aligned cell values (date columns
+                               stay left-aligned like the legacy report) */
+                            const colType = activeColumns.find((c) => c.key === columnKey)?.type
+                            const isNumericHeader = colType === 'number' || colType === 'currency'
 
                             return (
                               <th
@@ -726,7 +1013,7 @@ export default function TransactionReports() {
                       ) : query === null ? (
                         <tr>
                           <td colSpan={visibleColumns.length} className='text-center py-8 text-muted dark:text-gray-500'>
-                            Select a report above and press Show to load data.
+                            Select a date and press Search to load data.
                           </td>
                         </tr>
                       ) : table.getRowModel().rows.length === 0 ? (
@@ -739,14 +1026,23 @@ export default function TransactionReports() {
                             key={row.id}
                             index={index}
                             className='border-b last:border-b-0 border-ld hover:bg-lightprimary transition-colors duration-200'>
-                            {row.getVisibleCells().map((cell) => (
-                              <td
-                                key={cell.id}
-                                className={`px-4 py-2 ${cell.column.id === 'categoryName' ? 'min-w-[250px]' : ''}`}
-                                style={cell.column.id === 'totalAmount' ? { minWidth: 120 } : undefined}>
-                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                              </td>
-                            ))}
+                            {row.getVisibleCells().map((cell) => {
+                              const cellConfig = activeColumns.find(
+                                (c) => c.key === cell.column.id
+                              )
+                              return (
+                                <td
+                                  key={cell.id}
+                                  className='px-4 py-2'
+                                  style={
+                                    cellConfig?.minWidth
+                                      ? { minWidth: cellConfig.minWidth }
+                                      : undefined
+                                  }>
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                              )
+                            })}
                           </AnimatedTableRow>
                         ))
                       )}
@@ -826,21 +1122,136 @@ export default function TransactionReports() {
             </h2>
           </div>
 
-          {activeReport.implemented && query?.from && (
+          {activeReport.implemented && query && (query.from || query.to) && (
             <div className='mb-3'>
-              <p className='text-sm text-slate-900'>
-                <strong>Date:</strong> <strong className='ms-4'>{toLongDate(query.from)}</strong>
-              </p>
+              {activeReport.dateMode === 'range' ? (
+                <p className='text-sm text-slate-900'>
+                  <strong>From:</strong>
+                  <strong className='ms-2'>
+                    {query.from ? toLongDate(query.from) : '—'}
+                  </strong>
+                  <strong className='ms-6'>To:</strong>
+                  <strong className='ms-2'>{query.to ? toLongDate(query.to) : '—'}</strong>
+                </p>
+              ) : (
+                <p className='text-sm text-slate-900'>
+                  <strong>Date:</strong> <strong className='ms-4'>{toLongDate(query.from)}</strong>
+                </p>
+              )}
             </div>
           )}
 
-          <table className='w-full text-xs border-collapse'>
+          {activeReport.key === 'invoiceData' ? (
+            /* Invoice Data: legacy-style chronological card layout — a main
+               row with the transaction essentials plus a detail row with the
+               vehicle / contact metadata and the note, mirroring the legacy
+               InvoiceData.pdf rich-row formatting. */
+            <table className='w-full text-xs border-collapse'>
+              <thead>
+                <tr className='bg-slate-100'>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>Transaction ID</th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>Date</th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>Customer Name</th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>Phone</th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>Payment Type</th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-right'>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pdfInvoiceRows.map((row, idx) => {
+                  const meta = [
+                    row.vehicle || row.model || row.year
+                      ? `Vehicle: ${[row.vehicle, row.model, row.year].filter(Boolean).join(' ')}`
+                      : '',
+                    row.companyName ? `Company: ${row.companyName}` : '',
+                    row.taxNumber ? `Tax ID: ${row.taxNumber}` : '',
+                    row.license ? `License: ${row.license}` : '',
+                    row.odometer ? `Odometer: ${row.odometer}` : '',
+                    row.treadDepth ? `Tread Depth: ${row.treadDepth}` : '',
+                    row.address ? `Address: ${row.address}` : '',
+                  ]
+                    .filter(Boolean)
+                    .join('   •   ')
+                  return (
+                    <React.Fragment key={idx}>
+                      <tr className='bg-white'>
+                        <td className='border border-slate-300 px-2 py-1 font-medium'>{row.invoiceId || '—'}</td>
+                        <td className='border border-slate-300 px-2 py-1'>
+                          {formatReportDate(row.invoiceDate) || '—'}
+                        </td>
+                        <td className='border border-slate-300 px-2 py-1'>{row.name || '—'}</td>
+                        <td className='border border-slate-300 px-2 py-1'>{row.phone || '—'}</td>
+                        <td className='border border-slate-300 px-2 py-1'>{row.tbip_Paymentname || '—'}</td>
+                        <td className='border border-slate-300 px-2 py-1 text-right'>
+                          {typeof row.total === 'number' ? formatMoney(row.total) : '—'}
+                        </td>
+                      </tr>
+                      {(meta || row.notes) && (
+                        <tr className='pdf-detail-row bg-slate-50'>
+                          <td colSpan={6} className='border border-slate-300 px-2 py-1'>
+                            {meta && <div>{meta}</div>}
+                            {row.notes && <div className='text-slate-500'>{row.notes}</div>}
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          ) : activeReport.key === 'checkRegister' && pdfCheckGroups ? (
+            /* Check Register: legacy layout — a `DISCRIPTION OF TRANSACTION /
+               AMOUNT` table where rows are grouped per date, each group closed
+               with its day total and the whole report with a grand total. */
+            <table className='w-full text-xs border-collapse'>
+              <thead>
+                <tr className='bg-slate-100'>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-left'>
+                    Description of Transaction
+                  </th>
+                  <th className='border border-slate-300 px-2 py-1.5 font-semibold text-right w-36'>
+                    Amount
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {pdfCheckGroups.groups.map((group) => (
+                  <React.Fragment key={group.date}>
+                    <tr className='pdf-group-header'>
+                      <td colSpan={2} className='border border-slate-300 bg-slate-100 px-2 py-1 font-semibold'>
+                        DATE : {formatReportDate(group.date)}
+                      </td>
+                    </tr>
+                    {group.rows.map((r, i) => (
+                      <tr key={i} className='bg-white'>
+                        <td className='border border-slate-300 px-2 py-1'>{r.name}</td>
+                        <td className='border border-slate-300 px-2 py-1 text-right'>{formatMoney(r.amount)}</td>
+                      </tr>
+                    ))}
+                    <tr className='bg-slate-50'>
+                      <td className='border border-slate-300 px-2 py-1 font-semibold'>Total</td>
+                      <td className='border border-slate-300 px-2 py-1 text-right font-semibold'>
+                        {formatMoney(group.total)}
+                      </td>
+                    </tr>
+                  </React.Fragment>
+                ))}
+                <tr className='bg-slate-100'>
+                  <td className='border border-slate-300 px-2 py-1.5 font-bold uppercase tracking-wide'>Grand Total</td>
+                  <td className='border border-slate-300 px-2 py-1.5 text-right font-bold'>
+                    {formatMoney(pdfCheckGroups.grandTotal)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          ) : (
+            <table className='w-full text-xs border-collapse'>
             <thead>
               <tr className='bg-slate-100'>
                 {activeColumns.map((c) => (
                   <th
                     key={c.key}
-                    className={`border border-slate-300 px-2 py-1.5 font-semibold ${c.type === 'text' ? 'text-left' : 'text-right'}`}>
+                    className={`border border-slate-300 px-2 py-1.5 font-semibold ${c.type === 'text' || c.type === 'date' ? 'text-left' : 'text-right'}`}>
                     {c.header}
                   </th>
                 ))}
@@ -854,19 +1265,39 @@ export default function TransactionReports() {
                     return (
                       <td
                         key={c.key}
-                        className={`border border-slate-300 px-2 py-1 ${c.type === 'text' ? '' : 'text-right'} ${c.key === 'categoryName' ? 'font-medium' : ''}`}>
-                        {c.type === 'text'
-                          ? value || '—'
-                          : typeof value === 'number'
-                            ? formatMoney(value)
-                            : '—'}
+                        className={`border border-slate-300 px-2 py-1 ${c.type === 'text' || c.type === 'date' ? '' : 'text-right'} ${c.type === 'text' || c.type === 'date' ? 'font-medium' : ''}`}>
+                        {c.type === 'date'
+                          ? formatReportDate(value) || '—'
+                          : c.type === 'text'
+                            ? value || '—'
+                            : typeof value === 'number'
+                              ? formatMoney(value)
+                              : '—'}
                       </td>
                     )
                   })}
                 </tr>
               ))}
+              {activeReport.key === 'onCredit' && filteredData.length > 0 && (
+                /* Pending Amount totals footer: summarize the amount columns */
+                <tr className='bg-slate-100'>
+                  {/* five label columns (date, invoice, customer, company,
+                      payment methods) ahead of the amount columns */}
+                  <td colSpan={5} className='border border-slate-300 px-2 py-1.5 font-bold uppercase tracking-wide'>
+                    Totals ({filteredData.length} records)
+                  </td>
+                  {['tbim_Total', 'tbim_PaidAmt', 'pendingAmount', 'payInfo'].map((key) => (
+                    <td key={key} className='border border-slate-300 px-2 py-1.5 font-bold'>
+                      {activeColumns.find((c) => c.key === key)?.type === 'currency'
+                        ? formatMoney(filteredData.reduce((sum, row) => sum + numOrZero(row[key]), 0))
+                        : ''}
+                    </td>
+                  ))}
+                </tr>
+              )}
             </tbody>
           </table>
+          )}
 
           {/* Print timestamp footer, as in the legacy report */}
           <div className='mt-6 text-xs text-slate-600'>

@@ -82,7 +82,7 @@ const BasicHeaderForm = () => {
                     'w-full justify-start text-left font-normal hover:bg-transparent text-ld hover:text-ld',
                     !date && 'text-muted-foreground hover:text-muted-foreground'
                   )}>
-                  {date ? format(date, 'PPP') : <span>Pick a date</span>}
+                  {date ? format(date, 'MM-dd-yyyy') : <span>Pick a date</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className='w-auto p-0' align='start'>

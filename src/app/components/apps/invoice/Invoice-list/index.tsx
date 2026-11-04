@@ -291,7 +291,7 @@ function InvoiceList() {
                 variant="outline"
                 className={`w-full justify-start text-left font-normal border border-ld hover:bg-transparent hover:border-primary ${!createdDateFilter ? "text-muted-foreground hover:text-muted-foreground" : "text-ld hover:text-ld"}`}
               >
-                {createdDateFilter ? format(createdDateFilter, "PPP") : "Created Date"}
+                {createdDateFilter ? format(createdDateFilter, "MM-dd-yyyy") : "Created Date"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
@@ -313,7 +313,7 @@ function InvoiceList() {
                 className={`w-full justify-start text-left font-normal border border-ld hover:bg-transparent hover:border-primary ${!dueDateFilter ? "text-muted-foreground hover:text-muted-foreground" : "text-ld hover:text-ld"
                   }`}
               >
-                {dueDateFilter ? format(dueDateFilter, "PPP") : "Due Date"}
+                {dueDateFilter ? format(dueDateFilter, "MM-dd-yyyy") : "Due Date"}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">

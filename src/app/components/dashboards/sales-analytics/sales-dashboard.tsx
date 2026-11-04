@@ -204,7 +204,7 @@ function DashboardHeader({ query }: { query: QueryState<OverviewResponse> }) {
 /**
  * Custom-range date pickers, committed to the shared filter 400 ms after a
  * change (§5.2). Same look and behaviour as the transaction pages' pickers
- * (outline button → Calendar popover, `dd/MM/yyyy` display) with the same
+ * (outline button → Calendar popover, `MM-dd-yyyy` display) with the same
  * ISO `yyyy-MM-dd` value contract — no native browser date inputs.
  */
 function DateRangeControls() {
@@ -268,7 +268,7 @@ function DateButton({
           aria-label={label}
         >
           {selected ? (
-            format(selected, 'dd/MM/yyyy')
+            format(selected, 'MM-dd-yyyy')
           ) : (
             <span className="text-darklink">Pick a date</span>
           )}

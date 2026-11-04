@@ -44,7 +44,7 @@ export default function DateField({ label, value, onChange }: DateFieldProps) {
             className='h-10 w-full justify-start text-left font-normal text-ld border-ld'
             aria-label={label}>
             {selected ? (
-              format(selected, 'dd/MM/yyyy')
+              format(selected, 'MM-dd-yyyy')
             ) : (
               <span className='text-darklink'>Pick a Date</span>
             )}

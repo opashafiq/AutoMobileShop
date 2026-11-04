@@ -307,8 +307,8 @@ export default function OrderDataTable({ data }: OrderTableProps) {
                       variant='outline'
                       className='justify-start text-left w-full border border-ld text-ld hover:bg-transparent hover:text-ld hover:border-primary'>
                       {editedRowData.date
-                        ? format(new Date(editedRowData.date), 'PPP')
-                        : format(new Date(row.original.date), 'PPP')}
+                        ? format(new Date(editedRowData.date), 'MM-dd-yyyy')
+                        : format(new Date(row.original.date), 'MM-dd-yyyy')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className='w-auto p-0' align='start'>
@@ -898,7 +898,7 @@ export default function OrderDataTable({ data }: OrderTableProps) {
                       : 'text-ld hover:text-ld'
                   }`}>
                   {columnFilters.date
-                    ? format(parseISO(columnFilters.date), 'PPP')
+                    ? format(parseISO(columnFilters.date), 'MM-dd-yyyy')
                     : 'Pick a date'}
                 </Button>
               </PopoverTrigger>

@@ -14,14 +14,19 @@ import {
 import { DateRange } from 'react-day-picker'
 
 const DateRangePickerCode = () => {
+  const [open, setOpen] = React.useState(false)
   const [date, setDate] = React.useState<DateRange | undefined>({
     from: new Date(2022, 0, 20),
     to: addDays(new Date(2022, 0, 20), 20),
   })
+  // Draft selection: the calendar edits this, and only "Apply" commits it to
+  // the displayed value — clicking days does not fire the change twice.
+  const [draft, setDraft] = React.useState<DateRange | undefined>(date)
+
   return (
     <>
       <div className='flex flex-wrap items-center gap-3 max-w-sm'>
-        <Popover>
+        <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
               id='date'
@@ -34,11 +39,11 @@ const DateRangePickerCode = () => {
               {date?.from ? (
                 date.to ? (
                   <>
-                    {format(date.from, 'LLL dd, y')} -{' '}
-                    {format(date.to, 'LLL dd, y')}
+                    {format(date.from, 'MM-dd-yyyy')} -{' '}
+                    {format(date.to, 'MM-dd-yyyy')}
                   </>
                 ) : (
-                  format(date.from, 'LLL dd, y')
+                  format(date.from, 'MM-dd-yyyy')
                 )
               ) : (
                 <span>Pick a date</span>
@@ -49,9 +54,21 @@ const DateRangePickerCode = () => {
             <Calendar
               initialFocus
               mode='range'
-              defaultMonth={date?.from}
-              selected={date}
-              onSelect={setDate}
+              defaultMonth={draft?.from}
+              selected={draft}
+              onSelect={setDraft}
+              onApply={(range) => {
+                if (range?.from && range?.to) {
+                  setDate(range)
+                  setDraft(range)
+                }
+                setOpen(false)
+              }}
+              onCancel={() => {
+                setDraft(date)
+                setOpen(false)
+              }}
+              showPresets
               numberOfMonths={2}
             />
           </PopoverContent>

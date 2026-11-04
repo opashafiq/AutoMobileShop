@@ -135,7 +135,7 @@ const CalendarApp = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {start ? format(start, "PPP") : "Select start date"}
+                      {start ? format(start, "MM-dd-yyyy") : "Select start date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
@@ -150,7 +150,7 @@ const CalendarApp = () => {
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="w-full justify-start">
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {end ? format(end, "PPP") : "Select end date"}
+                      {end ? format(end, "MM-dd-yyyy") : "Select end date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">

@@ -292,7 +292,7 @@ function CreateInvoice() {
                           ? 'text-muted-foreground hover:text-muted-foreground'
                           : 'text-ld hover:text-ld'
                       }`}>
-                      {date ? format(date, 'MMMM d, yyyy') : ''}
+                      {date ? format(date, 'MM-dd-yyyy') : ''}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>
@@ -388,8 +388,8 @@ function CreateInvoice() {
                           : 'text-ld hover:text-ld'
                       }`}>
                       {formData.dueDate
-                        ? format(new Date(formData.dueDate), 'MMMM d, yyyy')
-                        : format(new Date(), 'MMMM d, yyyy')}
+                        ? format(new Date(formData.dueDate), 'MM-dd-yyyy')
+                        : format(new Date(), 'MM-dd-yyyy')}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent>

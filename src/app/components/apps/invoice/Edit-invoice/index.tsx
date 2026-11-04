@@ -360,7 +360,7 @@ const EditInvoicePage = () => {
                     {editedInvoice.createdDate
                       ? format(
                           new Date(editedInvoice.createdDate),
-                          'MMMM d, yyyy'
+                          'MM-dd-yyyy'
                         )
                       : 'Pick a date'}
                   </Button>
@@ -487,7 +487,7 @@ const EditInvoicePage = () => {
                         : 'text-ld'
                     }`}>
                     {editedInvoice.dueDate
-                      ? format(new Date(editedInvoice.dueDate), 'MMMM d, yyyy')
+                      ? format(new Date(editedInvoice.dueDate), 'MM-dd-yyyy')
                       : 'Pick a date'}
                   </Button>
                 </PopoverTrigger>

@@ -409,7 +409,11 @@ const ProductTablelist = () => {
                 <DatePicker
                   selected={selectedDate}
                   onChange={handleDateChange}
-                  dateFormat="MMMM d, yyyy"
+                  dateFormat="MM-dd-yyyy"
+                  showMonthDropdown
+                  showYearDropdown
+                  dropdownMode="select"
+                  yearDropdownItemNumber={120}
                   className="form-control-input w-full max-w-full py-[10px] border border-input rounded-md px-3"
                   id="dt"
                 />

@@ -27,7 +27,7 @@ const BasicDatepickerCode = () => {
               )}>
               <CalendarIcon className='mr-2 h-4 w-4 text-primary group-hover:text-white' />
               {date ? (
-                format(date, 'PPP')
+                format(date, 'MM-dd-yyyy')
               ) : (
                 <span className='text-primary group-hover:text-white'>
                   Pick a date
