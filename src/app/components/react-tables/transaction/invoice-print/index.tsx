@@ -154,7 +154,7 @@ export default function InvoicePrintView({ invoiceId }: InvoicePrintViewProps) {
         {/* 3. Customer + Vehicle info grid */}
         <CustomerInfo master={master} />
 
-        {/* 4. Line items table */}
+        {/* 4. Line items table .. */}
         <div className='mb-4 overflow-hidden'>
           <LineItemsTable
             details={details}
